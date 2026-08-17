@@ -1,0 +1,23 @@
+/* stylelint-disable annotation-no-unknown */
+
+@use 'sass:string'; // Импортируем модуль string
+$icomoon-font-family: 'icon-set' !default;
+$icomoon-font-path: '/fonts' !default;
+
+$icon-zoom-in: string.unquote('"\\e912"');
+$icon-check4: string.unquote('"\\e911"');
+$icon-check: string.unquote('"\\e90f"');
+$icon-location: string.unquote('"\\e909"');
+$icon-max-draw: string.unquote('"\\e905"');
+$icon-check-box: string.unquote('"\\e900"');
+$icon-pencil-alt: string.unquote('"\\e901"');
+$icon-volume-control-phone: string.unquote('"\\f2a0"');
+$icon-phone-call: string.unquote('"\\e915"');
+$icon-vk-draw: string.unquote('"\\e902"');
+$icon-telegram-draw: string.unquote('"\\e903"');
+$icon-whatsapp-draw: string.unquote('"\\e904"');
+$icon-contacts: string.unquote('"\\e907"');
+$icon-arrow-down: string.unquote('"\\e92c"');
+$icon-arrow-left: string.unquote('"\\e92d"');
+$icon-arrow-right: string.unquote('"\\e950"');
+$icon-arrow-up: string.unquote('"\\e95c"');

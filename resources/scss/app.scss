@@ -1,0 +1,15 @@
+.test {
+	display: grid;
+	user-select: all;
+
+	@media (width >= 768px) {
+		display: flex;
+	}
+}
+
+h1 {
+	color: red;
+	font-size: 3rem;
+	font-weight: bold;
+	text-align: center;
+}

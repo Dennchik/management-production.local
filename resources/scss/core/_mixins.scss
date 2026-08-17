@@ -1,0 +1,285 @@
+/* stylelint-disable at-rule-descriptor-value-no-unknown */
+
+@use 'variables' as *;
+@use 'variables-icon' as *;
+
+@mixin font-face($font_name, $file_name, $weight, $style) {
+  @font-face {
+    font-family: $font_name;
+    font-weight: #{$weight};
+    font-style: #{$style};
+    font-display: swap;
+    src:
+      url('#{$font-path}/#{$file_name}.eot') format('eot'),
+      url('#{$font-path}/#{$file_name}.woff') format('woff'),
+      url('#{$font-path}/#{$file_name}.woff2') format('woff2'),
+      url('#{$font-path}/#{$file_name}.ttf') format('truetype');
+  }
+}
+:root {
+  --mq-header-size: normal;
+}
+//* ----------------------------------------------------------------------------
+
+@mixin screen {
+  @media screen {
+    @content;
+  }
+}
+@mixin screen-hover {
+  @media (hover: hover) {
+    @content;
+  }
+}
+@mixin screen-1920 {
+  @media screen and (width < 1920px) {
+    :root {
+      --mq-header-size: big;
+    }
+
+    @content;
+  }
+}
+@mixin screen-1440 {
+  @media screen and (width < 1440px) {
+    @content;
+  }
+}
+@mixin screen-1200 {
+  @media screen and (width < 1200px) {
+    @content;
+  }
+}
+@mixin screen-1140 {
+  @media screen and (width < 1140px) {
+    :root {
+      --mq-header-size: big;
+    }
+
+    @content;
+  }
+}
+@mixin screen-1024 {
+  @media screen and (width < 1024px) {
+    :root {
+      --mq-header-size: big;
+    }
+
+    @content;
+  }
+}
+@mixin screen-992 {
+  @media screen and (width < 992px) {
+    @content;
+  }
+}
+@mixin screen-980 {
+  @media screen and (width < 980px) {
+    @content;
+  }
+}
+@mixin screen-960 {
+  @media screen and (width < 960px) {
+    :root {
+      --mq-header-size: big;
+    }
+    @content;
+  }
+}
+@mixin screen-920 {
+  @media screen and (width < 920px) {
+    :root {
+      --mq-header-size: big;
+    }
+    @content;
+  }
+}
+@mixin screen-840 {
+  @media screen and (width < 840px) {
+    :root {
+      --mq-header-size: big;
+    }
+    @content;
+  }
+}
+@mixin screen-820 {
+  @media screen and (width < 820px) {
+    :root {
+      --mq-header-size: big;
+    }
+    @content;
+  }
+}
+@mixin screen-768 {
+  @media screen and (width < 768px) {
+    :root {
+      --mq-header-size: big;
+    }
+    @content;
+  }
+}
+@mixin screen-690 {
+  @media screen and (width < 690px) {
+    @content;
+  }
+}
+@mixin screen-620 {
+  @media screen and (width < 620px) {
+    @content;
+  }
+}
+@mixin screen-540 {
+  @media screen and (width < 580px) {
+    @content;
+  }
+}
+@mixin screen-490 {
+  @media screen and (width < 490px) {
+    @content;
+  }
+}
+@mixin max-490 {
+  @media screen and (width < 490px) {
+    @content;
+  }
+}
+@mixin screen-425 {
+  @media screen and (width < 425px) {
+    @content;
+  }
+}
+@mixin screen-375 {
+  @media screen and (width < 375px) {
+    @content;
+  }
+}
+@mixin screen-320 {
+  @media screen and (width < 320px) {
+    @content;
+  }
+}
+//* ----------------------------------------------------------------------------
+
+@mixin min-1440 {
+  @media (width > 1440px) {
+    @content;
+  }
+}
+@mixin min-1200 {
+  @media (width > 1200px) {
+    @content;
+  }
+}
+@mixin min-1140 {
+  @media (width > 1140px) {
+    @content;
+  }
+}
+@mixin min-1024 {
+  @media (width > 1024px) {
+    @content;
+  }
+}
+@mixin min-960 {
+  @media (width > 960px) {
+    @content;
+  }
+}
+@mixin min-920 {
+  @media (width > 920px) {
+    @content;
+  }
+}
+@mixin min-820 {
+  @media (width > 820px) {
+    @content;
+  }
+}
+@mixin min-768 {
+  @media (width > 768px) {
+    @content;
+  }
+}
+@mixin min-690 {
+  @media (width > 690px) {
+    @content;
+  }
+}
+@mixin min-490 {
+  @media (width > 490px) {
+    @content;
+  }
+}
+@mixin min-375 {
+  @media (width > 375px) {
+    @content;
+  }
+}
+//* ----------------------------------------------------------------------------
+
+@mixin minmax-1440-1920 {
+  @media (width > 1440px) and (width <= 1920px) {
+    @content;
+  }
+}
+@mixin minmax-960-1920 {
+  @media (width > 960px) and (width <= 1920px) {
+    @content;
+  }
+}
+@mixin minmax-690-1920 {
+  @media (width > 690px) and (width <= 1920px) {
+    @content;
+  }
+}
+@mixin minmax-490-1920 {
+  @media (width > 490px) and (width <= 1920px) {
+    @content;
+  }
+}
+@mixin minmax-320-1920 {
+  @media (width > 320px) and (width <= 1920px) {
+    @content;
+  }
+}
+@mixin minmax-690-1440 {
+  @media (width > 690.98px) and (width <= 1440px) {
+    @content;
+  }
+}
+@mixin minmax-1289-1440 {
+  @media (width > 1289px) and (width <= 1440px) {
+    @content;
+  }
+}
+@mixin minmax-980-1440 {
+  @media (width > 980px) and (width <= 1440px) {
+    @content;
+  }
+}
+@mixin minmax-690-1024 {
+  @media (width > 690px) and (width <= 1024px) {
+    @content;
+  }
+}
+@mixin minmax-490-1440 {
+  @media (width > 490px) and (width <= 1440px) {
+    @content;
+  }
+}
+@mixin minmax-490-960 {
+  @media (width > 490px) and (width <= 960px) {
+    @content;
+  }
+}
+@mixin minmax-690-960 {
+  @media (width > 690px) and (width <= 960px) {
+    @content;
+  }
+}
+@mixin minmax-320-768 {
+  @media (width > 320px) and (width <= 768px) {
+    @content;
+  }
+}
+//* ----------------------------------------------------------------------------

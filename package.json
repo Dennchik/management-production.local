@@ -1,0 +1,36 @@
+{
+	"$schema": "https://www.schemastore.org/package.json",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "vite build",
+		"dev": "vite",
+		"artisan ": "composer run dev"
+	},
+	"devDependencies": {
+		"autoprefixer": "^10.5.4",
+		"concurrently": "^10.0.3",
+		"glob": "^13.0.6",
+		"laravel-vite-plugin": "^3.1",
+		"postcss": "^8.5.26",
+		"postcss-media-minmax": "^5.0.0",
+		"postcss-scss": "^4.0.9",
+		"postcss-sort-media-queries": "^6.7.1",
+		"sass": "^1.102.0",
+		"sharp": "^0.35.3",
+		"stylelint": "^17.14.1",
+		"stylelint-config-clean-order": "^10.0.0",
+		"stylelint-config-standard": "^40.0.0",
+		"stylelint-order": "^8.1.1",
+		"stylelint-scss": "^7.2.0",
+		"ttf2woff": "^3.0.0",
+		"ttf2woff2": "^8.0.1",
+		"vite": "^8.0.0"
+	},
+	"optionalDependencies": {
+		"@laravel/multiplex": "^0.4.1"
+	},
+	"dependencies": {
+		"gsap": "^3.15.0"
+	}
+}

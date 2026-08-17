@@ -1,0 +1,107 @@
+//* - [Variables] -
+
+$maxWidthContainer: 1440px;
+
+//! - [Font Variables] -
+// --- Переменные (Настройте под свой проект) ---
+
+$radius: 3.2rem; // Скругление углов (как на референсе)
+$gap: 16px; // Отступы между карточками
+$transition-linear-ease: var(--linear-ease);
+$radius-btn: 50px;
+
+$font-path: '../fonts';
+$font-family-default: 'Manrope', sans-serif;
+$font-family-title: 'Montserrat Alternates', sans-serif;
+$font-family-logo: 'Dancing Script', sans-serif;
+$font-hand: 'cursive', sans-serif; // Шрифт для "Pf" (подключите рукописный)
+$font-weight-default: 400;
+$font-size: 1.6rem;
+
+//* - [ Font color ] -
+$font-color-secondary: rgb(255 255 255);
+
+//* - [ Color ]
+$color-bg-section: rgb(240 240 240); // Фон секции (светло-серый)
+$color-bg-dark: rgb(17 17 17); // Темный фон футера
+$color-bg-card: rgb(255 255 255);
+$color-card-gray: rgb(242 243 245); // Фон для карточек статистики и контактов
+$color-text: rgb(17 17 17);
+$color-text-light: rgb(95 95 95);
+$color-text-gray: rgb(136 136 136);
+$color-accent-light: rgb(255 90 95 / 10%);
+$color-accent: rgb(255 90 95); // Красный акцент (можно поменять)
+$color-white: rgb(255 255 255);
+$border-color: rgb(51 51 51);
+$color-placeholder: rgb(85 85 85);
+$color-gray-hover: rgb(173 173 173);
+
+//* - [ Shadow ]
+//* - [ Background Color ] -
+$background: rgb(255 255 255);
+$background-footer: rgb(38 39 41);
+$background-input: rgb(31 31 31); // Фон полей ввода
+
+//* - [ Text-selection ]
+$text-selection: rgb(255 90 96 / 25.3%);
+
+//* - [ Root ]
+:root {
+  --alarm-color: rgb(255 90 95);
+  --width: calc(0px + (260 - 0) * ((100vw - 320px) / (1024 - 320)));
+  //* - [Background] -
+  --background-transparent: rgb(14 14 19 / 85.5%);
+  //* - [Scrollbar] -
+  --thumb-color: rgb(16 71 28 / 37.7%);
+  --background-hover: rgb(94 77 168 / 24%);
+  --scrollbar-thumb-color: rgb(133 133 133 / 32.2%);
+  //* ----------- --------------------------------------------------------------
+  --pos: center center;
+  --size: 0;
+  --inset-top: 0;
+  --inset-right: 100%;
+  --inset-bottom: 100%;
+  --inset-left: 0;
+  //* --------------------------------------------------------------------------
+  // --color-1: #ff5a60be;
+  --color-1: #ff5adbbe;
+
+  /* Emerald */
+  --color-2: #ff5a6079;
+
+  /* Cyan */
+  // --color-3: #ff5a6044;
+  --color-3: #5affe944;
+
+  /* Violet */
+  --color-4: #fff45a2a;
+  --linear-ease: linear(
+    0,
+    0.068,
+    0.19 2.7%,
+    0.804 8.1%,
+    1.037,
+    1.199 13.2%,
+    1.245,
+    1.27 15.8%,
+    1.274,
+    1.272 17.4%,
+    1.249 19.1%,
+    0.996 28%,
+    0.949,
+    0.928 33.3%,
+    0.926,
+    0.933 36.8%,
+    1.001 45.6%,
+    1.013,
+    1.019 50.8%,
+    1.018 54.4%,
+    1 63.1%,
+    0.995 68%,
+    1.001 85%,
+    1
+  );
+}
+
+$snap: cubic-bezier(1, 0.005, 0.24, 1);
+$bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
