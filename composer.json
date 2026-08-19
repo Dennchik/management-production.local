@@ -48,6 +48,11 @@
 			"start \"\" /b scripts\\open-browser.cmd",
 			"@php artisan dev"
 		],
+		"preview": [
+			"npm run build",
+			"start \"\" /b scripts\\open-browser.cmd",
+			"@php artisan serve"
+		],
 		"test": [
 			"@php artisan config:clear --ansi @no_additional_args",
 			"@php artisan test"

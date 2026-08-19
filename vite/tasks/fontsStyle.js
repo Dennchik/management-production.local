@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { paths } from '../config/path.js';
 
 import { fonts } from './fonts.js';
-import { paths } from '../config/path.js';
 
 function generateFontsScss() {
 	const fontsDir = paths.fonts.src;
@@ -28,7 +28,7 @@ function generateFontsScss() {
 		});
 	}
 
-	fs.mkdirSync(path.dirname(targetFile), { recursive: true });
+	fs.mkdirSync(path.dirname(targetFile), {recursive: true});
 	fs.writeFileSync(targetFile, content);
 }
 
@@ -50,7 +50,7 @@ export function fontStyle() {
 
 			fs.watch(
 				fontsPath,
-				{ persistent: true },
+				{persistent: true},
 				(_eventType, filename) => {
 					if (!filename) {
 						return;

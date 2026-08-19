@@ -2,104 +2,106 @@
 @use 'mixins.scss' as *;
 
 html {
-  counter-reset: heading;
-  // scroll-behavior: smooth;
-  // scrollbar-width: thin;
-  height: 100%;
+	counter-reset: heading;
+	// scroll-behavior: smooth;
+	// scrollbar-width: thin;
+	height: 100%;
 
-  font: {
-    size: 62.5%;
+	font: {
+		size: 62.5%;
 
-    family: $font-family-default;
-    style: normal;
-    weight: $font-weight-default;
-  }
+		family: $font-family-default;
+		style: normal;
+		weight: $font-weight-default;
+	}
 
-  @include screen-1440 {
-    font-size: 50%;
-  }
+	@include screen-1440 {
+		font-size: 50%;
+	}
 }
 
 body {
-  overscroll-behavior: none;
+	overscroll-behavior: none;
 
-  font: 16px/16px $font-family-default;
-  font-weight: $font-weight-default;
-  line-height: 1;
-  color: $color-text;
+	font: 1.6rem/1.6rem $font-family-default;
+	font-weight: $font-weight-default;
+	line-height: 1;
+	color: $font-color;
 
-  background: $background;
+	background: var(--background);
 
-  &.no-scroll {
-    overflow: hidden;
-  }
+	&.no-scroll {
+		overflow: hidden;
+	}
 }
+
 [tabindex='-1']:focus {
-  outline: none !important;
-  box-shadow: none !important;
+	outline: none !important;
+	box-shadow: none !important;
 }
 
 * {
-  // scrollbar-width: none;
+	// scrollbar-width: none;
 
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  border: none;
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+	border: none;
 
-  -webkit-tap-highlight-color: transparent;
+	-webkit-tap-highlight-color: transparent;
 
-  &::before,
-  &::after {
-    box-sizing: border-box;
-  }
+	&::before,
+	&::after {
+		box-sizing: border-box;
+	}
 }
 
 img,
 svg {
-  // pointer-events: none;
-  user-select: none;
-  max-width: 100%;
-  height: auto;
-  vertical-align: middle;
+	// pointer-events: none;
+	user-select: none;
+	max-width: 100%;
+	height: auto;
+	vertical-align: middle;
 }
 
 a {
-  cursor: pointer;
-  color: inherit;
-  text-decoration: none;
+	cursor: pointer;
+	color: inherit;
+	text-decoration: none;
 
-  &:hover {
-    text-decoration: none;
-    vertical-align: baseline;
-  }
+	&:hover {
+		text-decoration: none;
+		vertical-align: baseline;
+	}
 
-  &:focus {
-    text-decoration: none;
-  }
+	&:focus {
+		text-decoration: none;
+	}
 
-  &:visited {
-    text-emphasis-style: none;
-    vertical-align: middle;
-  }
+	&:visited {
+		text-emphasis-style: none;
+		vertical-align: middle;
+	}
 }
 
 button,
 input[type='submit'] {
-  cursor: pointer;
-  background: transparent none;
-  box-shadow: none;
+	cursor: pointer;
+	background: transparent none;
+	box-shadow: none;
 }
 
 input,
 textarea,
 button,
 select {
-  font-family: inherit;
-  font-size: inherit;
-  color: inherit;
-  background-color: transparent;
+	font-family: inherit;
+	font-size: inherit;
+	color: inherit;
+	background-color: transparent;
 }
+
 a:focus,
 a:active,
 input:focus,
@@ -108,24 +110,26 @@ button:focus,
 button:active,
 textarea:focus,
 textarea:active {
-  // outline: none;
+	// outline: none;
 }
 
 button::-moz-focus-inner {
-  padding: 0;
-  border: 0;
+	padding: 0;
+	border: 0;
 }
 
 label {
-  cursor: pointer;
+	cursor: pointer;
 }
+
 table {
-  font-weight: initial;
+	font-weight: initial;
 }
+
 ul,
 ol,
 li {
-  list-style: none;
+	list-style: none;
 }
 
 h1,
@@ -134,34 +138,33 @@ h3,
 h4,
 h5,
 h6 {
-  font-weight: inherit;
-  font-style: inherit;
+	font-weight: inherit;
+	font-style: inherit;
 }
 
 //  * Изменить стиль выделения текста
 ::selection {
-  color: $color-text;
-  color: red;
-  background-color: $text-selection;
+	color: var(--color-text);
+	background-color: var(--color-text-secondary);
 }
 
 /// * Изменить стиль полосы прокрутки (scrollbar)
 ::-webkit-scrollbar {
-  position: fixed;
-  width: 0.4rem;
-  padding: 0.031em;
+	position: fixed;
+	width: 0.4rem;
+	padding: 0.031em;
 }
 
 ::-webkit-scrollbar-track {
-  background-color: var(--scrollbar-thumb-color);
+	background-color: var(--scrollbar-thumb-color);
 }
 
 ::-webkit-scrollbar-thumb {
-  border: 0 solid var(--border-color);
-  border-radius: 2px;
-  background-color: var(--thumb-color);
+	border: 0 solid var(--border-color);
+	border-radius: 2px;
+	background-color: var(--thumb-color);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--background-hover);
+	background-color: var(--background-hover);
 }

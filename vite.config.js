@@ -1,10 +1,10 @@
 import autoprefixer from 'autoprefixer';
+import laravel from 'laravel-vite-plugin';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import postcssMediaMinMax from 'postcss-media-minmax';
 import sortMediaQueries from 'postcss-sort-media-queries';
 import { defineConfig } from 'vite';
-import laravel from 'laravel-vite-plugin';
 
 import { app } from './vite/config/app.js';
 import { fontStyle } from './vite/tasks/fontsStyle.js';
@@ -12,7 +12,7 @@ import { convertImagesToWebp } from './vite/tasks/webp.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig(({ command }) => {
+export default defineConfig(({command}) => {
 	const isProd = command === 'build';
 
 	// noinspection JSValidateTypes
@@ -31,12 +31,19 @@ export default defineConfig(({ command }) => {
 			convertImagesToWebp(app.webp),
 		],
 
-		// server: {
-		// 	open: true,
-		// 	watch: {
-		// 		ignored: ['**/storage/framework/views/**'],
-		// 	},
-		// },
+		server: {
+			proxy: {
+				'/fonts': {
+					target: 'http://localhost:8000',
+					changeOrigin: true,
+				},
+			},
+
+			// open: true,
+			// 	watch: { 
+			// 		ignored: ['**/storage/framework/views/**'],
+			// 	},
+		},
 
 		css: {
 			devSourcemap: !isProd,

@@ -1,25 +1,22 @@
 <?php
 
-namespace Database\Seeders;
+	namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
+	use Illuminate\Database\Seeder;
 
-class DatabaseSeeder extends Seeder
-{
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
-    public function run(): void
-    {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-    }
-}
+	class DatabaseSeeder extends Seeder
+	{
+		/**
+		 * Запускает основные Seeder приложения.
+		 *
+		 * Здесь определяется порядок первоначального
+		 * заполнения справочников и системных данных.
+		 */
+		public function run(): void
+		{
+			// Справочник типов материалов.
+			$this->call([
+					MaterialSeeder::class,
+			]);
+		}
+	}

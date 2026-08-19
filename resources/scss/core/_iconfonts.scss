@@ -1,117 +1,315 @@
 @use 'variables-icon' as *;
 
 @font-face {
-  font-family: '#{$icomoon-font-family}';
-  font-weight: normal;
-  font-style: normal;
-  font-display: block;
-  src: url('#{$icomoon-font-path}/#{$icomoon-font-family}.eot?1q423w');
-  src:
-    url('#{$icomoon-font-path}/#{$icomoon-font-family}.eot?1q423w#iefix')
-      format('embedded-opentype'),
-    url('#{$icomoon-font-path}/#{$icomoon-font-family}.ttf?1q423w')
-      format('truetype'),
-    url('#{$icomoon-font-path}/#{$icomoon-font-family}.woff?1q423w')
-      format('woff'),
-    url('#{$icomoon-font-path}/#{$icomoon-font-family}.svg?1q423w##{$icomoon-font-family}')
-      format('svg');
+	font-family: '#{$icomoon-font-family}';
+	font-weight: normal;
+	font-style: normal;
+	font-display: block;
+	src: url('#{$icomoon-font-path}/#{$icomoon-font-family}.eot?1q423w');
+	src: url('#{$icomoon-font-path}/#{$icomoon-font-family}.eot?1q423w#iefix') format('embedded-opentype'),
+	url('#{$icomoon-font-path}/#{$icomoon-font-family}.ttf?1q423w') format('truetype'),
+	url('#{$icomoon-font-path}/#{$icomoon-font-family}.woff?1q423w') format('woff'),
+	url('#{$icomoon-font-path}/#{$icomoon-font-family}.svg?1q423w##{$icomoon-font-family}') format('svg');
 }
 
 [class^='icon-']::before,
 [class*=' icon-']::before {
-  font-family: '#{$icomoon-font-family}' !important;
-  font-feature-settings: 'liga';
-  font-weight: normal;
-  font-style: normal;
-  font-variant: normal;
-  font-variant-ligatures: discretionary-ligatures;
-  line-height: 1;
-  text-transform: none;
-  letter-spacing: 0;
+	font-family: '#{$icomoon-font-family}' !important;
+	font-feature-settings: 'liga';
+	font-weight: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-variant-ligatures: discretionary-ligatures;
+	line-height: 1;
+	text-transform: none;
+	letter-spacing: 0;
 }
 
-.icon-zoom-in {
-  &::before {
-    content: $icon-zoom-in;
-  }
+.icon-information-outline {
+	&:before {
+		content: $icon-information-outline;
+	}
 }
-.icon-check4 {
-  &::before {
-    content: $icon-check4;
-  }
+
+.icon-warehouse {
+	&:before {
+		content: $icon-warehouse;
+	}
 }
-.icon-check {
-  &::before {
-    content: $icon-check;
-  }
+
+.icon-crane {
+	&:before {
+		content: $icon-crane;
+	}
 }
-.icon-location {
-  &::before {
-    content: $icon-location;
-  }
+
+.icon-home-com {
+	&:before {
+		content: $icon-home-com;
+	}
 }
-.icon-check-box {
-  &::before {
-    content: $icon-check-box;
-  }
+
+.icon-users-group {
+	&:before {
+		content: $icon-users-group;
+	}
 }
-.icon-pencil-alt {
-  &::before {
-    content: $icon-pencil-alt;
-  }
+
+.icon-link {
+	&:before {
+		content: $icon-link;
+	}
 }
-.icon-volume-control-phone {
-  &::before {
-    content: $icon-volume-control-phone;
-  }
+
+.icon-settings-cogs {
+	&:before {
+		content: $icon-settings-cogs;
+	}
 }
-.icon-phone-call {
-  &::before {
-    content: $icon-phone-call;
-  }
+
+.icon-sign-out {
+	&:before {
+		content: $icon-sign-out;
+	}
 }
-.icon-vk-draw {
-  &::before {
-    content: $icon-vk-draw;
-  }
+
+.icon-angle-left {
+	&:before {
+		content: $icon-angle-left;
+	}
 }
-.icon-telegram-draw {
-  &::before {
-    content: $icon-telegram-draw;
-  }
+
+.icon-angle-right {
+	&:before {
+		content: $icon-angle-right;
+	}
 }
-.icon-whatsapp-draw {
-  &::before {
-    content: $icon-whatsapp-draw;
-  }
+
+.icon-angle-up {
+	&:before {
+		content: $icon-angle-up;
+	}
 }
-.icon-max-draw {
-  &::before {
-    content: $icon-max-draw;
-  }
+
+.icon-angle-down {
+	&:before {
+		content: $icon-angle-down;
+	}
 }
-.icon-contacts {
-  &::before {
-    content: $icon-contacts;
-  }
+
+.icon-enter {
+	&:before {
+		content: $icon-enter;
+	}
 }
-.icon-arrow-down {
-  &::before {
-    content: $icon-arrow-down;
-  }
+
+.icon-exit {
+	&:before {
+		content: $icon-exit;
+	}
 }
-.icon-arrow-left {
-  &::before {
-    content: $icon-arrow-left;
-  }
+
+.icon-exchange {
+	&:before {
+		content: $icon-exchange;
+	}
 }
-.icon-arrow-right {
-  &::before {
-    content: $icon-arrow-right;
-  }
+
+.icon-folder-open {
+	&:before {
+		content: $icon-folder-open;
+	}
 }
-.icon-arrow-up {
-  &::before {
-    content: $icon-arrow-up;
-  }
+
+.icon-calculator {
+	&:before {
+		content: $icon-calculator;
+	}
 }
+
+.icon-factory {
+	&:before {
+		content: $icon-factory;
+	}
+}
+
+.icon-order-list {
+	&:before {
+		content: $icon-order-list;
+	}
+}
+
+.icon-search-doc {
+	&:before {
+		content: $icon-search-doc;
+	}
+}
+
+.icon-copy-files {
+	&:before {
+		content: $icon-copy-files;
+	}
+}
+
+.icon-file-word {
+	&:before {
+		content: $icon-file-word;
+	}
+}
+
+.icon-file-text {
+	&:before {
+		content: $icon-file-text;
+	}
+}
+
+.icon-print1 {
+	&:before {
+		content: $icon-print1;
+	}
+}
+
+.icon-close {
+	&:before {
+		content: $icon-close;
+	}
+}
+
+.icon-caret-right {
+	&:before {
+		content: $icon-caret-right;
+	}
+}
+
+.icon-home-house {
+	&:before {
+		content: $icon-home-house;
+	}
+}
+
+.icon-embed {
+	&:before {
+		content: $icon-embed;
+	}
+}
+
+.icon-embed-code {
+	&:before {
+		content: $icon-embed-code;
+	}
+}
+
+.icon-indent-increase {
+	&:before {
+		content: $icon-indent-increase;
+	}
+}
+
+.icon-indent-decrease {
+	&:before {
+		content: $icon-indent-decrease;
+	}
+}
+
+.icon-angles-left-solid {
+	&:before {
+		content: $icon-angles-left-solid;
+	}
+}
+
+.icon-angles-right-solid {
+	&:before {
+		content: $icon-angles-right-solid;
+	}
+}
+
+.icon-angles-up-solid {
+	&:before {
+		content: $icon-angles-up-solid;
+	}
+}
+
+.icon-angles-down-solid {
+	&:before {
+		content: $icon-angles-down-solid;
+	}
+}
+
+.icon-bin-trashcan {
+	&:before {
+		content: $icon-bin-trashcan;
+	}
+}
+
+.icon-file-excel {
+	&:before {
+		content: $icon-file-excel;
+	}
+}
+
+.icon-equalizer-settings {
+	&:before {
+		content: $icon-equalizer-settings;
+	}
+}
+
+.icon-settings-options {
+	&:before {
+		content: $icon-settings-options;
+	}
+}
+
+.icon-settings-generate {
+	&:before {
+		content: $icon-settings-generate;
+	}
+}
+
+.icon-recycle-arrows {
+	&:before {
+		content: $icon-recycle-arrows;
+	}
+}
+
+.icon-archive {
+	&:before {
+		content: $icon-archive;
+	}
+}
+
+.icon-lock-security {
+	&:before {
+		content: $icon-lock-security;
+	}
+}
+
+.icon-catalog {
+	&:before {
+		content: $icon-catalog;
+	}
+}
+
+.icon-print {
+	&:before {
+		content: $icon-print;
+	}
+}
+
+.icon-cut {
+	&:before {
+		content: $icon-cut;
+	}
+}
+
+.icon-minus {
+	&:before {
+		content: $icon-minus;
+	}
+}
+
+.icon-plus {
+	&:before {
+		content: $icon-plus;
+	}
+}
+

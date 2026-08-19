@@ -1,0 +1,82 @@
+@use '../core/variables' as *;
+@use '../core/mixins' as *;
+
+.header {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 100;
+	width: 100%;
+
+	background-color: var(--color-black);
+	color: var(--color-text-secondary);
+	border-bottom: 1px solid var(--color-pink);
+
+	// .header__inner
+	&__inner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		min-height: 64px;
+		padding: 0 24px;
+	}
+
+	// .header__menu-toggle
+	&__menu-toggle {
+		display: none;
+	}
+
+	// .header__logo
+	&__logo {
+		color: var(--color-pink);
+		text-decoration: none;
+		display: flex;
+		align-items: end;
+
+		img {
+			width: 24px;
+			height: 24px;
+			margin-right: 1.6rem
+		}
+
+	}
+
+	// .header__actions
+	&__actions {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+	}
+
+	// .header__theme-toggle
+	&__theme-toggle {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+
+		width: 40px;
+		height: 40px;
+		padding: 0;
+
+		color: var(--color-text-secondary);
+		background-color: transparent;
+		border: 1px solid var(--color-text-secondary);
+		border-radius: 50%;
+
+		cursor: pointer;
+	}
+
+	// .header__theme-icon
+	&__theme-icon {
+		width: 16px;
+		height: 16px;
+		border: 2px solid currentColor;
+		border-radius: 50%;
+	}
+
+	// .header__user
+	&__user {
+		color: var(--color-white);
+		white-space: nowrap;
+	}
+}

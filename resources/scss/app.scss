@@ -1,15 +1,45 @@
-.test {
-	display: grid;
-	user-select: all;
+// todo --------------------------- Fonts --------------------------------------
 
-	@media (width >= 768px) {
-		display: flex;
-	}
+@use 'core/fonts';
+@use 'core/fonts-import';
+@use 'core/iconfonts';
+
+//todo  --------------------------- Core ---------------------------------------
+@use 'core/reset' as *;
+@use 'core/variables' as *;
+@use 'core/mixins' as *;
+////@use 'core/extend' as *;
+//todo  --------------------------- layouts ------------------------------------
+@use 'layouts/header';
+@use 'layouts/main-content';
+//todo  --------------------------- Pages --------------------------------------
+@use 'pages/warehouse';
+
+//todo  -------------------------- Partials ------------------------------------
+@use 'partials/message.blade';
+@use 'partials/its-select';
+//todo  -------------------------- Components ----------------------------------
+@use 'components/sidebar';
+@use 'components/receipt-order';
+
+// todo --------------------------- Style --------------------------------------
+.wrapper {
+	display: flex;
+	flex-direction: column;
+
+	height: 100%;
+	min-height: 100vh;
+	margin: 0 auto;
 }
 
-h1 {
-	color: red;
-	font-size: 3rem;
-	font-weight: bold;
-	text-align: center;
+[class*='container'] {
+	box-sizing: border-box;
+	width: 100%;
+	max-width: $maxWidthContainer;
+	margin: 0 auto;
+	padding: 0 2rem;
+
+	@include screen-490 {
+		padding: 0 10px;
+	}
 }

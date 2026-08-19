@@ -1,0 +1,30 @@
+@use '../core/variables' as *;
+@use '../core/mixins' as *;
+
+.select {
+	position: relative;
+	// .select__button
+	&__button {
+	}
+
+	// .select__dropdown
+	&__dropdown {
+		background: var(--color-white);
+		border: 1px solid rgb(210 216 222);
+		border-radius: var(--border-radius);
+		box-shadow: 0 0 0 3px rgb(150 190 220 / 15%);
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+		padding: 12px;
+		position: absolute;
+		transform: translateY(3px);
+		width: 100%;
+	}
+
+	// .select__item
+	&__item {
+		cursor: pointer;
+	}
+}
+

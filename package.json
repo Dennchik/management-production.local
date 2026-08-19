@@ -3,9 +3,10 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "vite build",
+		"production": "vite build",
 		"dev": "vite",
-		"artisan ": "composer run dev"
+		"composer dev": "composer run dev",
+		"preview": "composer run preview"
 	},
 	"devDependencies": {
 		"autoprefixer": "^10.5.4",
@@ -31,6 +32,8 @@
 		"@laravel/multiplex": "^0.4.1"
 	},
 	"dependencies": {
-		"gsap": "^3.15.0"
+		"alpinejs": "^3.16.1",
+		"gsap": "^3.15.0",
+		"swiper": "^14.1.0"
 	}
 }
