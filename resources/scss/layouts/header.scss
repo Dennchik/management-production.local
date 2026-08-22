@@ -2,7 +2,7 @@
 @use '../core/mixins' as *;
 
 .header {
- 
+
 	// .header__inner
 	&__inner {
 		display: flex;
@@ -19,7 +19,7 @@
 
 	// .header__logo
 	&__logo {
-		color: var(--color-pink);
+		color: var(--color-text-header);
 		text-decoration: none;
 		display: flex;
 		align-items: end;

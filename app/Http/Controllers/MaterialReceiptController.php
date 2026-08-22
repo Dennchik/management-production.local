@@ -14,28 +14,6 @@
 	class MaterialReceiptController extends Controller
 	{
 		/**
-		 * Просмотр приходного ордера.
-		 */
-		public function show(MaterialReceipt $receipt)
-		{
-			$receipt->load([
-				'items.material',
-				'items.roll',
-				'user',
-			]);
-
-			if (request()->ajax()) {
-				return view('material-receipts._content', [
-					'receipt' => $receipt,
-				]);
-			}
-
-			return view('material-receipts.show', [
-				'receipt' => $receipt,
-			]);
-		}
-
-		/**
 		 * Список приходных ордеров.
 		 */
 		public function index(Request $request)
@@ -62,6 +40,28 @@
 				'dateFrom',
 				'dateTo'
 			));
+		}
+
+		/**
+		 * Просмотр приходного ордера.
+		 */
+		public function show(MaterialReceipt $receipt)
+		{
+			$receipt->load([
+				'items.material',
+				'items.roll',
+				'user',
+			]);
+
+			if (request()->ajax()) {
+				return view('material-receipts._content', [
+					'receipt' => $receipt,
+				]);
+			}
+
+			return view('material-receipts.show', [
+				'receipt' => $receipt,
+			]);
 		}
 
 		/**

@@ -14,8 +14,7 @@
 
 			<div class="material-roll__actions">
 
-				<a
-						class="material-roll__back button"
+				<a class="material-roll__back button"
 						href="{{ route('warehouse.material', $roll->material) }}">
 					<span>Назад к материалу</span>
 				</a>

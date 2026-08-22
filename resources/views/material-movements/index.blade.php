@@ -5,105 +5,107 @@
 @section('content')
 
 	<div class="material-movements">
+		<div class="material-movements__content">
+			{{-- Фильтр --}}
+			<div class="material-movements">
+				@include('layouts.filters-actions', [
+				  'filterType' => 'material-movements',
+				  'filterAction' => route('material-movements.index'),
+				  'filterReset' => route('material-movements.index'),
+				])
+			</div>
 
-		{{-- Фильтр --}}
-		@include('layouts.filters-actions', [
-		  'filterType' => 'material-movements',
-		  'filterAction' => route('material-movements.index'),
-		  'filterReset' => route('material-movements.index'),
-		])
+			<h1 class="main-content__title">
+				Движение материалов
+			</h1>
 
-		<h1 class="main-content__title">
-			Движение материалов
-		</h1>
+			{{-- Таблица движений --}}
+			<div class="material-movements__table-wrapper">
 
-		{{-- Таблица движений --}}
-		<div class="material-movements__table-wrapper">
+				<table class="material-movements__table">
 
-			<table class="material-movements__table">
-
-				<thead>
-				<tr>
-					<th>Дата</th>
-					<th>Операция</th>
-					<th>Материал</th>
-					<th>Идентификатор</th>
-					<th>Рулон</th>
-					<th>Изменение</th>
-					<th>Пользователь</th>
-				</tr>
-				</thead>
-
-				<tbody>
-
-				@forelse ($movements as $movement)
-
+					<thead>
 					<tr>
-
-						{{-- Дата --}}
-						<td>
-							{{ $movement['date']->format('d.m.Y H:i') }}
-						</td>
-
-						{{-- Операция --}}
-						<td>
-							@if ($movement['type'] === 'receipt')
-								Приход
-							@else
-								Расход
-							@endif
-						</td>
-
-						{{-- Материал --}}
-						<td>
-							{{ $movement['material']->name }}
-						</td>
-
-						{{-- Идентификатор --}}
-						<td>
-							{{ $movement['material']->identifier }}
-						</td>
-
-						{{-- Рулон --}}
-						<td>
-							{{ $movement['roll']->roll_number }}
-						</td>
-
-						{{-- Изменение веса --}}
-						<td>
-							@if ($movement['type'] === 'receipt')
-								+{{ number_format($movement['weight'], 3, '.', '') }}
-							@else
-								-{{ number_format($movement['weight'], 3, '.', '') }}
-							@endif
-							кг
-						</td>
-
-						{{-- Пользователь --}}
-						<td>
-							{{ $movement['user']?->name ?? '—' }}
-						</td>
-
+						<th>Дата</th>
+						<th>Операция</th>
+						<th>Материал</th>
+						<th>Идентификатор</th>
+						<th>Рулон</th>
+						<th>Изменение</th>
+						<th>Пользователь</th>
 					</tr>
+					</thead>
 
-				@empty
+					<tbody>
 
-					<tr>
-						<td
-								class="material-movements__empty"
-								colspan="7">
-							Движений материалов пока нет
-						</td>
-					</tr>
+					@forelse ($movements as $movement)
 
-				@endforelse
+						<tr>
 
-				</tbody>
+							{{-- Дата --}}
+							<td>
+								{{ $movement['date']->format('d.m.Y H:i') }}
+							</td>
 
-			</table>
+							{{-- Операция --}}
+							<td>
+								@if ($movement['type'] === 'receipt')
+									Приход
+								@else
+									Расход
+								@endif
+							</td>
 
+							{{-- Материал --}}
+							<td>
+								{{ $movement['material']->name }}
+							</td>
+
+							{{-- Идентификатор --}}
+							<td>
+								{{ $movement['material']->identifier }}
+							</td>
+
+							{{-- Рулон --}}
+							<td>
+								{{ $movement['roll']->roll_number }}
+							</td>
+
+							{{-- Изменение веса --}}
+							<td>
+								@if ($movement['type'] === 'receipt')
+									+{{ number_format($movement['weight'], 3, '.', '') }}
+								@else
+									-{{ number_format($movement['weight'], 3, '.', '') }}
+								@endif
+								кг
+							</td>
+
+							{{-- Пользователь --}}
+							<td>
+								{{ $movement['user']?->name ?? '—' }}
+							</td>
+
+						</tr>
+
+					@empty
+
+						<tr>
+							<td
+									class="material-movements__empty"
+									colspan="7">
+								Движений материалов пока нет
+							</td>
+						</tr>
+
+					@endforelse
+
+					</tbody>
+
+				</table>
+
+			</div>
 		</div>
-
 	</div>
 
 @endsection

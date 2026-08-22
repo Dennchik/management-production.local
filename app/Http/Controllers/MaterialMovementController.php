@@ -2,6 +2,7 @@
 
 	namespace App\Http\Controllers;
 
+	use App\Models\Material;
 	use App\Models\MaterialIssue;
 	use App\Models\MaterialReceiptItem;
 	use Illuminate\Http\Request;
@@ -22,6 +23,7 @@
 			$dateTo = $request->input('date_to');
 			$type = $request->input('type');
 			$materialId = $request->input('material_id');
+			$search = trim($request->input('search', ''));
 
 			/*
 			 * Приходы.
@@ -39,6 +41,17 @@
 				})
 				->when($materialId, function ($query) use ($materialId) {
 					$query->where('material_id', $materialId);
+				})
+				->when($search, function ($query) use ($search) {
+					$query->whereHas('material', function ($query) use ($search) {
+						$query
+							->where('name', 'ilike', '%' . $search . '%')
+							->orWhere(
+								'identifier',
+								'ilike',
+								'%' . $search . '%'
+							);
+					});
 				})
 				->get()
 				->map(function (MaterialReceiptItem $item) {
@@ -71,6 +84,17 @@
 				->when($materialId, function ($query) use ($materialId) {
 					$query->where('material_id', $materialId);
 				})
+				->when($search, function ($query) use ($search) {
+					$query->whereHas('material', function ($query) use ($search) {
+						$query
+							->where('name', 'ilike', '%' . $search . '%')
+							->orWhere(
+								'identifier',
+								'ilike',
+								'%' . $search . '%'
+							);
+					});
+				})
 				->get()
 				->map(function (MaterialIssue $issue) {
 					return [
@@ -100,7 +124,7 @@
 			/*
 			 * Материалы для фильтра.
 			 */
-			$materials = \App\Models\Material::query()
+			$materials = Material::query()
 				->orderBy('name')
 				->get();
 
@@ -110,7 +134,8 @@
 				'dateFrom',
 				'dateTo',
 				'type',
-				'materialId'
+				'materialId',
+				'search'
 			));
 		}
 	}

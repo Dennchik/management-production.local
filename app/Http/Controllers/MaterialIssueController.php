@@ -41,7 +41,29 @@
 		}
 
 		/**
-		 * Форма нового расходного ордера.
+		 * Просмотр расходного ордера.
+		 */
+		public function show(MaterialIssue $issue): View
+		{
+			$issue->load([
+				'material',
+				'roll',
+				'user',
+			]);
+
+			if (request()->ajax()) {
+				return view('material-issues._content', [
+					'issue' => $issue,
+				]);
+			}
+
+			return view('material-issues.show', [
+				'issue' => $issue,
+			]);
+		}
+
+		/**
+		 * Отображает форму расходного ордера.
 		 */
 		public function create(): View
 		{
@@ -98,9 +120,9 @@
 				$currentWeight = (float)$roll->weight;
 				$issueWeight = (float)$validated['weight'];
 
-				if ($issueWeight > $currentWeight) {
-					abort(422, 'Недостаточно материала на рулоне.');
-				}
+//				if ($issueWeight > $currentWeight) {
+//					abort(422, 'Недостаточно материала на рулоне.');
+//				}
 
 				MaterialIssue::create([
 					'material_id' => $roll->material_id,
@@ -118,27 +140,5 @@
 			return redirect()
 				->route('material-issues.create')
 				->with('success', 'Материал успешно списан.');
-		}
-
-		/**
-		 * Просмотр расходного ордера.
-		 */
-		public function show(MaterialIssue $issue): View
-		{
-			$issue->load([
-				'material',
-				'roll',
-				'user',
-			]);
-
-			if (request()->ajax()) {
-				return view('material-issues._content', [
-					'issue' => $issue,
-				]);
-			}
-
-			return view('material-issues.show', [
-				'issue' => $issue,
-			]);
 		}
 	}

@@ -22,8 +22,8 @@
 		min-width: 0;
 
 		&:first-child {
-			flex: 0 0 32rem;
-			width: max-content;
+			flex: 0 0 fit-content;
+			width: fit-content;
 		}
 
 		&:last-child {
@@ -77,7 +77,7 @@
 		flex-direction: column;
 		gap: 8px;
 		padding: 20px;
-		background-color: var(--background-secondary);
+		background-color: var(--color-button);
 		border-radius: 8px;
 	}
 
@@ -183,6 +183,7 @@
 		max-width: 10%;
 		border-right: 1px solid var(--color-border);
 		padding: 1rem;
+		white-space: nowrap;
 	}
 
 	// .main-content__operation-user

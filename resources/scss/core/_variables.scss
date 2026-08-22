@@ -18,11 +18,11 @@ $font-color: var(--color-text);
 :root {
 	--font-weight-bold: 600;
 
-	--shadow: 0 1px 2px 0 rgb(201 186 186);
+	--shadow: 0 1px 12px rgb(0 0 0 / 15%);
 	--box-shadow: 0 1px 1px rgb(0 0 0 / 5%),
 	0 2px 15px rgb(0 0 0 / 10%);
 	--focus-shadow: 0 0 0 3px rgb(150 190 220 / 15%);
-	--focus-color: rgb(150 190 220 / 15%);
+	--focus-color: rgb(150 190 220 / 35%);
 
 	--gap: 2rem;
 	--gap-4: 4rem;
@@ -50,9 +50,10 @@ $font-color: var(--color-text);
 	--background-gray: var(--color-gray);
 
 	--color-text: var(--color-black);
+	--color-text-header: var(--color-white);
 	--color-text-secondary: var(--color-pink);
 
-	--color-button: var(--color-pink);
+	--color-button: var(--focus-color);
 	--color-button-text: var(--color-black);
 
 	--color-accent: var(--color-pink);
@@ -66,10 +67,11 @@ $font-color: var(--color-text);
 	--background-secondary: var(--color-pink);
 
 	--color-text: var(--color-white);
+	--color-text-header: var(--color-black);
 	--color-text-secondary: var(--color-white);
 
 	--color-button: var(--color-pink);
-	--color-button-text: var(--color-black);
+	--color-button-text: var(--color-white);
 
 	--color-accent: var(--color-pink);
 	--color-border: var(--color-white);

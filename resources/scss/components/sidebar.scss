@@ -18,6 +18,7 @@
 
 	// .sidebar__nav
 	&__nav {
+		width: fit-content;
 		background-color: var(--color-black);
 		border-radius: 8px;
 		display: flex;
@@ -49,12 +50,12 @@
 		white-space: nowrap;
 
 		&:hover {
-			background-color: var(--color-pink);
+			background-color: var(--border-color);
 			color: var(--color-black);
 		}
 
 		&.is-active {
-			background-color: var(--color-pink);
+			background-color: var(--border-color);
 			color: var(--color-black);
 		}
 
@@ -62,6 +63,7 @@
 
 	// .sidebar__section
 	&__section {
+		width: fit-content;
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
