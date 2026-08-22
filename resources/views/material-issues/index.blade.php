@@ -45,8 +45,8 @@
 				@forelse ($issues as $issue)
 
 					<tr class="material-issues__row"
-							data-receipt-modal-open
-							data-receipt-id="{{ $issue->id }}">
+							data-issue-modal-open
+							data-issue-id="{{ $issue->id }}">
 
 						{{-- Дата --}}
 						<td> {{ $issue->created_at->format('d.m.Y H:i') }} </td>
