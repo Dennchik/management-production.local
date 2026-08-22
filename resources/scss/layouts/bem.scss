@@ -1,0 +1,63 @@
+@use '../core/variables';
+
+.button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--space-yxs);
+	color: var(--color-button-text);
+	background-color: var(--color-button);
+	border-radius: var(--border-radius);
+
+	span {
+		font-weight: var(--font-weight-bold);
+	}
+}
+
+table {
+	background: var(--color-gray);
+	border-collapse: collapse;
+	border-radius: var(--border-radius);
+	box-shadow: var(--box-shadow);
+	overflow: hidden;
+	width: 100%;
+
+	thead {
+		background: var(--color-black);
+		border-radius: var(--border-radius);
+
+		th {
+
+			color: var(--color-white);
+		}
+	}
+
+	th,
+	td {
+		border-bottom: 1px solid var(--border-color);
+		padding: var(--spacing);
+		text-align: left;
+	}
+
+	th:not(:last-child),
+	td:not(:last-child) {
+		border-right: 1px solid rgb(220 226 232);
+	}
+
+	th {
+		font-weight: 600;
+		white-space: nowrap;
+	}
+
+	td {
+		vertical-align: middle;
+	}
+
+	tbody tr:nth-child(even) {
+		background: var(--color-gray);
+	}
+
+	tbody tr:last-child td {
+		border-bottom: 0;
+	}
+}

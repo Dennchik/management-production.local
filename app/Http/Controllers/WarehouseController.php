@@ -80,4 +80,39 @@
 				'code'
 			));
 		}
+
+		/**
+		 * Отображает карточку материала
+		 * и физические рулоны этого материала.
+		 */
+		public function material(Material $material): View
+		{
+			$material->load([
+				'rolls' => function ($query) {
+					$query
+						->where('weight', '>', 0)
+						->orderBy('roll_number');
+				},
+			]);
+
+			/*
+			 * Количество физических рулонов
+			 * с положительным остатком.
+			 */
+			$rollsCount = $material->rolls->count();
+
+			/*
+			 * Общий текущий остаток материала.
+			 */
+			$totalWeight = $material->rolls->sum(
+				fn($roll) => (float)$roll->weight
+			);
+
+			return view('warehouse.material', [
+				'material' => $material,
+				'rolls' => $material->rolls,
+				'rollsCount' => $rollsCount,
+				'totalWeight' => $totalWeight,
+			]);
+		}
 	}

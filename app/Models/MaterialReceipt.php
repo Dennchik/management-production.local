@@ -5,34 +5,26 @@
 	use Illuminate\Database\Eloquent\Attributes\Fillable;
 	use Illuminate\Database\Eloquent\Model;
 	use Illuminate\Database\Eloquent\Relations\BelongsTo;
+	use Illuminate\Database\Eloquent\Relations\HasMany;
 
 	#[Fillable([
-			'material_id',
-			'roll_id',
-			'weight',
-			'comment',
-			'user_id',
+		'comment',
+		'user_id',
 	])]
 	class MaterialReceipt extends Model
 	{
 		/**
-		 * Материал, который был оприходован.
+		 * Позиции приходного ордера.
+		 *
+		 * Один приходный ордер может содержать несколько физических рулонов.
 		 */
-		public function material(): BelongsTo
+		public function items(): HasMany
 		{
-			return $this->belongsTo(Material::class);
+			return $this->hasMany(MaterialReceiptItem::class);
 		}
 
 		/**
-		 * Физический рулон, созданный при оприходовании.
-		 */
-		public function roll(): BelongsTo
-		{
-			return $this->belongsTo(MaterialRoll::class);
-		}
-
-		/**
-		 * Пользователь, выполнивший операцию оприходования.
+		 * Пользователь, выполнивший оприходование.
 		 */
 		public function user(): BelongsTo
 		{

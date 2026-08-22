@@ -10,17 +10,27 @@
 @use 'core/mixins' as *;
 ////@use 'core/extend' as *;
 //todo  --------------------------- layouts ------------------------------------
+@use 'layouts/page';
 @use 'layouts/header';
 @use 'layouts/main-content';
+@use 'layouts/bem';
+
 //todo  --------------------------- Pages --------------------------------------
 @use 'pages/warehouse';
+@use 'pages/material-receipt';
 
 //todo  -------------------------- Partials ------------------------------------
 @use 'partials/message.blade';
 @use 'partials/its-select';
+
 //todo  -------------------------- Components ----------------------------------
 @use 'components/sidebar';
 @use 'components/receipt-order';
+@use 'components/warehouse-filter';
+@use 'components/warehouse-material';
+
+//todo  -------------------------- Modules -------------------------------------
+@use 'modules/operation-modal';
 
 // todo --------------------------- Style --------------------------------------
 .wrapper {

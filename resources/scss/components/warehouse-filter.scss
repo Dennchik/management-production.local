@@ -1,0 +1,105 @@
+@use '../core/variables' as *;
+@use '../core/mixins' as *;
+
+.filters-actions {
+	margin-block: 0 2rem;
+
+	// .filters-actions__content
+	&__content {
+		border-radius: var(--border-radius);
+		background: var(--color-gray);
+		box-shadow: var(--box-shadow);
+		padding: 2rem;
+	}
+
+	// .filters-actions__filters-form
+	&__filters-form {
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
+
+	// .filters-actions__filters-body
+	&__filters-body {
+		align-items: end;
+		display: grid;
+		gap: 1.6rem;
+		grid-template-columns: minmax(220px, 1.5fr) repeat(2, minmax(150px, 1fr));
+	}
+
+	// .filters-actions__filter
+	&__filter {
+		display: flex;
+		flex-direction: column;
+		gap: 7px;
+	}
+
+	// .filters-actions__filter-label
+	&__filter-label {
+		font-size: 14px;
+		font-weight: 500;
+	}
+
+	// .filters-actions__filter-input
+	&__filter-input, .select__button {
+		background: var(--background-gray);
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius);
+		cursor: pointer;
+		font: inherit;
+		height: 42px;
+		outline: none;
+		padding: 0 12px;
+		transition: border-color 0.2s ease,
+		box-shadow 0.2s ease;
+		width: 100%;
+
+		&:focus {
+			border-color: var(--border-color);
+			box-shadow: var(--focus-shadow);
+		}
+	}
+
+	// .filters-actions__actions
+	&__actions {
+		align-items: center;
+		justify-content: end;
+		display: flex;
+		gap: 2rem;
+	}
+
+	// .filters-actions__filter-select
+	&__filter-select {
+		position: relative;
+	}
+
+	// .filters-actions__filter-button
+	&__filter-button {
+		background: var(--color-pink);
+		border: 1px solid var(--border-color);
+	}
+
+	// .filters-actions__filter-reset
+	&__filter-reset {
+		background: var(--background-gray);
+		border: 1px solid var(--color-pink);
+		color: inherit;
+		display: inline-flex;
+		justify-content: center;
+		text-decoration: none;
+	}
+
+	// .filters-actions__filter-button, .filters-actions__filter-reset
+	&__filter-button, &__filter-reset {
+		align-items: center;
+		border-radius: var(--border-radius);
+		cursor: pointer;
+		font: inherit;
+		padding: 1rem 1.6rem;
+		white-space: nowrap;
+
+		span {
+			font-weight: 600;
+		}
+	}
+}

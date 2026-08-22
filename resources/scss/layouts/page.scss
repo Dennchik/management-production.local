@@ -1,0 +1,24 @@
+@use '../core/variables' as *;
+@use '../core/mixins' as *;
+
+.page {
+	// .page__header
+	&__header {
+		position: fixed;
+		top: 0;
+		left: 0;
+		z-index: 11;
+		width: 100%;
+
+		background-color: var(--color-black);
+		color: var(--color-text-secondary);
+		border-bottom: 1px solid var(--color-pink);
+	}
+
+	// .page__main-content
+	&__main-content {
+		min-height: 100vh;
+		padding-top: 64px;
+	}
+
+}

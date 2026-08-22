@@ -8,9 +8,9 @@
 	use Illuminate\Database\Eloquent\Relations\HasMany;
 
 	#[Fillable([
-			'material_id',
-			'roll_number',
-			'weight',
+		'material_id',
+		'roll_number',
+		'weight',
 	])]
 	class MaterialRoll extends Model
 	{
@@ -23,10 +23,26 @@
 		}
 
 		/**
-		 * Операции оприходования, связанные с этим рулоном.
+		 * Позиции приходных ордеров,
+		 * связанные с этим рулоном.
 		 */
-		public function receipts(): HasMany
+		public function receiptItems(): HasMany
 		{
-			return $this->hasMany(MaterialReceipt::class, 'roll_id');
+			return $this->hasMany(
+				MaterialReceiptItem::class,
+				'roll_id'
+			);
+		}
+
+		/**
+		 * Операции расхода,
+		 * связанные с этим рулоном.
+		 */
+		public function issues(): HasMany
+		{
+			return $this->hasMany(
+				MaterialIssue::class,
+				'roll_id'
+			);
 		}
 	}

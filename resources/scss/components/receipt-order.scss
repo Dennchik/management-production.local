@@ -1,17 +1,17 @@
 @use '../core/variables' as *;
 @use '../core/mixins' as *;
 
-.receipt-order {
-	// receipt-order__body
-	&__body {
-		background: var(--color-white);
-		display: flex;
-		flex-direction: column;
+.issue-order {
+	// .receipt-order__line
+	&__line {
+		display: grid;
+		grid-template-columns:  1.5fr max-content repeat(2, 0.5fr);
 		gap: 2rem;
-		border-radius: var(--border-radius);
-		padding: var(--space-xy);
 	}
+}
 
+.receipt-order {
+	// .receipt-order__line
 	// .receipt-order__line
 	&__line {
 		display: flex;
@@ -36,6 +36,19 @@
 			}
 		}
 
+	}
+}
+
+.receipt-order, .issue-order {
+	// receipt-order__body
+	&__body {
+		background: var(--color-white);
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+		border-radius: var(--border-radius);
+		padding: var(--padding);
+		box-shadow: var(--box-shadow);
 	}
 
 	// .receipt-order__field
@@ -94,14 +107,6 @@
 
 	// .receipt-order__button
 	&__button {
-		align-self: flex-start;
-		min-height: 46px;
-		padding: 0 24px;
-
-		color: var(--color-button-text);
-		background-color: var(--color-button);
-		border-radius: 8px;
-
 		transition: opacity 0.2s ease;
 
 		&:hover {
@@ -148,7 +153,7 @@
 
 		background-color: var(--color-white);
 		border-radius: 8px;
-		box-shadow: var(--shadow);
+		box-shadow: var(--box-shadow);
 	}
 
 	// .material-select__select-button
@@ -157,7 +162,7 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 16px;
-
+		outline: none;
 		width: 100%;
 		min-height: 44px;
 		padding: 0 14px;
@@ -264,7 +269,6 @@
 	// .material-select__select-search-clear
 	&__select-search-clear {
 		position: absolute;
-		//		top: 12px;
 		right: 12px;
 		color: var(--color-pink);
 	}

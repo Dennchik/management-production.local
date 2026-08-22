@@ -7,12 +7,12 @@
 	use Illuminate\Database\Eloquent\Relations\HasMany;
 
 	#[Fillable([
-			'name',
-			'code',
-			'grammage',
-			'thickness',
-			'format',
-			'identifier',
+		'name',
+		'code',
+		'grammage',
+		'thickness',
+		'format',
+		'identifier',
 	])]
 	class Material extends Model
 	{
@@ -30,5 +30,13 @@
 		public function receipts(): HasMany
 		{
 			return $this->hasMany(MaterialReceipt::class);
+		}
+
+		/**
+		 * Операции расхода этого материала.
+		 */
+		public function issues(): HasMany
+		{
+			return $this->hasMany(MaterialIssue::class);
 		}
 	}

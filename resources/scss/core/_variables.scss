@@ -16,20 +16,34 @@ $font-color: var(--color-text);
 //* -------------------------------- Colors ------------------------------------
 
 :root {
+	--font-weight-bold: 600;
+
 	--shadow: 0 1px 2px 0 rgb(201 186 186);
-	--space-xy: 2rem;
+	--box-shadow: 0 1px 1px rgb(0 0 0 / 5%),
+	0 2px 15px rgb(0 0 0 / 10%);
+	--focus-shadow: 0 0 0 3px rgb(150 190 220 / 15%);
+	--focus-color: rgb(150 190 220 / 15%);
+
+	--gap: 2rem;
+	--gap-4: 4rem;
+	--padding: 1.6rem;
+	--space-xs: 4rem;
+	--space-yxs: 1rem 1.6rem;
+	--spacing: 14px 16px;
 	--border-radius: 8px;
+	--border-color: rgb(197 208 218 / 0.7);
+	//	--border-color: rgb(210 216 222)
 	--color-white: #fff;
-	--color-beige: #fff3f3;
+	--color-beige: rgb(255 243 243);
 	--color-black: #000;
+	--color-green: rgb(254 254 34);
+	--color-orange: orange;
+	--color-pink: rgb(254 89 194);
+	--color-gray: rgb(241 241 241);
+	--color-blue: rgb(85 85 255);
 	//	--color-pink: rgb(188, 19, 254);
-	--color-pink: rgb(254, 89, 194);
-	--color-gray: #fff3f3;
-	--color-blue: rgb(85, 85, 255);
 	//	--color-green: rgb(204, 255, 0);
 	//	--color-green: rgb(200, 255, 0);
-	--color-green: rgb(254, 254, 34);
-	--color-orange: orange;
 
 	--background: var(--color-beige);
 	--background-secondary: var(--color-pink);
@@ -42,7 +56,7 @@ $font-color: var(--color-text);
 	--color-button-text: var(--color-black);
 
 	--color-accent: var(--color-pink);
-	--color-border: var(--color-black);
+	--color-border: var(--border-color);
 }
 
 //* -------------------------------- Dark Theme --------------------------------
