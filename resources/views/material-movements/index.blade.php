@@ -41,11 +41,8 @@
 					@forelse ($movements as $movement)
 
 						<tr>
-
 							{{-- Дата --}}
-							<td>
-								{{ $movement['date']->format('d.m.Y H:i') }}
-							</td>
+							<td class="material-movements__date"> {{ $movement['date']->format('d.m.Y H:i') }} </td>
 
 							{{-- Операция --}}
 							<td>
@@ -57,19 +54,13 @@
 							</td>
 
 							{{-- Материал --}}
-							<td>
-								{{ $movement['material']->name }}
-							</td>
+							<td> {{ $movement['material']->name }} </td>
 
 							{{-- Идентификатор --}}
-							<td>
-								{{ $movement['material']->identifier }}
-							</td>
+							<td> {{ $movement['material']->identifier }} </td>
 
 							{{-- Рулон --}}
-							<td>
-								{{ $movement['roll']->roll_number }}
-							</td>
+							<td> {{ $movement['roll']->roll_number }} </td>
 
 							{{-- Изменение веса --}}
 							<td>
@@ -80,30 +71,19 @@
 								@endif
 								кг
 							</td>
-
 							{{-- Пользователь --}}
-							<td>
-								{{ $movement['user']?->name ?? '—' }}
-							</td>
-
+							<td> {{ $movement['user']?->name ?? '—' }} </td>
 						</tr>
 
 					@empty
-
 						<tr>
-							<td
-									class="material-movements__empty"
-									colspan="7">
+							<td class="material-movements__empty" colspan="7">
 								Движений материалов пока нет
 							</td>
 						</tr>
-
 					@endforelse
-
 					</tbody>
-
 				</table>
-
 			</div>
 		</div>
 	</div>

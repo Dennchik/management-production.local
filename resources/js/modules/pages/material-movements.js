@@ -1,4 +1,4 @@
-import ItcCollapse from '../assets/its-collapse.js';
+// import Collapse from '../../assets/collapse.js'
 
 const filter = document.querySelector(
 	'.filters-actions'
@@ -45,7 +45,7 @@ if (filter) {
 			'.material-select__select-empty'
 		);
 
-		const collapse = new ItcCollapse(selectList);
+		const collapse = new Collapse(selectList);
 
 		/*
 		 * Сброс поиска материала.
@@ -279,7 +279,7 @@ if (filter) {
 		}
 
 		const collapse =
-			new ItcCollapse(dropdown);
+			new Collapse(dropdown);
 
 		/*
 		 * Открытие / закрытие.

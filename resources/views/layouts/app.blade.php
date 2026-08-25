@@ -35,8 +35,9 @@
 		</div>
 
 		{{-- Одна общая модалка для просмотра операций --}}
-		<div class="operation-modal" data-operation-modal aria-hidden="true">
-			<div class="operation-modal__overlay" data-operation-modal-close></div>
+		<div class="operation-modal" data-operation-modal>
+			<div class="operation-modal__overlay"
+					data-operation-modal-closetabindex="-1"></div>
 
 			<div class="operation-modal__content" role="dialog" aria-modal="true">
 
@@ -44,8 +45,8 @@
 						class="operation-modal__close button"
 						type="button"
 						aria-label="Закрыть"
-						data-operation-modal-close>
-					<span aria-hidden="true">Закрыть</span>
+						data-operation-modal-close tabindex="-1">
+					<span>Закрыть</span>
 				</button>
 
 				<div class="data-operation-modal-content"

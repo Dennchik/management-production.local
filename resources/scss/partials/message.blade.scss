@@ -44,7 +44,7 @@
 	&__errors {
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
+		gap: 5px;
 		margin: 0;
 		padding: 0;
 	}
@@ -52,6 +52,13 @@
 	// .message__error
 	&__error {
 		list-style: none;
+		//		padding: var(--spacing);
+		line-height: 1.5;
+
+		&:not(:last-child) {
+			margin-bottom: 1rem;
+
+		}
 	}
 
 	// .message__close

@@ -1,21 +1,21 @@
-export default class ItcCollapse {
+export default class Collapse {
 	constructor(target, duration = 150) {
-		if (!target) throw new Error('ItcCollapse: target element is required');
-		this._target = target;
-		this._duration = duration;
+		if (!target) throw new Error('Collapse: target is required');
+		this.target = target;
+		this.duration = duration;
 	}
 
 	show() {
-		const el = this._target;
-		if (el.classList.contains('collapsing') || el.classList.contains('_show'))
-			return;
+		const el = this.target;
+		if (el.classList.contains('collapsing') || el.classList.contains(
+			'_show')) return;
 
 		el.classList.remove('_collapse');
 		const height = el.scrollHeight;
 
 		el.style.height = '0px';
 		el.style.overflow = 'hidden';
-		el.style.transition = `height ${this._duration}ms ease`;
+		el.style.transition = `height ${this.duration}ms ease`;
 		el.classList.add('collapsing');
 
 		requestAnimationFrame(() => {
@@ -28,21 +28,20 @@ export default class ItcCollapse {
 			el.style.height = '';
 			el.style.transition = '';
 			el.style.overflow = '';
-		}, this._duration);
+		}, this.duration);
 	}
 
 	hide() {
-		const el = this._target;
+		const el = this.target;
 		if (el.classList.contains('collapsing') || !el.classList.contains(
-			'_show'))
-			return;
+			'_show')) return;
 
 		const height = el.scrollHeight;
 		el.style.height = `${height}px`;
-		el.offsetHeight; // force reflow
+		el.offsetHeight;
 
 		el.style.overflow = 'hidden';
-		el.style.transition = `height ${this._duration}ms ease`;
+		el.style.transition = `height ${this.duration}ms ease`;
 		el.classList.remove('_collapse', '_show');
 		el.classList.add('collapsing');
 
@@ -56,17 +55,10 @@ export default class ItcCollapse {
 			el.style.height = '';
 			el.style.transition = '';
 			el.style.overflow = '';
-		}, this._duration);
+		}, this.duration);
 	}
 
 	toggle() {
-		this._target.classList.contains('_show') ? this.hide() : this.show();
-	}
-
-	// Статический метод для инициализации всех коллапсов на странице
-	static initAll(selector = '._collapse', duration = 350) {
-		const elements = document.querySelectorAll(selector);
-		return Array.from(elements).map((el) => new ItcCollapse(el, duration));
+		this.target.classList.contains('_show') ? this.hide() : this.show();
 	}
 }
-

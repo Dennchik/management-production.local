@@ -11,103 +11,200 @@
 	<form
 			class="issue-order"
 			method="POST"
-			action="{{ route('material-issues.store') }}">
+			action="{{ route('material-issues.store') }}"
+			novalidate>
 
 		@csrf
 
 		<div class="issue-order__body">
 
-			{{-- Выбор физического рулона --}}
+			{{-- Блок: Материал --}}
 			<div class="issue-order__line">
 
 				<fieldset class="issue-order__field">
 
-					<label
-							class="issue-order__label"
-							for="roll_select">
-						Рулон
+					<label class="issue-order__label" for="material_select">
+						Материал
 					</label>
 
-					<div class="material-select">
+					<div data-select>
+						<div class="select material-select">
 
-						<input
-								id="roll_id"
-								name="roll_id"
-								type="hidden"
-								value="{{ old('roll_id') }}">
+							<input
+									class="select__value"
+									id="material_id"
+									name="material_id"
+									type="hidden"
+									value="{{ old('material_id') }}">
 
-						<button
-								class="material-select__select-button select-button"
-								id="roll_select"
-								type="button"
-								aria-haspopup="listbox"
-								aria-expanded="false">
+							<button
+									class="material-select__select-button select__button select-button"
+									id="material_select"
+									type="button"
+									aria-haspopup="listbox"
+									aria-expanded="false">
 
-               <span class="material-select__select-value">
-                 Выберите рулон
-               </span>
+							  <span class="material-select__select-value select__button-text">
+								 Выберите материал
+							  </span>
 
-							<span
-									class="material-select__select-arrow"
-									aria-hidden="true">
-               </span>
+								<span class="material-select__select-arrow" aria-hidden="true"> </span>
+							</button>
 
-						</button>
+							<div class="select__dropdown material-select__select-list _collapse"
+									role="listbox">
 
-						<div
-								class="material-select__select-list _collapse"
-								role="listbox">
+								<div class="material-select__select-search">
 
-							<div class="material-select__select-search">
+									<input class="material-select__select-search-input select__search"
+											type="search"
+											placeholder="Поиск материала..."
+											autocomplete="off">
 
-								<input
-										class="material-select__select-search-input"
-										id="roll_search"
-										type="search"
-										name="roll_search"
-										placeholder="Поиск рулона..."
-										autocomplete="off">
+									<button class="material-select__select-search-clear select__search-clear"
+											type="button"
+											aria-label="Очистить поиск"
+											hidden>
 
-								<button
-										class="material-select__select-search-clear"
-										type="button"
-										aria-label="Очистить поиск"
+										<i class="icon icon-close" aria-hidden="true"></i>
+
+									</button>
+
+								</div>
+
+								@foreach ($materials ?? [] as $material)
+
+									<button class="material-select__select-option select__item"
+											type="button"
+											role="option"
+											data-value="{{ $material->id }}"
+											data-name="{{ $material->name }}"
+											data-identifier="{{ $material->identifier }}"
+											aria-selected="{{ old('material_id') == $material->id ? 'true' : 'false' }}">
+
+										<span>
+										 {{ $material->name }}
+
+											@if($material->thickness)
+												| {{ $material->thickness }} мкм
+											@endif
+
+											@if($material->grammage)
+												| {{ $material->grammage }} гр
+											@endif
+
+										 | {{ $material->format }}
+										</span>
+
+									</button>
+
+								@endforeach
+
+								<div class="material-select__select-empty select__empty"
 										hidden>
-									<i
-											class="icon icon-close"
-											aria-hidden="true">
-									</i>
-								</button>
-
+									Ничего не найдено
+								</div>
 							</div>
+						</div>
+					</div>
+				</fieldset>
 
-							@foreach ($rolls as $roll)
+				<fieldset class="issue-order__field">
 
-								<button
-										class="material-select__select-option"
-										type="button"
-										role="option"
-										data-value="{{ $roll->id }}"
-										data-material="{{ $roll->material->name }}"
-										data-identifier="{{ $roll->material->identifier }}"
-										data-roll="{{ $roll->roll_number }}"
-										data-weight="{{ $roll->weight }}"
-										aria-selected="{{ old('roll_id') == $roll->id ? 'true' : 'false' }}">
+					<label class="issue-order__label" for="material_name"> Материал </label>
+					<input class="issue-order__input" id="material_name" name="material_name" type="text" readonly>
 
-                   <span>
-                     {{ $roll->material->name }}
-                     | {{ $roll->roll_number }}
-                     | {{ number_format($roll->weight, 3, '.', '') }} кг
-                   </span>
+				</fieldset>
 
-								</button>
+				<fieldset class="issue-order__field">
 
-							@endforeach
+					<label class="issue-order__label" for="material_identifier"> Идентификатор </label>
+
+					<input class="issue-order__input" id="material_identifier" name="material_identifier" type="text"
+							readonly>
+
+				</fieldset>
+			</div>
+
+
+			{{-- Блок: Рулон --}}
+			<div class="issue-order__line">
+				<fieldset class="issue-order__field">
+					<label class="issue-order__label"
+							for="roll_select">
+
+						Номер рулона
+
+					</label>
+
+					<div data-select>
+
+						<div class="select material-select">
+
+							{{-- ID физического рулона --}}
+							<input
+									class="select__value"
+									id="roll_id"
+									name="roll_id"
+									type="hidden"
+									value="{{ old('roll_id') }}">
+
+							<button
+									class="material-select__select-button select__button select-button"
+									id="roll_select"
+									type="button"
+									aria-haspopup="listbox"
+									aria-expanded="false">
+
+                 <span class="material-select__select-value select__button-text">
+                   Сначала выберите материал
+                 </span>
+
+								<span
+										class="material-select__select-arrow"
+										aria-hidden="true">
+                 </span>
+
+							</button>
 
 							<div
-									class="material-select__select-empty"
-									hidden>
-								Нет доступных рулонов
+									class="select__dropdown material-select__select-list _collapse"
+									role="listbox">
+
+								<div class="material-select__select-search">
+
+									<input
+											class="material-select__select-search-input select__search"
+											type="search"
+											placeholder="Поиск рулона..."
+											autocomplete="off">
+
+									<button
+											class="material-select__select-search-clear select__search-clear"
+											type="button"
+											aria-label="Очистить поиск"
+											hidden>
+
+										<i
+												class="icon icon-close"
+												aria-hidden="true">
+										</i>
+
+									</button>
+
+								</div>
+
+								{{-- Рулоны подставляются через JS --}}
+								<div id="rolls-list"></div>
+
+								<div
+										class="material-select__select-empty select__empty"
+										hidden>
+
+									Нет доступных рулонов
+
+								</div>
+
 							</div>
 
 						</div>
@@ -116,81 +213,40 @@
 
 				</fieldset>
 
-				{{-- Материал определяется выбранным рулоном --}}
-				<fieldset class="issue-order__field">
-
-					<label
-							class="issue-order__label"
-							for="material">
-						Материал
-					</label>
-
-					<input
-							class="issue-order__input"
-							id="material"
-							type="text"
-							readonly>
-
-				</fieldset>
-
-				{{-- Идентификатор определяется автоматически --}}
-				<fieldset class="issue-order__field">
-
-					<label
-							class="issue-order__label"
-							for="identifier">
-						Идентификатор
-					</label>
-
-					<input
-							class="issue-order__input"
-							id="identifier"
-							type="text"
-							readonly>
-
-				</fieldset>
-
-				{{-- Номер выбранного рулона --}}
-				<fieldset class="issue-order__field">
-
-					<label
-							class="issue-order__label"
-							for="roll_number">
-						Номер рулона
-					</label>
-
-					<input
-							class="issue-order__input"
-							id="roll_number"
-							type="text"
-							readonly>
-
-				</fieldset>
-
-				{{-- Текущий остаток рулона --}}
+				{{-- Остаток выбранного рулона --}}
 				<fieldset class="issue-order__field">
 
 					<label
 							class="issue-order__label"
 							for="remaining_weight">
+
 						Остаток, кг
+
 					</label>
 
 					<input
 							class="issue-order__input"
 							id="remaining_weight"
+							name="remaining_weight"
 							type="text"
 							readonly>
 
 				</fieldset>
 
-				{{-- Вес расхода --}}
+			</div>
+
+
+			{{-- Вес расхода --}}
+			<div class="issue-order__line">
+
 				<fieldset class="issue-order__field">
 
 					<label
 							class="issue-order__label"
 							for="weight">
+
 						Вес расхода, кг
+
 					</label>
 
 					<input
@@ -206,7 +262,8 @@
 
 			</div>
 
-			{{-- Дополнительный комментарий --}}
+
+			{{-- Комментарий --}}
 			<div class="issue-order__line">
 
 				<fieldset class="issue-order__field">
@@ -214,7 +271,9 @@
 					<label
 							class="issue-order__label"
 							for="comment">
+
 						Комментарий
+
 					</label>
 
 					<textarea
@@ -226,18 +285,24 @@
 
 			</div>
 
+
+			{{-- Действия --}}
 			<div class="issue-order__actions">
 
 				<button
 						class="issue-order__button main-content__button button"
 						type="submit">
+
 					<span>Списать</span>
+
 				</button>
 
 				<button
 						class="issue-order__button issue-order__button--reset button"
 						type="button">
+
 					<span>Очистить</span>
+
 				</button>
 
 			</div>

@@ -2,7 +2,7 @@
 @use '../core/mixins' as *;
 
 .material-select > ._collapse:not(._show) {
-	display: none;
+	//	display: none;
 }
 
 .select > ._collapse:not(._show) {
@@ -52,6 +52,20 @@
 		font-size: 3.2rem;
 		font-weight: 600;
 		line-height: 1.2;
+	}
+
+	// .material-movements__date
+	.material-movements__date {
+		white-space: nowrap;
+	}
+
+	// .material-movements__link-more
+	&__link-more {
+		margin-bottom: var(--space-xs);
+
+		span {
+			padding-right: var(--padding);
+		}
 	}
 
 	// .main-content__section-title
@@ -130,6 +144,7 @@
 		border-bottom: 1px solid var(--color-border);
 		gap: var(--gap);
 		padding: var(--space-yxs);
+		background: var(--color-button);
 	}
 
 	// .main-content__operation-title

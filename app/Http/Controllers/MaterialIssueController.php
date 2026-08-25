@@ -2,6 +2,7 @@
 
 	namespace App\Http\Controllers;
 
+	use App\Models\Material;
 	use App\Models\MaterialIssue;
 	use App\Models\MaterialRoll;
 	use Illuminate\Http\RedirectResponse;
@@ -67,12 +68,16 @@
 		 */
 		public function create(): View
 		{
+			// 👇 Добавляем получение материалов
+			$materials = Material::orderBy('name')->get();
+
+			// 👇 Добавляем получение рулонов (для выпадающего списка)
 			$rolls = MaterialRoll::with('material')
 				->where('weight', '>', 0)
 				->orderBy('roll_number')
 				->get();
 
-			return view('material-issues.create', compact('rolls'));
+			return view('material-issues.create', compact('materials', 'rolls'));
 		}
 
 		/**
@@ -112,33 +117,45 @@
 				]
 			);
 
-			DB::transaction(function () use ($validated) {
-				$roll = MaterialRoll::query()
-					->lockForUpdate()
-					->findOrFail($validated['roll_id']);
+			try {
+				DB::transaction(function () use ($validated) {
+					$roll = MaterialRoll::query()
+						->lockForUpdate()
+						->findOrFail($validated['roll_id']);
 
-				$currentWeight = (float)$roll->weight;
-				$issueWeight = (float)$validated['weight'];
+					$currentWeight = (float)$roll->weight;
+					$issueWeight = (float)$validated['weight'];
 
-//				if ($issueWeight > $currentWeight) {
-//					abort(422, 'Недостаточно материала на рулоне.');
-//				}
+					//* Проверка на списание недостающего материала
+					if ($issueWeight > $currentWeight) {
+						throw new \Exception(
+							'Недостаточно материала на рулоне. Доступно: '
+							. number_format($currentWeight, 3, '.', '')
+							. ' кг'
+						);
+					}
 
-				MaterialIssue::create([
-					'material_id' => $roll->material_id,
-					'roll_id' => $roll->id,
-					'weight' => $issueWeight,
-					'comment' => $validated['comment'] ?? null,
-					'user_id' => 1,
-				]);
+					MaterialIssue::create([
+						'material_id' => $roll->material_id,
+						'roll_id' => $roll->id,
+						'weight' => $issueWeight,
+						'comment' => $validated['comment'] ?? null,
+						'user_id' => 1,
+					]);
 
-				$roll->update([
-					'weight' => $currentWeight - $issueWeight,
-				]);
-			});
+					$roll->update([
+						'weight' => $currentWeight - $issueWeight,
+					]);
+				});
 
-			return redirect()
-				->route('material-issues.create')
-				->with('success', 'Материал успешно списан.');
+				return redirect()
+					->route('material-issues.create')
+					->with('success', 'Материал успешно списан.');
+
+			} catch (\Exception $e) {
+				return back()
+					->withInput()
+					->withErrors(['weight' => $e->getMessage()]);
+			}
 		}
 	}

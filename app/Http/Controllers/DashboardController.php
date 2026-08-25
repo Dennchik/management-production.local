@@ -15,18 +15,59 @@
 		 */
 		public function index(): View
 		{
+			//* Общая статистика
 			$materialsCount = Material::count();
-
 			$rollsCount = MaterialRoll::count();
-
 			$totalWeight = MaterialRoll::sum('weight');
 
-			/*
-			 * Последние приходные ордера.
-			 *
-			 * Один приходный ордер может содержать
-			 * несколько физических рулонов.
-			 */
+			//* 1. Сырье на складе (бумага ВП, БЛ и фольга)
+			$rawMaterialsWeight = MaterialRoll::whereHas('material', function ($query) {
+				$query->whereIn('code', ['13', '14', '15']);
+			})->sum('weight');
+
+			$rawMaterialsRolls = MaterialRoll::whereHas('material', function ($query) {
+				$query->whereIn('code', ['13', '14', '15']);
+			})->count();
+
+			//* 2. ПФ не праймированный (МКНП 3 и 4)
+			$unprimedPfWeight = MaterialRoll::whereHas('material', function ($query) {
+				$query->whereIn('code', ['30', '40']);
+			})->sum('weight');
+
+			$unprimedPfRolls = MaterialRoll::whereHas('material', function ($query) {
+				$query->whereIn('code', ['30', '40']);
+			})->count();
+
+			//* 3. ПФ праймированный (МК 3 и 4 праймированные)
+			$primedPfWeight = MaterialRoll::whereHas('material', function ($query) {
+				$query->whereIn('code', ['31', '41']);
+			})->sum('weight');
+
+			$primedPfRolls = MaterialRoll::whereHas('material', function ($query) {
+				$query->whereIn('code', ['31', '41']);
+			})->count();
+
+			//* 4. ПФ на резку (все МК с положительным весом)
+			$cuttingPfWeight = MaterialRoll::whereHas('material', function ($query) {
+				$query->whereIn('code', ['30', '31', '40', '41']);
+			})->sum('weight');
+
+			$cuttingPfRolls = MaterialRoll::whereHas('material', function ($query) {
+				$query->whereIn('code', ['30', '31', '40', '41']);
+			})->count();
+
+			//* 5. ПФ на печать (пока все МК, позже будет статус)
+			$printingPfWeight = $cuttingPfWeight;
+			$printingPfRolls = $cuttingPfRolls;
+
+			//* 6. Материалы с низким остатком (< 50 кг)
+			$lowStockMaterials = Material::withSum('rolls', 'weight')
+				->get()
+				->filter(function ($material) {
+					return $material->rolls_sum_weight > 0 && $material->rolls_sum_weight < 50;
+				});
+
+			//* 7. Последние операции (приходы и расходы)
 			$receipts = MaterialReceipt::with([
 				'items.material',
 				'items.roll',
@@ -45,9 +86,6 @@
 					];
 				});
 
-			/*
-			 * Последние операции расхода.
-			 */
 			$issues = MaterialIssue::with([
 				'material',
 				'roll',
@@ -66,13 +104,6 @@
 					];
 				});
 
-			/**
-			 * Объединяем приходы и расходы в единый список.
-			 *
-			 * После объединения снова сортируем по дате,
-			 * чтобы операции отображались в правильной
-			 * хронологической последовательности.
-			 */
 			$recentOperations = $receipts
 				->concat($issues)
 				->sortByDesc('date')
@@ -83,7 +114,18 @@
 				'materialsCount',
 				'rollsCount',
 				'totalWeight',
-				'recentOperations',
+				'rawMaterialsWeight',
+				'rawMaterialsRolls',
+				'unprimedPfWeight',
+				'unprimedPfRolls',
+				'primedPfWeight',
+				'primedPfRolls',
+				'cuttingPfWeight',
+				'cuttingPfRolls',
+				'printingPfWeight',
+				'printingPfRolls',
+				'lowStockMaterials',
+				'recentOperations'
 			));
 		}
 	}

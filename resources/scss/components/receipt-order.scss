@@ -155,7 +155,11 @@
 
 		background-color: var(--color-white);
 		border-radius: 8px;
-		box-shadow: var(--box-shadow);
+
+		&._show {
+			box-shadow: var(--focus-shadow);
+		}
+
 	}
 
 	// .material-select__select-button
@@ -171,7 +175,6 @@
 		border: 1px solid var(--border-color);
 		color: var(--color-text);
 		border-radius: 8px;
-		box-shadow: var(--shadow);
 
 		cursor: pointer;
 
@@ -180,8 +183,8 @@
 
 		&:hover,
 		&[aria-expanded='true'] {
-			border-color: var(--color-pink);
-			box-shadow: 0 2px 8px 0 rgb(201 186 186);
+			border: 1px solid var(--border-color);
+			box-shadow: var(--focus-shadow);
 		}
 
 		&[aria-expanded='true'] {

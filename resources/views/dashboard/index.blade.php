@@ -6,30 +6,65 @@
 
 	<h1 class="main-content__title">Главная</h1>
 
+	{{-- Информационные блоки --}}
 	<section class="main-content__section">
-		<h2 class="main-content__section-title">Ключевые показатели склада</h2>
+		<h2 class="main-content__section-title">Состояние производства</h2>
 
-		<div class="main-content__stats">
-			<div class="main-content__stat">
-				<span class="main-content__stat-label">Материалы</span>
-				<strong class="main-content__stat-value">
-					{{ $materialsCount }}
-				</strong>
-			</div>
+		<div class="main-content__stats main-content__stats--grid">
 
-			<div class="main-content__stat">
-				<span class="main-content__stat-label">Рулоны</span>
-				<strong class="main-content__stat-value">
-					{{ $rollsCount }}
-				</strong>
-			</div>
+			{{-- 1. Сырье на складе --}}
+			<a href="{{ route('warehouse.index') }}"
+					class="main-content__stat main-content__stat--link">
+				<span class="main-content__stat-label">Сырье на складе</span>
+				<strong class="main-content__stat-value">{{ number_format($rawMaterialsWeight, 0, '.', ' ') }}
+					кг</strong>
+				<span class="main-content__stat-sub">{{ $rawMaterialsRolls }} рулонов</span>
+			</a>
 
-			<div class="main-content__stat">
-				<span class="main-content__stat-label">Остаток</span>
-				<strong class="main-content__stat-value">
-					{{ number_format($totalWeight, 3, '.', '') }} кг
-				</strong>
-			</div>
+			{{-- 2. ПФ не праймированный --}}
+			<a href="{{ route('warehouse.index') }}"
+					class="main-content__stat main-content__stat--link">
+				<span class="main-content__stat-label">ПФ не праймированный</span>
+				<strong class="main-content__stat-value">{{ number_format($unprimedPfWeight, 0, '.', ' ') }}
+					кг</strong>
+				<span class="main-content__stat-sub">{{ $unprimedPfRolls }} рулонов</span>
+			</a>
+
+			{{-- 3. ПФ праймированный --}}
+			<a href="{{ route('warehouse.index') }}"
+					class="main-content__stat main-content__stat--link">
+				<span class="main-content__stat-label">ПФ праймированный</span>
+				<strong class="main-content__stat-value">{{ number_format($primedPfWeight, 0, '.', ' ') }}
+					кг</strong>
+				<span class="main-content__stat-sub">{{ $primedPfRolls }} рулонов</span>
+			</a>
+
+			{{-- 4. ПФ на резку --}}
+			<a href="{{ route('warehouse.index') }}"
+					class="main-content__stat main-content__stat--link">
+				<span class="main-content__stat-label">ПФ на резку</span>
+				<strong class="main-content__stat-value">{{ number_format($cuttingPfWeight, 0, '.', ' ') }}
+					кг</strong>
+				<span class="main-content__stat-sub">{{ $cuttingPfRolls }} рулонов</span>
+			</a>
+
+			{{-- 5. ПФ на печать --}}
+			<a href="{{ route('warehouse.index') }}"
+					class="main-content__stat main-content__stat--link">
+				<span class="main-content__stat-label">ПФ на печать</span>
+				<strong class="main-content__stat-value">{{ number_format($printingPfWeight, 0, '.', ' ') }}
+					кг</strong>
+				<span class="main-content__stat-sub">{{ $printingPfRolls }} рулонов</span>
+			</a>
+
+			{{-- 6. Материалы с низким остатком --}}
+			<a href="{{ route('warehouse.index') }}"
+					class="main-content__stat main-content__stat--link">
+				<span class="main-content__stat-label">Низкий остаток</span>
+				<strong class="main-content__stat-value">{{ $lowStockMaterials->count() }}</strong>
+				<span class="main-content__stat-sub">материалов</span>
+			</a>
+
 		</div>
 	</section>
 
@@ -56,6 +91,12 @@
 					<span>Оформить расход</span>
 				</a>
 
+				<a
+						class="quick-action__link button"
+						href="{{ route('warehouse.index') }}">
+					<span>Смотреть склад</span>
+				</a>
+
 			</div>
 
 		</div>
@@ -65,9 +106,16 @@
 	{{-- Последние операции --}}
 	<section class="main-content__section">
 
-		<h2 class="main-content__section-title">
-			Последние операции
-		</h2>
+		<div class="section-header">
+			<h2 class="main-content__section-title">
+				Последние операции
+			</h2>
+			<a href="{{ route('material-movements.index') }}"
+					class="main-content__link-more button">
+				<span>Все операции</span>
+				<i class="icon-angles-right-solid icon"></i>
+			</a>
+		</div>
 
 		@if ($recentOperations->isEmpty())
 

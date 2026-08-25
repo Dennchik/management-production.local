@@ -3,6 +3,7 @@
 	namespace App\Http\Controllers;
 
 	use App\Models\MaterialRoll;
+	use Illuminate\Http\Request;
 	use Illuminate\View\View;
 
 	class MaterialRollController extends Controller
@@ -99,5 +100,27 @@
 				'issuesCount',
 				'movements',
 			));
+		}
+
+		/**
+		 * Получить список рулонов по идентификатору материала.
+		 *
+		 * Используется для динамической подгрузки рулонов
+		 * при выборе материала в расходном ордере.
+		 */
+		public function getRollsByMaterial(Request $request)
+		{
+			$materialId = $request->input('material_id');
+
+			if (!$materialId) {
+				return response()->json([]);
+			}
+
+			$rolls = MaterialRoll::where('material_id', $materialId)
+				->where('weight', '>', 0)
+				->orderBy('roll_number')
+				->get(['id', 'roll_number', 'weight']);
+
+			return response()->json($rolls);
 		}
 	}

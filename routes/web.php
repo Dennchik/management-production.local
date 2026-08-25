@@ -101,3 +101,14 @@
 		'/rolls/{roll}',
 		[MaterialRollController::class, 'show']
 	)->name('material-rolls.show');
+
+	/*
+	|--------------------------------------------------------------------------
+	| API для получения рулонов по материалу
+	|--------------------------------------------------------------------------
+	*/
+
+	Route::get(
+		'/api/rolls',
+		[MaterialRollController::class, 'getRollsByMaterial']
+	)->name('api.rolls.by-material');

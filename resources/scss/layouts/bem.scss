@@ -8,9 +8,15 @@
 	color: var(--color-button-text);
 	background-color: var(--color-button);
 	border-radius: var(--border-radius);
+	transition: opacity 0.3s, color 0.3s ease-in-out;
 
 	span {
 		font-weight: var(--font-weight-bold);
+	}
+
+	&:hover {
+		opacity: 0.8;
+		color: var(--color-blue);
 	}
 }
 
