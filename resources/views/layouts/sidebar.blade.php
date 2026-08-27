@@ -20,7 +20,7 @@
 						<span>Приходный ордер</span>
 					</a>
 
-					<a class="sidebar__link sidebar__link--submenu"
+					<a class="sidebar__link sidebar__link--submenu {{ request()->routeIs('material-issues.*') ? 'is-active' : '' }}"
 							href="{{ route('material-issues.index') }}">
 						<i class="icon-indent-decrease icon"></i>
 						<span>Расходный ордер</span>
@@ -36,6 +36,12 @@
 							href="{{ route('material-movements.index') }}">
 						<i class="icon-recycle-arrows icon"></i>
 						<span>Движение материалов</span>
+					</a>
+
+					<a class="sidebar__link sidebar__link--submenu {{ request()->routeIs('material-rolls.*') ? 'is-active' : '' }}"
+							href="{{ route('material-rolls.index') }}">
+						<i class="icon-roll icon"></i>
+						<span>Рулоны</span>
 					</a>
 				</div>
 			</div>

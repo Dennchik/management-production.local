@@ -25,9 +25,9 @@
 	letter-spacing: 0;
 }
 
-.icon-information-outline {
+.icon-roll {
 	&:before {
-		content: $icon-information-outline;
+		content: $icon-roll;
 	}
 }
 
@@ -178,6 +178,12 @@
 .icon-caret-right {
 	&:before {
 		content: $icon-caret-right;
+	}
+}
+
+.icon-information-outline {
+	&:before {
+		content: $icon-information-outline;
 	}
 }
 

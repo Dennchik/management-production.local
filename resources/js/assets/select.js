@@ -1,196 +1,220 @@
-import Collapse from './collapse';
+import Collapse from './collapse.js';
 
-export function initSelects() {
-	document.querySelectorAll('[data-select]').forEach((container) => {
-		// Защита от повторной инициализации
-		if (container.dataset.selectInitialized === 'true') {
-			return;
-		}
+export class CustomSelect {
+   constructor(element, options = {}) {
+      if (!element) return;
+      this.container = element;
+      this.options = options;
 
-		container.dataset.selectInitialized = 'true';
+      this.initDOM();
+      if (!this.button || !this.dropdown) return;
 
-		const selects = container.querySelectorAll('.select');
+      // Инициализируем твой оригинальный Collapse
+      this.collapse = new Collapse(this.dropdown, options.duration || 150);
 
-		selects.forEach((select) => {
-			const button = select.querySelector('.select__button');
-			const valueInput = select.querySelector('.select__value');
-			const dropdown = select.querySelector('.select__dropdown');
+      this.bindEvents();
+      this.checkInitialState();
+   }
 
-			if (!button || !dropdown) {
-				return;
-			}
+   initDOM() {
+      this.button = this.container.querySelector(
+         '.select-button, .select__button'
+      );
 
-			const collapse = new Collapse(dropdown);
+      // Находим целевой элемент с классом ._collapse
+      this.dropdown = this.container.querySelector('._collapse');
 
-			/*
-			 * Получить все пункты select.
-			 *
-			 * Используем функцию, а не заранее сохранённый NodeList,
-			 * потому что пункты могут добавляться динамически.
-			 */
-			const getItems = () => {
-				return select.querySelectorAll('.select__item');
-			};
+      this.valueSpan = this.container.querySelector(
+         '.material-select__select-value'
+      );
+      this.hiddenInput = this.container.querySelector(
+         '#material_id, #roll_id, .select__value, input[type="hidden"]'
+      );
+      this.searchInput = this.container.querySelector(
+         '.material-select__select-search-input, .select__search'
+      );
+      this.searchClear = this.container.querySelector(
+         '.material-select__select-search-clear, .select__search-clear'
+      );
+      this.emptyMsg = this.container.querySelector(
+         '.material-select__select-empty, .select__empty'
+      );
+      this.optionsList = Array.from(
+         this.container.querySelectorAll(
+            '.material-select__select-option, .select__item'
+         )
+      );
+   }
 
-			/*
-			 * Текущий выбранный пункт.
-			 */
-			let selected = select.querySelector('.select__item._selected');
+   bindEvents() {
+      // Клик по кнопке — запуск анимации через Collapse
+      this.button.addEventListener('click', (e) => {
+         e.preventDefault();
+         e.stopPropagation();
 
-			/*
-			 * Установить значение select.
-			 */
-			const setValue = (item) => {
-				if (!item) {
-					return;
-				}
+         // Закрываем другие открытые Selects перед открытием текущего
+         if (!this.isOpen()) {
+            CustomSelect.closeAllExcept(this);
+         }
 
-				selected = item;
+         this.toggle();
+      });
 
-				/*
-				 * Текст кнопки.
-				 */
-				const buttonText = button.querySelector(
-					'.select__button-text'
-				);
+      // Закрытие при клике вне Select
+      document.addEventListener('click', (e) => {
+         if (!this.container.contains(e.target) && this.isOpen()) {
+            this.hide();
+         }
+      });
 
-				if (buttonText) {
-					buttonText.textContent = item.textContent.trim();
-				} else {
-					button.value = item.textContent.trim();
-				}
+      // Закрытие по Escape
+      document.addEventListener('keydown', (e) => {
+         if (e.key === 'Escape' && this.isOpen()) {
+            this.hide();
+            this.button.focus();
+         }
+      });
 
-				/*
-				 * Hidden input.
-				 */
-				if (valueInput) {
-					valueInput.value = item.dataset.value || '';
-				}
+      this.bindOptionsEvents();
 
-				/*
-				 * Активный пункт.
-				 */
-				getItems().forEach((el) => {
-					el.classList.toggle('_selected', el === item);
-					el.setAttribute(
-						'aria-selected',
-						el === item ? 'true' : 'false'
-					);
-				});
+      this.searchInput?.addEventListener('input', (e) =>
+         this.handleSearch(e.target.value)
+      );
+      this.searchClear?.addEventListener('click', () => this.resetSearch(true));
+   }
 
-				/*
-				 * Уведомляем конкретный select,
-				 * что значение изменилось.
-				 *
-				 * bubbles: true позволяет форме
-				 * подписаться на событие.
-				 */
-				select.dispatchEvent(
-					new CustomEvent('select-change', {
-						bubbles: true,
-						detail: {
-							value: item.dataset.value || '',
-							label: item.textContent.trim(),
-							item,
-						},
-					})
-				);
-			};
+   bindOptionsEvents() {
+      this.optionsList.forEach((opt) => {
+         opt.onclick = () => this.selectOption(opt);
+      });
+   }
 
-			/*
-			 * Открытие / закрытие.
-			 */
-			button.addEventListener('click', (event) => {
-				event.stopPropagation();
+   isOpen() {
+      return this.dropdown?.classList.contains('_show');
+   }
 
-				/*
-				 * Закрываем другие select.
-				 */
-				document.querySelectorAll('.select._active-collapse').forEach(
-					(otherSelect) => {
-						if (otherSelect === select) {
-							return;
-						}
+   toggle() {
+      this.collapse.toggle();
+      this.updateAria();
+   }
 
-						const otherDropdown =
-							otherSelect.querySelector('.select__dropdown');
+   show() {
+      this.collapse.show();
+      this.updateAria(true);
+   }
 
-						if (otherDropdown) {
-							otherDropdown.classList.remove('_show');
-						}
+   hide() {
+      this.collapse.hide();
+      this.updateAria(false);
+   }
 
-						otherSelect.classList.remove('_active-collapse');
-					});
+   updateAria(state = null) {
+      const isOpen = state !== null ? state : !this.isOpen();
+      this.button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+   }
 
-				if (dropdown.classList.contains('_show')) {
-					collapse.hide();
-					select.classList.remove('_active-collapse');
-				} else {
-					collapse.show();
-					select.classList.add('_active-collapse');
-				}
-			});
+   selectOption(option, triggerEvent = true) {
+      const value = option ? option.dataset.value || '' : '';
+      const label = option
+         ? option.textContent.trim()
+         : this.options.placeholder || 'Выберите значение';
 
-			/*
-			 * Выбор пункта.
-			 *
-			 * Делегирование:
-			 * работает и для пунктов, которые появились
-			 * после AJAX-загрузки.
-			 */
-			select.addEventListener('click', (event) => {
-				const item = event.target.closest('.select__item');
+      if (this.hiddenInput) this.hiddenInput.value = value;
+      if (this.button && 'value' in this.button) this.button.value = label;
+      if (this.valueSpan) this.valueSpan.textContent = label;
 
-				if (!item || !select.contains(item)) {
-					return;
-				}
+      this.optionsList.forEach((item) => {
+         const isSelected = item === option;
+         item.classList.toggle('_selected', isSelected);
+         item.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      });
 
-				event.stopPropagation();
+      this.resetSearch();
+      this.hide();
 
-				setValue(item);
+      if (triggerEvent) {
+         this.container.dispatchEvent(
+            new CustomEvent('select:change', {
+               bubbles: true,
+               detail: { value, option },
+            })
+         );
+      }
+   }
 
-				collapse.hide();
-				select.classList.remove('_active-collapse');
-			});
+   handleSearch(query) {
+      const cleanQuery = query.trim().toLowerCase();
+      if (this.searchClear) this.searchClear.hidden = !cleanQuery;
 
-			/*
-			 * Закрытие при клике вне select.
-			 */
-			document.addEventListener('click', (event) => {
-				if (
-					!select.contains(event.target) &&
-					dropdown.classList.contains('_show')
-				) {
-					collapse.hide();
-					select.classList.remove('_active-collapse');
-				}
-			});
+      if (!cleanQuery) {
+         this.resetSearchDisplay();
+         return;
+      }
 
-			/*
-			 * Escape.
-			 */
-			document.addEventListener('keydown', (event) => {
-				if (
-					event.key === 'Escape' &&
-					dropdown.classList.contains('_show')
-				) {
-					collapse.hide();
-					select.classList.remove('_active-collapse');
-				}
-			});
+      const parts = cleanQuery.match(/[a-zа-яё]+|\d+/gi) || [];
+      let visibleCount = 0;
 
-			/*
-			 * Начальное состояние.
-			 *
-			 * Если сервер явно отметил пункт как _selected —
-			 * устанавливаем его.
-			 *
-			 * Если _selected нет —
-			 * ничего автоматически не выбираем.
-			 */
-			if (selected) {
-				setValue(selected);
-			}
-		});
-	});
+      this.optionsList.forEach((opt) => {
+         const text = opt.textContent.trim().toLowerCase();
+         const match = parts.every((part) => text.includes(part));
+         opt.style.display = match ? '' : 'none';
+         if (match) visibleCount++;
+      });
+
+      if (this.emptyMsg) {
+         this.emptyMsg.hidden = visibleCount > 0;
+      }
+   }
+
+   resetSearch(focusInput = false) {
+      if (this.searchInput) this.searchInput.value = '';
+      if (this.searchClear) this.searchClear.hidden = true;
+      this.resetSearchDisplay();
+      if (focusInput) this.searchInput?.focus();
+   }
+
+   resetSearchDisplay() {
+      this.optionsList.forEach((opt) => (opt.style.display = ''));
+      if (this.emptyMsg) this.emptyMsg.hidden = true;
+   }
+
+   checkInitialState() {
+      if (this.hiddenInput?.value) {
+         const selected = this.optionsList.find(
+            (opt) => opt.dataset.value === this.hiddenInput.value
+         );
+         if (selected) this.selectOption(selected, false);
+      }
+   }
+
+   refresh() {
+      this.initDOM();
+      this.bindOptionsEvents();
+   }
+
+   static closeAllExcept(currentSelect) {
+      if (!window._activeSelects) return;
+      window._activeSelects.forEach((select) => {
+         if (select !== currentSelect && select.isOpen()) {
+            select.hide();
+         }
+      });
+   }
+}
+
+//* Регистрация в реестре для закрытия соседних выпадающих списков
+const originalConstructor = CustomSelect.prototype.constructor;
+CustomSelect = function (...args) {
+   const instance = new originalConstructor(...args);
+   if (!window._activeSelects) window._activeSelects = [];
+   if (instance.button && instance.dropdown) {
+      window._activeSelects.push(instance);
+   }
+   return instance;
+};
+CustomSelect.prototype = originalConstructor.prototype;
+
+export function initSelects(container = document) {
+   const selects = container.querySelectorAll('.select, .material-select');
+   return Array.from(selects).map((el) => new CustomSelect(el));
 }

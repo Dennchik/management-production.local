@@ -21,7 +21,6 @@
 
 			{{-- Таблица движений --}}
 			<div class="material-movements__table-wrapper">
-
 				<table class="material-movements__table">
 
 					<thead>

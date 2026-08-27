@@ -1,0 +1,47 @@
+@use '../core/variables' as *;
+@use '../core/mixins' as *;
+
+.material-rolls {
+	// .material-rolls__content
+	&__content {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	// .material-rolls__item
+	&__item {
+		display: flex;
+		justify-content: space-between;
+		border-top-left-radius: var(--border-radius);
+		border-top-right-radius: var(--border-radius);
+		overflow: hidden;
+	}
+
+	// .material-rolls__row
+	&__row {
+		width: 100%;
+		border-bottom: 1px solid var(--color-border);
+
+		&:not(:last-child) {
+			border-right: 1px solid var(--border-color);
+		}
+	}
+
+	// .material-rolls__label
+	&__label {
+		background-color: var(--color-black);
+		color: var(--color-white);
+		padding: var(--space-yxs);
+		width: 100%;
+	}
+
+	// .material-rolls__value
+	&__value {
+		padding: var(--spacing);
+	}
+
+	// .material-rolls__link
+	&__link {
+	}
+}

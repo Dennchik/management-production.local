@@ -8,26 +8,26 @@
 
 	<h1 class="main-content__title">Расходный ордер</h1>
 
-	<form
-			class="issue-order"
-			method="POST"
-			action="{{ route('material-issues.store') }}"
+	<form class="issue-order" method="POST" action="{{ route('material-issues.store') }}"
 			novalidate>
 
 		@csrf
 
 		<div class="issue-order__body">
 
-			{{-- Блок: Материал --}}
+			{{-- Материал --}}
 			<div class="issue-order__line">
 
 				<fieldset class="issue-order__field">
 
-					<label class="issue-order__label" for="material_select">
+					<label
+							class="issue-order__label"
+							for="material_select">
 						Материал
 					</label>
 
 					<div data-select>
+
 						<div class="select material-select">
 
 							<input
@@ -44,29 +44,39 @@
 									aria-haspopup="listbox"
 									aria-expanded="false">
 
-							  <span class="material-select__select-value select__button-text">
-								 Выберите материал
-							  </span>
+                 <span class="material-select__select-value select__button-text">
+                   Выберите материал
+                 </span>
 
-								<span class="material-select__select-arrow" aria-hidden="true"> </span>
+								<span
+										class="material-select__select-arrow"
+										aria-hidden="true">
+                 </span>
+
 							</button>
 
-							<div class="select__dropdown material-select__select-list _collapse"
+							<div
+									class="select__dropdown material-select__select-list _collapse"
 									role="listbox">
 
 								<div class="material-select__select-search">
 
-									<input class="material-select__select-search-input select__search"
+									<input
+											class="material-select__select-search-input select__search"
 											type="search"
 											placeholder="Поиск материала..."
 											autocomplete="off">
 
-									<button class="material-select__select-search-clear select__search-clear"
+									<button
+											class="material-select__select-search-clear select__search-clear"
 											type="button"
 											aria-label="Очистить поиск"
 											hidden>
 
-										<i class="icon icon-close" aria-hidden="true"></i>
+										<i
+												class="icon icon-close"
+												aria-hidden="true">
+										</i>
 
 									</button>
 
@@ -74,67 +84,100 @@
 
 								@foreach ($materials ?? [] as $material)
 
-									<button class="material-select__select-option select__item"
+									<button
+											class="material-select__select-option select__item"
 											type="button"
 											role="option"
 											data-value="{{ $material->id }}"
 											data-name="{{ $material->name }}"
 											data-identifier="{{ $material->identifier }}"
+											data-search="{{ strtolower($material->name . ' ' . $material->identifier . ' ' . $material->format . ' ' . $material->thickness . ' ' . $material->grammage) }}"
 											aria-selected="{{ old('material_id') == $material->id ? 'true' : 'false' }}">
 
-										<span>
-										 {{ $material->name }}
+                     <span>
 
-											@if($material->thickness)
-												| {{ $material->thickness }} мкм
-											@endif
+                       {{ $material->name }}
 
-											@if($material->grammage)
-												| {{ $material->grammage }} гр
-											@endif
+								@if ($material->thickness)
+									| {{ $material->thickness }} мкм
+								@endif
 
-										 | {{ $material->format }}
-										</span>
+								@if ($material->grammage)
+									| {{ $material->grammage }} гр
+								@endif
+
+                       | {{ $material->format }}
+
+                     </span>
 
 									</button>
 
 								@endforeach
 
-								<div class="material-select__select-empty select__empty"
+								<div
+										class="material-select__select-empty select__empty"
 										hidden>
 									Ничего не найдено
 								</div>
+
 							</div>
+
 						</div>
+
 					</div>
-				</fieldset>
-
-				<fieldset class="issue-order__field">
-
-					<label class="issue-order__label" for="material_name"> Материал </label>
-					<input class="issue-order__input" id="material_name" name="material_name" type="text" readonly>
 
 				</fieldset>
 
+
+				{{-- Выбранный материал --}}
 				<fieldset class="issue-order__field">
 
-					<label class="issue-order__label" for="material_identifier"> Идентификатор </label>
+					<label
+							class="issue-order__label"
+							for="material_name">
+						Материал
+					</label>
 
-					<input class="issue-order__input" id="material_identifier" name="material_identifier" type="text"
+					<input
+							class="issue-order__input"
+							id="material_name"
+							name="material_name"
+							type="text"
 							readonly>
 
 				</fieldset>
+
+
+				{{-- Идентификатор --}}
+				<fieldset class="issue-order__field">
+
+					<label
+							class="issue-order__label"
+							for="material_identifier">
+						Идентификатор
+					</label>
+
+					<input
+							class="issue-order__input"
+							id="material_identifier"
+							name="material_identifier"
+							type="text"
+							readonly>
+
+				</fieldset>
+
 			</div>
 
 
-			{{-- Блок: Рулон --}}
+			{{-- Рулон --}}
 			<div class="issue-order__line">
+
 				<fieldset class="issue-order__field">
-					<label class="issue-order__label"
+
+					<label
+							class="issue-order__label"
 							for="roll_select">
-
 						Номер рулона
-
 					</label>
 
 					<div data-select>
@@ -194,15 +237,13 @@
 
 								</div>
 
-								{{-- Рулоны подставляются через JS --}}
+								{{-- Список рулонов заполняется через JS --}}
 								<div id="rolls-list"></div>
 
 								<div
 										class="material-select__select-empty select__empty"
 										hidden>
-
 									Нет доступных рулонов
-
 								</div>
 
 							</div>
@@ -213,21 +254,19 @@
 
 				</fieldset>
 
+
 				{{-- Остаток выбранного рулона --}}
 				<fieldset class="issue-order__field">
 
 					<label
 							class="issue-order__label"
 							for="remaining_weight">
-
 						Остаток, кг
-
 					</label>
 
 					<input
 							class="issue-order__input"
 							id="remaining_weight"
-							name="remaining_weight"
 							type="text"
 							readonly>
 
@@ -244,9 +283,7 @@
 					<label
 							class="issue-order__label"
 							for="weight">
-
 						Вес расхода, кг
-
 					</label>
 
 					<input
@@ -271,9 +308,7 @@
 					<label
 							class="issue-order__label"
 							for="comment">
-
 						Комментарий
-
 					</label>
 
 					<textarea
@@ -293,7 +328,9 @@
 						class="issue-order__button main-content__button button"
 						type="submit">
 
-					<span>Списать</span>
+           <span>
+             Списать
+           </span>
 
 				</button>
 
@@ -301,7 +338,9 @@
 						class="issue-order__button issue-order__button--reset button"
 						type="button">
 
-					<span>Очистить</span>
+           <span>
+             Очистить
+           </span>
 
 				</button>
 
@@ -312,3 +351,4 @@
 	</form>
 
 @endsection
+

@@ -9,8 +9,7 @@
 	use Illuminate\Support\Facades\Route;
 
 	Route::get('/', [DashboardController::class, 'index'])
-		->name('dashboard');
-
+			->name('dashboard');
 
 	/*
 	|--------------------------------------------------------------------------
@@ -19,8 +18,8 @@
 	*/
 
 	Route::get(
-		'/material-movements',
-		[MaterialMovementController::class, 'index']
+			'/material-movements',
+			[MaterialMovementController::class, 'index']
 	)->name('material-movements.index');
 
 	/*
@@ -30,13 +29,13 @@
 	*/
 
 	Route::get(
-		'/warehouse',
-		[WarehouseController::class, 'index']
+			'/warehouse',
+			[WarehouseController::class, 'index']
 	)->name('warehouse.index');
 
 	Route::get(
-		'/warehouse/materials/{material}',
-		[WarehouseController::class, 'material']
+			'/warehouse/materials/{material}',
+			[WarehouseController::class, 'material']
 	)->name('warehouse.material');
 
 	/*
@@ -46,23 +45,23 @@
 	*/
 
 	Route::get(
-		'/receipts',
-		[MaterialReceiptController::class, 'index']
+			'/receipts',
+			[MaterialReceiptController::class, 'index']
 	)->name('material-receipts.index');
 
 	Route::get(
-		'/receipts/create',
-		[MaterialReceiptController::class, 'create']
+			'/receipts/create',
+			[MaterialReceiptController::class, 'create']
 	)->name('material-receipts.create');
 
 	Route::post(
-		'/receipts',
-		[MaterialReceiptController::class, 'store']
+			'/receipts',
+			[MaterialReceiptController::class, 'store']
 	)->name('material-receipts.store');
 
 	Route::get(
-		'/receipts/{receipt}',
-		[MaterialReceiptController::class, 'show']
+			'/receipts/{receipt}',
+			[MaterialReceiptController::class, 'show']
 	)->name('material-receipts.show');
 
 	/*
@@ -72,23 +71,23 @@
 	*/
 
 	Route::get(
-		'/issues',
-		[MaterialIssueController::class, 'index']
+			'/issues',
+			[MaterialIssueController::class, 'index']
 	)->name('material-issues.index');
 
 	Route::get(
-		'/issues/create',
-		[MaterialIssueController::class, 'create']
+			'/issues/create',
+			[MaterialIssueController::class, 'create']
 	)->name('material-issues.create');
 
 	Route::post(
-		'/issues',
-		[MaterialIssueController::class, 'store']
+			'/issues',
+			[MaterialIssueController::class, 'store']
 	)->name('material-issues.store');
 
 	Route::get(
-		'/issues/{issue}',
-		[MaterialIssueController::class, 'show']
+			'/issues/{issue}',
+			[MaterialIssueController::class, 'show']
 	)->name('material-issues.show');
 
 	/*
@@ -98,8 +97,13 @@
 	*/
 
 	Route::get(
-		'/rolls/{roll}',
-		[MaterialRollController::class, 'show']
+			'/rolls',
+			[MaterialRollController::class, 'index']
+	)->name('material-rolls.index');
+
+	Route::get(
+			'/rolls/{roll}',
+			[MaterialRollController::class, 'show']
 	)->name('material-rolls.show');
 
 	/*
@@ -109,6 +113,6 @@
 	*/
 
 	Route::get(
-		'/api/rolls',
-		[MaterialRollController::class, 'getRollsByMaterial']
+			'/api/rolls',
+			[MaterialRollController::class, 'getRollsByMaterial']
 	)->name('api.rolls.by-material');

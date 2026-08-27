@@ -1,9 +1,8 @@
 import { initSelects } from '../../assets/select.js';
 
-document.addEventListener('DOMContentLoaded', () => {
-	const filter = document.querySelector('.filters-actions');
-	if (!filter) return;
+export function initFiltersModule() {
+   const filterContainer = document.querySelector('.filters-actions');
+   if (!filterContainer) return;
 
-	// Инициализируем select-ы внутри фильтра
-	initSelects();
-});
+   initSelects(filterContainer);
+}
