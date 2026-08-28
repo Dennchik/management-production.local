@@ -6,10 +6,32 @@
 	use App\Http\Controllers\MaterialReceiptController;
 	use App\Http\Controllers\MaterialRollController;
 	use App\Http\Controllers\WarehouseController;
+	use App\Http\Controllers\LaminationController;
 	use Illuminate\Support\Facades\Route;
 
 	Route::get('/', [DashboardController::class, 'index'])
 			->name('dashboard');
+
+	/*
+	|--------------------------------------------------------------------------
+	| Ламинация
+	|--------------------------------------------------------------------------
+	*/
+
+	Route::get(
+			'/lamination',
+			[LaminationController::class, 'index']
+	)->name('lamination.index');
+
+	Route::get(
+			'/lamination/create',
+			[LaminationController::class, 'create']
+	)->name('lamination.create');
+
+	Route::post(
+			'/lamination',
+			[LaminationController::class, 'store']
+	)->name('lamination.store');
 
 	/*
 	|--------------------------------------------------------------------------

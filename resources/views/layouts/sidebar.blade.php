@@ -46,7 +46,7 @@
 				</div>
 			</div>
 
-			<a class="sidebar__link" href="#">
+			<a class="sidebar__link" href="{{ route('lamination.index') }}">
 				<i class="icon-factory icon"></i>
 				<span>Ламинация</span>
 			</a>

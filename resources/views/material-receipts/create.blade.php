@@ -18,22 +18,26 @@
 			<div class="receipt-order__line">
 				<fieldset class="receipt-order__field">
 					<label class="receipt-order__label" for="material_select">Материал</label>
+
 					<div data-select>
 						<div class="select material-select receipt-order">
 							<input class="select__value" id="material_id" name="material_id"
 									type="hidden" value="{{ old('material_id') }}">
 
-							<button class="material-select__select-button select__button select-button" id="material_select"
-									type="button" aria-haspopup="listbox" aria-expanded="false">
-								<span class="material-select__select-value select__button-text"> Выберите материал </span>
-								<span class="material-select__select-arrow" aria-hidden="true"> </span>
+							<button class="material-select__select-button select__button select-button"
+									id="material_select" type="button" aria-haspopup="listbox" aria-expanded="false">
+								<span class="material-select__select-value select__button-text">
+								Выберите материал
+								</span>
+
+								<span class="material-select__select-arrow" aria-hidden="true"></span>
 							</button>
 
 							<div class="select__dropdown material-select__select-list _collapse" role="listbox">
 								<div class="material-select__select-search">
 									<input class="material-select__select-search-input select__search"
-											id="material_search" type="search" placeholder="Поиск материала..."
-											autocomplete="off">
+											id="material_search" type="search"
+											placeholder="Поиск материала..." autocomplete="off">
 
 									<button class="material-select__select-search-clear select__search-clear"
 											type="button" aria-label="Очистить поиск" hidden>
@@ -49,7 +53,8 @@
 											data-format="{{ $material->format }}" data-identifier="{{ $material->identifier }}"
 											aria-selected="{{ old('material_id') == $material->id ? 'true' : 'false' }}">
 
-										<span> {{ preg_replace('/\s*гр\.?\s*$/ui', '', $material->name) }}
+										<span>
+										  {{ preg_replace('/\s*гр\.?\s*$/ui', '', $material->name) }}
 											@if ($material->grammage)
 												|
 												{{ rtrim(rtrim(number_format($material->grammage, 2, '.', ''), '0'), '.') }}
@@ -59,7 +64,8 @@
 											@if ($material->thickness)
 												| {{ $material->thickness }} мкм
 											@endif
-											| {{ $material->format }}
+
+										  | {{ $material->format }}
 										</span>
 									</button>
 
@@ -81,24 +87,24 @@
 
 				{{-- Толщина --}}
 				<fieldset class="receipt-order__field">
-					<label class="receipt-order__label" for="thickness"> Толщина </label>
+					<label class="receipt-order__label" for="thickness">Толщина</label>
 					<input class="receipt-order__input" id="thickness" type="text" readonly>
 				</fieldset>
 
 				{{-- Формат --}}
 				<fieldset class="receipt-order__field">
-					<label class="receipt-order__label" for="format"> Формат </label>
-
+					<label class="receipt-order__label" for="format">Формат</label>
 					<input class="receipt-order__input" id="format" type="text" readonly>
 				</fieldset>
 
 				{{-- Идентификатор --}}
 				<fieldset class="receipt-order__field">
-					<label class="receipt-order__label" for="identifier"> Идентификатор </label>
+
+					<label class="receipt-order__label" for="identifier">Идентификатор</label>
+
 					<input class="receipt-order__input" id="identifier" type="text" readonly>
 				</fieldset>
 			</div>
-
 
 			{{-- Рулоны --}}
 			<div class="receipt-order__line">
@@ -113,42 +119,55 @@
 
 					<div class="receipt-order__rolls-list" data-receipt-rolls>
 
-						{{-- Первый рулон --}}
-						<div class="receipt-order__roll" data-receipt-roll>
-							<fieldset class="receipt-order__field">
-								<label class="receipt-order__label" for="roll_number_0" data-receipt-roll-number-label>
-									Номер рулона
-								</label>
+						@php
+							$oldRolls = old('rolls', [
+								 [
+									  'roll_number' => '',
+									  'weight' => '',
+								 ],
+							]);
+						@endphp
 
-								<input class="receipt-order__input" id="roll_number_0" name="rolls[0][roll_number]"
-										data-receipt-roll-number type="text" value="{{ old('rolls.0.roll_number') }}">
-							</fieldset>
+						@foreach ($oldRolls as $index => $roll)
 
-							<fieldset class="receipt-order__field">
-								<label class="receipt-order__label" for="weight_0" data-receipt-roll-weight-label>
-									Вес, кг
-								</label>
+							<div class="receipt-order__roll" data-receipt-roll>
 
-								<input class="receipt-order__input" id="weight_0" name="rolls[0][weight]"
-										data-receipt-roll-weight type="number" step="0.001" min="0"
-										value="{{ old('rolls.0.weight') }}">
-							</fieldset>
-						</div>
+								<fieldset class="receipt-order__field">
+									<label class="receipt-order__label" for="roll_number_{{ $index }}"
+											data-receipt-roll-number-label>
+										Номер рулона
+									</label>
+
+									<input class="receipt-order__input" id="roll_number_{{ $index }}"
+											name="rolls[{{ $index }}][roll_number]" data-receipt-roll-number type="text"
+											value="{{ $roll['roll_number'] ?? '' }}">
+
+								</fieldset>
+
+								<fieldset class="receipt-order__field">
+									<label class="receipt-order__label" for="weight_{{ $index }}" data-receipt-roll-weight-label>
+										Вес, кг
+									</label>
+
+									<input class="receipt-order__input" id="weight_{{ $index }}"
+											name="rolls[{{ $index }}][weight]" data-receipt-roll-weight
+											type="number" step="0.001" min="0" value="{{ $roll['weight'] ?? '' }}">
+
+								</fieldset>
+							</div>
+
+						@endforeach
 					</div>
 				</div>
 			</div>
 
+
 			{{-- Комментарий --}}
 			<div class="receipt-order__line">
 				<fieldset class="receipt-order__field">
-					<label
-							class="receipt-order__label"
-							for="comment">
-						Комментарий
-					</label>
-
-					<textarea class="receipt-order__input receipt-order__textarea" id="comment"
-							name="comment">{{ old ('comment') }}
+					<label class="receipt-order__label" for="comment"> Комментарий </label>
+					<textarea class="receipt-order__input receipt-order__textarea" id="comment" name="comment">
+						{{ old('comment') }}
 					</textarea>
 				</fieldset>
 			</div>
@@ -159,8 +178,8 @@
 					<span>Оприходовать</span>
 				</button>
 
-				<button class="receipt-order__button receipt-order__button--reset button" type="button"
-						data-receipt-form-reset>
+				<button class="receipt-order__button receipt-order__button--reset button"
+						type="button" data-receipt-form-reset>
 					<span>Очистить</span>
 				</button>
 			</div>

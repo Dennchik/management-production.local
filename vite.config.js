@@ -12,132 +12,106 @@ import { convertImagesToWebp } from './vite/tasks/webp.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig(({command}) => {
-	const isProd = command === 'build';
+export default defineConfig(({ command }) => {
+   const isProd = command === 'build';
 
-	// noinspection JSValidateTypes
-	return {
-		plugins: [
-			laravel({
-				input: [
-					'resources/scss/app.scss',
-					'resources/js/app.js',
-				],
-				refresh: true,
-			}),
+   // noinspection JSValidateTypes
+   return {
+      plugins: [
+         laravel({
+            input: ['resources/scss/app.scss', 'resources/js/app.js'],
+            refresh: true,
+         }),
+         fontStyle(),
+         convertImagesToWebp(app.webp),
+      ],
 
-			fontStyle(),
+      server: {
+         sourcemap: true,
+         proxy: {
+            '/fonts': {
+               target: 'http://localhost:8000',
+               changeOrigin: true,
+            },
+         },
+      },
 
-			convertImagesToWebp(app.webp),
-		],
+      css: {
+         devSourcemap: !isProd,
 
-		server: {
-			proxy: {
-				'/fonts': {
-					target: 'http://localhost:8000',
-					changeOrigin: true,
-				},
-			},
+         postcss: {
+            plugins: [
+               ...(isProd
+                  ? [
+                       postcssMediaMinMax(app.postcssMediaMinMax),
+                       sortMediaQueries(app.postcssSortMediaQueries),
+                       autoprefixer(app.autoprefixer),
+                    ]
+                  : []),
+            ],
+         },
 
-			// open: true,
-			// 	watch: { 
-			// 		ignored: ['**/storage/framework/views/**'],
-			// 	},
-		},
+         preprocessorOptions: {
+            scss: {},
+         },
+      },
 
-		css: {
-			devSourcemap: !isProd,
+      resolve: {
+         alias: {
+            '@': resolve(__dirname, 'resources'),
+         },
+      },
 
-			postcss: {
-				plugins: [
-					...(isProd
-						? [
-							postcssMediaMinMax(
-								app.postcssMediaMinMax,
-							),
+      build: {
+         outDir: 'public/build',
+         emptyOutDir: true,
+         sourcemap: false,
+         cssCodeSplit: true,
 
-							sortMediaQueries(
-								app.postcssSortMediaQueries,
-							),
+         chunkSizeWarningLimit: 264,
 
-							autoprefixer(
-								app.autoprefixer,
-							),
-						]
-						: []),
-				],
-			},
+         modulePreload: {
+            polyfill: true,
+         },
 
-			preprocessorOptions: {
-				scss: {},
-			},
-		},
+         commonjsOptions: {
+            transformMixedEsModules: true,
+         },
 
-		resolve: {
-			alias: {
-				'@': resolve(__dirname, 'resources'),
-			},
-		},
+         rollupOptions: {
+            output: {
+               assetFileNames: 'assets/[name].[ext]',
+               chunkFileNames: 'assets/vendors/[name].js',
 
-		build: {
-			outDir: 'public/build',
-			emptyOutDir: true,
-			sourcemap: false,
-			cssCodeSplit: true,
+               manualChunks(id) {
+                  if (id.includes('node_modules')) {
+                     if (id.includes('lodash') || id.includes('date-fns')) {
+                        return 'utils';
+                     }
 
-			chunkSizeWarningLimit: 264,
+                     if (id.includes('chart.js') || id.includes('d3')) {
+                        return 'charts';
+                     }
 
-			modulePreload: {
-				polyfill: true,
-			},
+                     if (id.includes('animejs') || id.includes('gsap')) {
+                        return 'anime-vendors';
+                     }
 
-			commonjsOptions: {
-				transformMixedEsModules: true,
-			},
+                     return 'vendor';
+                  }
+               },
+            },
+         },
 
-			rollupOptions: {
-				output: {
-					assetFileNames: 'assets/[name].[ext]',
-					chunkFileNames: 'assets/vendors/[name].js',
+         optimizeDeps: {
+            include: ['lodash', 'axios'],
+            exclude: [],
+         },
+      },
 
-					"manualChunks"(id) {
-						if (id.includes('node_modules')) {
-							if (
-								id.includes('lodash') ||
-								id.includes('date-fns')
-							) {
-								return 'utils';
-							}
-
-							if (
-								id.includes('chart.js') ||
-								id.includes('d3')
-							) {
-								return 'charts';
-							}
-
-							if (
-								id.includes('animejs') ||
-								id.includes('gsap')
-							) {
-								return 'anime-vendors';
-							}
-
-							return 'vendor';
-						}
-					},
-				},
-			},
-
-			optimizeDeps: {
-				include: ['lodash', 'axios'],
-				exclude: [],
-			},
-		},
-
-		preview: {
-			port: 4173,
-			host: true,
-		},
-	};
+      preview: {
+         port: 4173,
+         host: true,
+      },
+   };
 });

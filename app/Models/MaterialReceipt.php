@@ -7,9 +7,10 @@
 	use Illuminate\Database\Eloquent\Relations\BelongsTo;
 	use Illuminate\Database\Eloquent\Relations\HasMany;
 
+ 
 	#[Fillable([
-		'comment',
-		'user_id',
+			'comment',
+			'user_id',
 	])]
 	class MaterialReceipt extends Model
 	{

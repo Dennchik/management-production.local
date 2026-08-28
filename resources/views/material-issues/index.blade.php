@@ -46,7 +46,7 @@
 
 					<tr class="material-issues__row"
 							data-issue-modal-open
-							data-issue-id="{{ $issue->id }}">
+							data-issue-id="{{ $issue->getKey()}}">
 
 						{{-- Дата --}}
 						<td> {{ $issue->created_at->format('d.m.Y H:i') }} </td>

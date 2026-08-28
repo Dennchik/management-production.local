@@ -41,12 +41,12 @@
 				</thead>
 
 				<tbody>
-
+				{{-- @var \App\Models\MaterialReceipt $receipt --}}
 				@forelse ($receipts as $receipt)
 
 					<tr class="material-receipts__row"
 							data-receipt-modal-open
-							data-receipt-id="{{ $receipt->id }}">
+							data-receipt-id="{{ $receipt->getKey()}}">
 
 						{{-- Дата --}}
 						<td> {{ $receipt->created_at->format('d.m.Y H:i') }} </td>

@@ -8,7 +8,10 @@
 
 	<h1 class="main-content__title">Расходный ордер</h1>
 
-	<form class="issue-order" method="POST" action="{{ route('material-issues.store') }}"
+	<form
+			class="issue-order"
+			method="POST"
+			action="{{ route('material-issues.store') }}"
 			novalidate>
 
 		@csrf
@@ -94,38 +97,31 @@
 											data-search="{{ strtolower($material->name . ' ' . $material->identifier . ' ' . $material->format . ' ' . $material->thickness . ' ' . $material->grammage) }}"
 											aria-selected="{{ old('material_id') == $material->id ? 'true' : 'false' }}">
 
-                     <span>
+									<span>
+										{{ $material->name }}
 
-                       {{ $material->name }}
+										@if ($material->thickness)
+											| {{ $material->thickness }} мкм
+										@endif
 
-								@if ($material->thickness)
-									| {{ $material->thickness }} мкм
-								@endif
+										@if ($material->grammage)
+											| {{ $material->grammage }} гр
+										@endif
 
-								@if ($material->grammage)
-									| {{ $material->grammage }} гр
-								@endif
+									  | {{ $material->format }}
 
-                       | {{ $material->format }}
-
-                     </span>
+									</span>
 
 									</button>
 
 								@endforeach
 
-								<div
-										class="material-select__select-empty select__empty"
-										hidden>
+								<div class="material-select__select-empty select__empty" hidden>
 									Ничего не найдено
 								</div>
-
 							</div>
-
 						</div>
-
 					</div>
-
 				</fieldset>
 
 
@@ -199,7 +195,8 @@
 									aria-haspopup="listbox"
 									aria-expanded="false">
 
-                 <span class="material-select__select-value select__button-text">
+                 <span
+							  class="material-select__select-value select__button-text">
                    Сначала выберите материал
                  </span>
 
@@ -264,39 +261,21 @@
 						Остаток, кг
 					</label>
 
-					<input
-							class="issue-order__input"
-							id="remaining_weight"
-							type="text"
+					<input class="issue-order__input" id="remaining_weight" type="text"
 							readonly>
-
 				</fieldset>
-
 			</div>
-
 
 			{{-- Вес расхода --}}
 			<div class="issue-order__line">
-
 				<fieldset class="issue-order__field">
-
-					<label
-							class="issue-order__label"
-							for="weight">
+					<label class="issue-order__label" for="weight">
 						Вес расхода, кг
 					</label>
 
-					<input
-							class="issue-order__input"
-							id="weight"
-							name="weight"
-							type="number"
-							step="0.001"
-							min="0"
-							value="{{ old('weight') }}">
-
+					<input class="issue-order__input" id="weight" name="weight" type="number"
+							step="0.001" min="0" value="{{ old('weight') }}">
 				</fieldset>
-
 			</div>
 
 
@@ -305,49 +284,27 @@
 
 				<fieldset class="issue-order__field">
 
-					<label
-							class="issue-order__label"
-							for="comment">
-						Комментарий
+					<label class="issue-order__label" for="comment">Комментарий
 					</label>
 
-					<textarea
-							class="issue-order__input issue-order__textarea"
-							id="comment"
-							name="comment">{{ old('comment') }}</textarea>
-
+					<textarea class="issue-order__input issue-order__textarea" id="comment"
+							name="comment">{{ old('comment') }}
+					</textarea>
 				</fieldset>
-
 			</div>
-
 
 			{{-- Действия --}}
 			<div class="issue-order__actions">
-
-				<button
-						class="issue-order__button main-content__button button"
-						type="submit">
-
-           <span>
-             Списать
-           </span>
-
+				<button class="issue-order__button main-content__button button" type="submit">
+					<span>Списать </span>
 				</button>
 
-				<button
-						class="issue-order__button issue-order__button--reset button"
-						type="button">
-
-           <span>
-             Очистить
-           </span>
-
+				<button class="issue-order__button issue-order__button--reset button" type="button">
+					<span>Очистить</span>
 				</button>
 
 			</div>
-
 		</div>
-
 	</form>
 
 @endsection

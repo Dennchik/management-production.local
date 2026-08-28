@@ -7,26 +7,20 @@ import './modules/ui/sidebar.js';
 import { initFiltersModule } from './modules/forms/filters.js';
 import { initMaterialReceiptModule } from './modules/forms/material-receipt.js';
 import { initMaterialIssueModule } from './modules/forms/material-issue.js';
+import { initLaminationModule } from './modules/forms/lamination.js';
 import { initReceiptRolls } from './modules/ui/receipt-rolls.js';
 //* Импортируем страниц
 import { initMaterialRollsModule } from './modules/pages/material-rolls.js';
 import { initMaterialMovementsModule } from './modules/pages/material-movements.js';
+//* Импортируем утилиты для инициализации
+// import { initSelects } from './assets/select.js';
 document.addEventListener('DOMContentLoaded', () => {
-   // Безопасный запуск: инициализируются только те модули,
-   // чьи HTML-элементы реально присутствуют на текущей странице.
    initFiltersModule();
    initMaterialMovementsModule();
    initMaterialRollsModule();
    initMaterialReceiptModule();
    initMaterialIssueModule();
+   initLaminationModule();
    initReceiptRolls();
+   // initSelects();
 });
-//* Импортируем утилиты для инициализации
-// import { initSelects } from './assets/select.js';
-
-// ... остальные импорты
-
-//* Инициализация UI-компонентов
-// document.addEventListener('DOMContentLoaded', () => {
-//    initSelects();
-// });

@@ -68,16 +68,9 @@
 		 */
 		public function create(): View
 		{
-			// 👇 Добавляем получение материалов
 			$materials = Material::orderBy('name')->get();
 
-			// 👇 Добавляем получение рулонов (для выпадающего списка)
-			$rolls = MaterialRoll::with('material')
-					->where('weight', '>', 0)
-					->orderBy('roll_number')
-					->get();
-
-			return view('material-issues.create', compact('materials', 'rolls'));
+			return view('material-issues.create', compact('materials'));
 		}
 
 		/**
@@ -87,6 +80,12 @@
 		{
 			$validated = $request->validate(
 					[
+							'material_id' => [
+									'required',
+									'integer',
+									'exists:materials,id',
+							],
+
 							'roll_id' => [
 									'required',
 									'integer',
@@ -105,6 +104,10 @@
 							],
 					],
 					[
+							'material_id.required' => 'Укажите материал.',
+							'material_id.integer' => 'Некорректный материал.',
+							'material_id.exists' => 'Выбранный материал не существует.',
+
 							'roll_id.required' => 'Укажите рулон.',
 							'roll_id.integer' => 'Некорректный рулон.',
 							'roll_id.exists' => 'Выбранный рулон не существует.',
@@ -119,14 +122,31 @@
 
 			try {
 				DB::transaction(function () use ($validated) {
+					/*
+					 * Блокируем выбранный рулон на время операции,
+					 * чтобы два одновременных расхода не списали
+					 * больше материала, чем фактически есть.
+					 */
 					$roll = MaterialRoll::query()
 							->lockForUpdate()
 							->findOrFail($validated['roll_id']);
 
+					/*
+					 * Проверяем, что рулон относится именно
+					 * к выбранному материалу.
+					 */
+					if ((int)$roll->material_id !== (int)$validated['material_id']) {
+						throw new \Exception(
+								'Выбранный рулон не относится к выбранному материалу.'
+						);
+					}
+
 					$currentWeight = (float)$roll->weight;
 					$issueWeight = (float)$validated['weight'];
 
-					//* Проверка на списание недостающего материала
+					/*
+					 * Проверяем достаточность остатка.
+					 */
 					if ($issueWeight > $currentWeight) {
 						throw new \Exception(
 								'Недостаточно материала на рулоне. Доступно: '
@@ -135,6 +155,9 @@
 						);
 					}
 
+					/*
+					 * Создаём операцию расхода.
+					 */
 					MaterialIssue::create([
 							'material_id' => $roll->material_id,
 							'roll_id' => $roll->id,
@@ -143,6 +166,9 @@
 							'user_id' => 1,
 					]);
 
+					/*
+					 * Уменьшаем текущий остаток рулона.
+					 */
 					$roll->update([
 							'weight' => $currentWeight - $issueWeight,
 					]);
@@ -151,11 +177,13 @@
 				return redirect()
 						->route('material-issues.create')
 						->with('success', 'Материал успешно списан.');
-
 			} catch (\Exception $e) {
 				return back()
 						->withInput()
-						->withErrors(['weight' => $e->getMessage()]);
+						->withErrors([
+								'weight' => $e->getMessage(),
+						]);
 			}
 		}
 	}
+
