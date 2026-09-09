@@ -1,0 +1,467 @@
+/**
+ * Инициализация страницы справочника материалов.
+ *
+ * Отвечает за:
+ * - открытие формы создания материала;
+ * - просмотр материала;
+ * - открытие формы редактирования;
+ * - удаление материала;
+ * - сохранение нового материала;
+ * - обновление существующего материала;
+ * - обновление таблицы без перезагрузки страницы.
+ */
+export function initMaterialsModule() {
+   const materialsPage = document.querySelector('[data-materials-page]');
+
+   if (!materialsPage) {
+      return;
+   }
+
+   const createButton = materialsPage.querySelector('[data-material-create]');
+   const tableBody = materialsPage.querySelector('[data-materials-body]');
+
+   if (!createButton || !tableBody) {
+      return;
+   }
+
+   createButton.addEventListener('click', () => {
+      void createMaterial();
+   });
+
+   tableBody.addEventListener('click', (event) => {
+      const actionButton = event.target.closest('[data-action]');
+
+      if (!actionButton) {
+         return;
+      }
+
+      const action = actionButton.dataset.action;
+
+      if (action === 'view') {
+         viewMaterial(actionButton);
+         return;
+      }
+
+      if (action === 'edit') {
+         void editMaterial(actionButton);
+         return;
+      }
+
+      if (action === 'delete') {
+         deleteMaterial(actionButton);
+      }
+   });
+
+   document.addEventListener('click', (event) => {
+      const formActionButton = event.target.closest(
+         '[data-material-form] [data-action]'
+      );
+
+      if (formActionButton) {
+         const action = formActionButton.dataset.action;
+
+         if (action === 'save') {
+            void saveMaterial(formActionButton);
+            return;
+         }
+
+         if (action === 'update') {
+            void updateMaterial(formActionButton);
+            return;
+         }
+      }
+
+      const confirmButton = event.target.closest(
+         '[data-material-delete-confirm]'
+      );
+
+      if (!confirmButton) {
+         return;
+      }
+
+      void confirmDeleteMaterial(confirmButton);
+   });
+}
+
+/**
+ * Открывает форму создания материала.
+ */
+async function createMaterial() {
+   try {
+      const response = await fetch('/materials/create', {
+         headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'text/html',
+         },
+      });
+
+      if (!response.ok) {
+         return;
+      }
+
+      const html = await response.text();
+
+      window.operationModal.open(html);
+
+      const form = document.querySelector('[data-material-form]');
+
+      form?.querySelector('input[name="material-name"]')?.focus();
+   } catch (error) {
+      return;
+   }
+}
+
+/**
+ * Сохраняет новый материал.
+ *
+ * @param {HTMLElement} button Кнопка сохранения.
+ */
+async function saveMaterial(button) {
+   const form = button.closest('[data-material-form]');
+
+   if (!form) {
+      return;
+   }
+
+   if (!validateMaterialForm(form)) {
+      return;
+   }
+
+   const data = getMaterialData(form);
+
+   button.disabled = true;
+
+   try {
+      const csrfToken = document.querySelector(
+         'meta[name="csrf-token"]'
+      )?.content;
+
+      const response = await fetch('/materials', {
+         method: 'POST',
+         headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+         },
+         body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.material) {
+         button.disabled = false;
+         return;
+      }
+
+      const refreshed = await refreshMaterialsTable();
+
+      if (!refreshed) {
+         button.disabled = false;
+         return;
+      }
+
+      window.operationModal.close();
+   } catch (error) {
+      button.disabled = false;
+   }
+}
+
+/**
+ * Открывает форму редактирования материала.
+ *
+ * @param {HTMLElement} button Кнопка редактирования.
+ */
+async function editMaterial(button) {
+   const row = button.closest('[data-material-id]');
+
+   if (!row) {
+      return;
+   }
+
+   const materialId = row.dataset.materialId;
+
+   if (!materialId) {
+      return;
+   }
+
+   try {
+      const response = await fetch(`/materials/${materialId}/edit`, {
+         headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'text/html',
+         },
+      });
+
+      if (!response.ok) {
+         return;
+      }
+
+      const html = await response.text();
+
+      window.operationModal.open(html);
+
+      const form = document.querySelector('[data-material-form]');
+
+      form?.querySelector('input[name="material-name"]')?.focus();
+   } catch (error) {
+      return;
+   }
+}
+
+/**
+ * Обновляет существующий материал.
+ *
+ * @param {HTMLElement} button Кнопка обновления.
+ */
+async function updateMaterial(button) {
+   const form = button.closest('[data-material-form]');
+
+   if (!form) {
+      return;
+   }
+
+   const materialId = form.dataset.materialId;
+
+   if (!materialId) {
+      return;
+   }
+
+   if (!validateMaterialForm(form)) {
+      return;
+   }
+
+   const data = getMaterialData(form);
+
+   button.disabled = true;
+
+   try {
+      const csrfToken = document.querySelector(
+         'meta[name="csrf-token"]'
+      )?.content;
+
+      const response = await fetch(`/materials/${materialId}`, {
+         method: 'PUT',
+         headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+         },
+         body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.material) {
+         button.disabled = false;
+         return;
+      }
+
+      const refreshed = await refreshMaterialsTable();
+
+      if (!refreshed) {
+         button.disabled = false;
+         return;
+      }
+
+      window.operationModal.close();
+   } catch (error) {
+      button.disabled = false;
+   }
+}
+
+/**
+ * Обновляет тело таблицы данными, сформированными Blade.
+ *
+ * HTML-разметка строки и пустого состояния находится только в Blade.
+ *
+ * @returns {Promise<boolean>} Результат обновления.
+ */
+async function refreshMaterialsTable() {
+   const tableBody = document.querySelector('[data-materials-body]');
+
+   if (!tableBody) {
+      return false;
+   }
+
+   try {
+      const response = await fetch('/materials', {
+         headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'text/html',
+         },
+      });
+
+      if (!response.ok) {
+         return false;
+      }
+
+      const html = await response.text();
+      const parsedDocument = new DOMParser().parseFromString(html, 'text/html');
+
+      const newTableBody = parsedDocument.querySelector(
+         '[data-materials-body]'
+      );
+
+      if (!newTableBody) {
+         return false;
+      }
+
+      tableBody.replaceChildren(...Array.from(newTableBody.childNodes));
+
+      return true;
+   } catch (error) {
+      return false;
+   }
+}
+
+/**
+ * Собирает данные материала из формы.
+ *
+ * @param {HTMLElement} form Контейнер формы материала.
+ * @returns {Object} Данные материала.
+ */
+function getMaterialData(form) {
+   return {
+      name:
+         form.querySelector('input[name="material-name"]')?.value.trim() || '',
+
+      code: form.querySelector('input[name="code"]')?.value.trim() || '',
+
+      grammage: form.querySelector('input[name="grammage"]')?.value || null,
+
+      thickness: form.querySelector('input[name="thickness"]')?.value || null,
+
+      format: form.querySelector('input[name="format"]')?.value.trim() || '',
+
+      lamination_allowed:
+         form.querySelector('input[name="lamination_allowed"]')?.checked ??
+         false,
+
+      priming_allowed:
+         form.querySelector('input[name="priming_allowed"]')?.checked ?? false,
+
+      cutting_allowed:
+         form.querySelector('input[name="cutting_allowed"]')?.checked ?? false,
+
+      printing_allowed:
+         form.querySelector('input[name="printing_allowed"]')?.checked ?? false,
+
+      is_active:
+         form.querySelector('input[name="is_active"]')?.checked ?? false,
+   };
+}
+
+/**
+ * Проверяет поля материала средствами браузера.
+ *
+ * @param {HTMLElement} form Контейнер формы материала.
+ * @returns {boolean} Результат проверки.
+ */
+function validateMaterialForm(form) {
+   const fields = form.querySelectorAll('input, select, textarea');
+
+   for (const field of fields) {
+      if (!field.checkValidity()) {
+         field.reportValidity();
+
+         return false;
+      }
+   }
+
+   return true;
+}
+
+/**
+ * Открывает просмотр материала.
+ *
+ * @param {HTMLElement} button Кнопка просмотра.
+ */
+function viewMaterial(button) {
+   const row = button.closest('[data-material-id]');
+
+   if (!row) {
+      return;
+   }
+
+   const materialId = row.dataset.materialId;
+
+   if (!materialId) {
+      return;
+   }
+
+   window.operationModal.load(
+      `/materials/${materialId}`,
+      'Не удалось загрузить материал.'
+   );
+}
+
+/**
+ * Открывает подтверждение удаления материала.
+ *
+ * @param {HTMLElement} button Кнопка удаления.
+ */
+function deleteMaterial(button) {
+   const row = button.closest('[data-material-id]');
+
+   if (!row) {
+      return;
+   }
+
+   const materialId = row.dataset.materialId;
+
+   if (!materialId) {
+      return;
+   }
+
+   window.operationModal.load(
+      `/materials/${materialId}/delete`,
+      'Не удалось загрузить окно удаления материала.'
+   );
+}
+
+/**
+ * Окончательно удаляет материал.
+ *
+ * @param {HTMLElement} button Кнопка подтверждения.
+ */
+async function confirmDeleteMaterial(button) {
+   const materialId = button.dataset.materialId;
+
+   if (!materialId) {
+      return;
+   }
+
+   button.disabled = true;
+
+   try {
+      const csrfToken = document.querySelector(
+         'meta[name="csrf-token"]'
+      )?.content;
+
+      const response = await fetch(`/materials/${materialId}`, {
+         method: 'DELETE',
+         headers: {
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+         },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+         button.disabled = false;
+         return;
+      }
+
+      const refreshed = await refreshMaterialsTable();
+
+      if (!refreshed) {
+         button.disabled = false;
+         return;
+      }
+
+      window.operationModal.close();
+   } catch (error) {
+      button.disabled = false;
+   }
+}

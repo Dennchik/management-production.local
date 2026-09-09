@@ -1,15 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
-	const messages = document.querySelectorAll('.message');
+   const messages = document.querySelectorAll('.message');
 
-	messages.forEach((msg) => {
-		const closeBtn = msg.querySelector('.message__close');
+   messages.forEach((msg) => {
+      const closeBtn = msg.querySelector('.message__close');
 
-		function hide() {
-			msg.classList.add('_hide');
-			msg.addEventListener('animationend', () => msg.remove(), {once: true});
-		}
+      function hide() {
+         msg.classList.add('_hide');
+         msg.addEventListener('animationend', () => msg.remove(), {
+            once: true,
+         });
+      }
 
-		closeBtn?.addEventListener('click', hide);
-		setTimeout(hide, 5000);
-	});
+      closeBtn?.addEventListener('click', hide);
+      setTimeout(hide, 5000);
+   });
 });

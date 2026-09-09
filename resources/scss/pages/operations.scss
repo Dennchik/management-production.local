@@ -1,0 +1,115 @@
+@use '../core/variables' as *;
+@use '../core/mixins' as *;
+
+.operations {
+	// .operations__content
+	&__content {
+	}
+}
+
+.empty-state {
+}
+
+.table {
+	overflow: hidden;
+	border-radius: var(--border-radius-8);
+	// .table__row
+	&__row {
+		display: flex;
+		align-items: center;
+		height: 5.5rem;
+		border-bottom: 1px solid var(--border-color);
+
+
+		// .table__row--header
+		&--header {
+			color: var(--color-white);
+			background-color: var(--color-black);
+		}
+	}
+
+	// .table__cell
+	&__cell {
+		display: flex;
+		flex: 1 1 auto;
+		align-items: center;
+
+		height: 100%;
+		padding: 0 1.6rem;
+
+		&:not(:last-child) {
+			border-right: 1px solid var(--border-color);
+		}
+	}
+}
+.table {
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+
+	width: 100%;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-8);
+
+	background-color: var(--background);
+	box-shadow: var(--shadow);
+
+	&__row {
+		display: grid;
+		grid-template-columns: 80px 2fr 1fr 1fr 1fr;
+		align-items: center;
+
+		padding: var(--spacing);
+		border-bottom: 1px solid var(--color-border);
+
+		color: var(--color-text);
+		text-decoration: none;
+
+		transition: background-color 0.2s ease, box-shadow 0.2s ease;
+
+		&:last-child {
+			border-bottom: none;
+		}
+
+		// Состояния интерактивных строк-ссылок
+		&:not(&--header) {
+			cursor: pointer;
+
+			&:hover {
+				background-color: var(--background-gray);
+			}
+
+			&:focus-visible {
+				background-color: var(--color-selected);
+				outline: none;
+				box-shadow: var(--focus-shadow);
+			}
+		}
+
+		// Шапка таблицы
+		&--header {
+			font-weight: var(--font-weight-bold);
+			color: var(--color-white);
+			background: var(--color-black);
+
+			.table__cell {
+				font-size: var(--font-size-middle);
+				text-transform: uppercase;
+			}
+		}
+	}
+
+	&__cell {
+		padding: 0 calc(var(--gap) / 2);
+		font-size: var(--font-size-normal);
+		line-height: 1.4;
+
+		&:first-child {
+			padding-left: 0;
+		}
+
+		&:last-child {
+			padding-right: 0;
+		}
+	}
+}

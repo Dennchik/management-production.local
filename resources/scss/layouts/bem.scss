@@ -1,38 +1,62 @@
 @use '../core/variables';
 
+textarea {
+	cursor: pointer;
+	resize: vertical;
+
+	width: 100%;
+	height: 4.2rem;
+	min-height: 120px;
+	padding: 0 12px;
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius-32);
+
+	font: inherit;
+
+	background: var(--background-gray);
+	outline: none;
+
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
 .button {
 	display: inline-flex;
+	gap: 1rem;
 	align-items: center;
 	justify-content: center;
 
-	padding: var(--space-yxs);
+	height: 36px;
+	padding: var(--spacing);
 	border-radius: var(--border-radius);
 
+	font-weight: 500;
 	color: var(--color-button-text);
 
 	background-color: var(--color-button);
 
-	transition: opacity 0.3s,
-	color 0.3s ease-in-out;
+	transition: all 0.3s ease-in-out;
 
 	span {
 		font-weight: var(--font-weight-bold);
+		white-space: nowrap;
 	}
 
 	&:hover {
-		color: var(--color-blue);
-		opacity: 0.8;
+		background-color: var(--color-hover);
 	}
 }
 
 table {
 	overflow: hidden;
+	//	table-layout: fixed;
 	border-collapse: collapse;
 
 	width: 100%;
-	border-radius: var(--border-radius);
+	border-radius: var(--border-radius-8);
 
-	background: var(--color-gray);
+	font-size: var(--font-size-middle);
+
+	background: var(--background);
 	box-shadow: var(--box-shadow);
 
 	thead {
@@ -44,16 +68,35 @@ table {
 		}
 	}
 
-	th,
 	td {
-		padding: var(--spacing);
-		border-bottom: 1px solid var(--border-color);
-		text-align: left;
+		input[type='text'],
+		input[type='number'] {
+			box-sizing: border-box; /* Учитывает padding и border в общую ширину */
+			width: 100%; /* Занимает ровно 100% ширины td */
+			min-width: 0; /* Сбрасывает дефолтную минимальную ширину браузера */
+			max-width: 100%; /* Не дает выходить за границы */
+		}
 	}
 
-	th:not(:last-child),
-	td:not(:last-child) {
-		border-right: 1px solid rgb(220 226 232);
+	th,
+	td {
+		height: 5.5rem;
+		padding: 0 1.6rem;
+		border-bottom: 1px solid var(--border-color);
+
+		text-align: left;
+		vertical-align: middle;
+
+		label {
+			display: flex;
+			gap: 0.5rem;
+			align-items: center;
+		}
+
+		&:not(:last-child),
+		&:not(:last-child) {
+			border-right: 1px solid rgb(220 226 232);
+		}
 	}
 
 	th {
@@ -61,19 +104,14 @@ table {
 		white-space: nowrap;
 	}
 
-	td {
-		vertical-align: middle;
-	}
-
 	tbody {
-		font-size: var(--font-size-small);
+		tr:nth-child(even) {
+			background: var(--color-gray);
+		}
+
+		tr:last-child td {
+			border-bottom: 0;
+		}
 	}
 
-	tbody tr:nth-child(even) {
-		background: var(--color-gray);
-	}
-
-	tbody tr:last-child td {
-		border-bottom: 0;
-	}
 }

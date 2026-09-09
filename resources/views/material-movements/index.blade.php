@@ -4,25 +4,23 @@
 
 @section('content')
 
-	<div class="material-movements">
-		<div class="material-movements__content">
+	<div class="main-content__content">
+
 			{{-- Фильтр --}}
-			<div class="material-movements">
-				@include('layouts.filters-actions', [
-				  'filterType' => 'material-movements',
-				  'filterAction' => route('material-movements.index'),
-				  'filterReset' => route('material-movements.index'),
-				])
+			@include('layouts.filters-actions', [
+			  'filterType' => 'material-movements',
+			  'filterAction' => route('material-movements.index'),
+			  'filterReset' => route('material-movements.index'),
+			])
+
+			<div class="main-content__header">
+				<h1 class="main-content__title">Движение материалов</h1>
 			</div>
 
-			<h1 class="main-content__title">
-				Движение материалов
-			</h1>
-
+			<div class="material">
 			{{-- Таблица движений --}}
-			<div class="material-movements__table-wrapper">
-				<table class="material-movements__table">
-
+				<div class="material__table-wrapper">
+				<table class="material__table">
 					<thead>
 					<tr>
 						<th>Дата</th>
@@ -34,12 +32,11 @@
 						<th>Пользователь</th>
 					</tr>
 					</thead>
-
 					<tbody>
 
 					@forelse ($movements as $movement)
 
-						<tr>
+						<tr class="material__material-row">
 							{{-- Дата --}}
 							<td class="material-movements__date"> {{ $movement['date']->format('d.m.Y H:i') }} </td>
 
@@ -54,13 +51,10 @@
 
 							{{-- Материал --}}
 							<td> {{ $movement['material']->name }} </td>
-
 							{{-- Идентификатор --}}
 							<td> {{ $movement['material']->identifier }} </td>
-
 							{{-- Рулон --}}
-							<td> {{ $movement['roll']->roll_number }} </td>
-
+							<td class="material-movements__date">{{ $movement['roll']->roll_number }}</td>
 							{{-- Изменение веса --}}
 							<td>
 								@if ($movement['type'] === 'receipt')
@@ -84,7 +78,7 @@
 					</tbody>
 				</table>
 			</div>
+			</div>
 		</div>
-	</div>
 
 @endsection

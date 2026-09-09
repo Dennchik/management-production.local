@@ -4,17 +4,16 @@
 
 @section('content')
 
-	<div class="warehouse">
-		<div class="warehouse__content">
-			{{-- Фильтр --}}
-			<div class="warehouse__filter">
-				@include('layouts.filters-actions')
-			</div>
+	<div class="main-content__content">
 
+		{{-- Фильтр --}}
+		@include('layouts.filters-actions')
+		<div class="main-content__header">
 			<h1 class="main-content__title">Склад</h1>
-
+		</div>
+		<div class="material">
 			{{-- Таблица склада --}}
-			<table class="warehouse__table">
+			<table class="material__table">
 
 				<thead>
 				<tr>
@@ -30,10 +29,8 @@
 
 				@forelse ($materials as $material)
 
-					<tr class="warehouse__material-row"
-							data-row-link="{{ route('warehouse.material', $material) }}"
-							tabindex="0"
-							role="link">
+					<tr class="material__material-row" data-row-link="{{ route('warehouse.material', $material) }}"
+							tabindex="0" role="link">
 
 						<td> {{ $material->name }} </td>
 						<td> {{ $material->identifier }} </td>
@@ -48,16 +45,13 @@
 				@empty
 
 					<tr>
-						<td colspan="5">
-							Склад пуст
-						</td>
+						<td colspan="5">Склад пуст</td>
 					</tr>
 
 				@endforelse
-
 				</tbody>
-
 			</table>
 		</div>
 	</div>
+
 @endsection

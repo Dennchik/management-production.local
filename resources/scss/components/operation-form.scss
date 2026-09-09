@@ -1,0 +1,164 @@
+// Переменные для быстрой кастомизации
+
+@use '../core/variables' as *;
+@use '../core/mixins' as *;
+
+.operation-form {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+
+	&__section {
+		padding: 24px;
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius-8);
+
+		background-color: var(--background);
+		box-shadow: var(--box-shadow);
+	}
+
+	&__section-header {
+		display: flex;
+		gap: 16px;
+		align-items: flex-start;
+		justify-content: space-between;
+
+		margin-bottom: 20px;
+		padding-bottom: 12px;
+		border-bottom: 1px solid var(--border-color);
+
+	}
+
+	&__section-title {
+		margin: 0 0 4px;
+		font-size: 20px;
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
+	&__section-description {
+		margin: 0;
+		font-size: 14px;
+		color: var(--text-muted);
+	}
+
+	&__fields {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 16px;
+
+		.form-field:has(.form-field__textarea),
+		.form-field--checkbox {
+			grid-column: 1 / -1;
+		}
+	}
+
+	&__components {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+
+	&__actions {
+		display: flex;
+		gap: 12px;
+		align-items: center;
+		justify-content: flex-end;
+
+		padding-top: 8px;
+	}
+}
+
+.operation-component {
+	display: grid;
+	grid-template-columns: 2fr 1fr 1fr 1.2fr auto;
+	gap: 12px;
+	align-items: end;
+
+	padding: 16px;
+	border: 1px solid var(--border-color);
+	border-radius: calc(var(--border-radius-8) - 4px);
+
+	background-color: var(--background);
+
+	.form-field:has(.form-field__input[name*='[comment]']) {
+		grid-column: 1 / span 4;
+	}
+
+	@media (width <= 900px) {
+		grid-template-columns: 1fr 1fr;
+
+		.form-field:has(.form-field__input[name*='[comment]']) {
+			grid-column: 1 / -1;
+		}
+
+		.button--danger {
+			grid-column: 1 / -1;
+		}
+	}
+}
+
+.form-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+
+	&__label {
+		font-size: 14px;
+		font-weight: 500;
+		color: var(--color-text);
+	}
+
+	&__input,
+	&__select,
+	&__textarea {
+		width: 100%;
+min-height: 44px;
+		padding: var(--space-yxs);
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius-8);
+
+		font-size: 14px;
+		color: var(--color-text);
+
+		background-color: var(--background);
+		outline: none;
+
+		transition: all 0.3s ease-in-out;
+
+		&::placeholder {
+			color: var(--text-muted);
+		}
+
+		&:focus {
+			border-color: var(--color-hover);
+		}
+	}
+
+	&__textarea {
+		resize: vertical;
+		min-height: 90px;
+	}
+
+	&--checkbox {
+		flex-direction: row;
+
+		.form-field__label {
+			cursor: pointer;
+			user-select: none;
+
+			display: inline-flex;
+			gap: 8px;
+			align-items: center;
+
+			font-weight: 400;
+
+			input[type='checkbox'] {
+				cursor: pointer;
+				width: 18px;
+				height: 18px;
+				accent-color: var(--color-button);
+			}
+		}
+	}
+}

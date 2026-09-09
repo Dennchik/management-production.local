@@ -1,7 +1,31 @@
 @use '../core/variables' as *;
 @use '../core/mixins' as *;
 
-.material-receipt, .material-issue {
+.material-show {
+		// .material-show__title
+	&__title {
+		font-family: $font-family-secondary;
+		font-size: var(--clamp-32);
+		font-weight: 600;
+		line-height: 1.2;
+		color: var(--color-text);
+	}
+
+	// .material-show__content
+	&__content {
+	}
+
+	// .material-show__row
+	&__row {padding: var(--spacing);
+	}
+
+	// .material-show__actions
+	&__actions{
+		margin-top: var(--padding);
+	}
+}
+
+.material-receipt, .material-issue, .operation-confirm, .material-show {
 	width: 100%;
 
 	// .material-receipt__header
@@ -14,37 +38,47 @@
 
 	// .material-receipt__content
 	&__content {
-		background: var(--color-gray);
-		border-radius: var(--border-radius);
-		box-shadow: var(--box-shadow);
 		overflow: hidden;
+		border-radius: var(--border-radius-8);
+		background: var(--color-gray);
+		box-shadow: var(--box-shadow);
+	}
+
+	// .operation-confirm__text
+	&__text {
+		margin-bottom: var(--padding);
+		color: var(--alarm);
 	}
 
 	// .material-receipt__row
 	&__row {
 		display: grid;
-		grid-template-columns: 220px 1fr;
+		grid-template-columns: 200px 1fr;
 		border-bottom: 1px solid var(--border-color);
 
 		&:last-child {
 			border-bottom: 0;
 		}
+
+		@include screen-425 {
+			grid-template-columns:   1fr;
+		}
 	}
 
 	// .material-receipt__label
 	&__label {
-		padding: 16px 20px;
-		background: var(--color-black);
-		color: var(--color-white);
+		padding: var(--spacing);
 		font-weight: 600;
+		color: var(--color-white);
+		background: var(--color-black);
 	}
 
 	// .material-receipt__value
 	&__value {
-		padding: var(--spacing);
 		display: flex;
 		flex-direction: column;
-		gap: var(--gap);
+		gap: var(--gap-2);
+		padding: var(--spacing);
 	}
 
 	// .material-receipt__roll
@@ -55,11 +89,11 @@
 	}
 
 	// .material-receipt__actions
-	//	&__actions {
-	//		display: flex;
-	//		align-items: center;
-	//		margin-block-end: 2rem;
-	//	}
+	&__actions {
+		display: flex;
+		gap: var(--gap);
+		align-items: center;
+	}
 
 	// .material-receipt__back
 	&__back {

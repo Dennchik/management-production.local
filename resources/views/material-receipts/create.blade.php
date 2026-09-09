@@ -6,10 +6,10 @@
 
 	@include('partials.message')
 
-	<h1 class="main-content__title">Приходный ордер</h1>
-
 	<form class="receipt-order" method="POST" action="{{ route('material-receipts.store') }}">
-
+		<div class="receipt-order__header">
+			<h1 class="main-content__title">Приходный ордер</h1>
+		</div>
 		@csrf
 
 		<div class="receipt-order__body">

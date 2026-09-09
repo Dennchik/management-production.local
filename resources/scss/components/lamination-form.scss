@@ -1,0 +1,91 @@
+@use '../core/variables' as *;
+@use '../core/mixins' as *;
+
+.lamination-form {
+	padding: var(--padding);
+	border-radius: var(--border-radius-8);
+	box-shadow: var(--shadow);
+
+	// .lamination-form__section
+	&__section {
+
+		& + & {
+			margin-top: var(--padding);
+		}
+
+	}
+
+	// .lamination-form__title
+	&__title {
+		margin-bottom: 1rem;
+		font-size: var(--clamp-24);
+		font-weight: 500;
+	}
+
+	// .lamination-form__row
+	&__row {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(200px, 1.5fr)) minmax(150px, 1fr);
+		gap: var(--gap-2);
+		align-items: center;
+	}
+
+	// .lamination-form__textarea-row
+	&__textarea-row {
+		margin-top: var(--padding);
+	}
+
+	// .lamination-form__field
+	&__field {
+	}
+
+	// .lamination-form__input-weight
+	&__input-weight {
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius-8);
+	}
+
+	// .lamination-form__input
+	&__input {
+		cursor: pointer;
+
+		width: 100%;
+		height: 4.2rem;
+		padding: 0 12px;
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius-32);
+
+		font: inherit;
+
+		background: var(--background-gray);
+		outline: none;
+
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	// .lamination-form__label
+	&__label {
+		display: block;
+
+		margin-bottom: 0.8rem;
+		margin-left: 2rem;
+
+		font-size: 1.4rem;
+
+		opacity: 0.8;
+	}
+
+	// .lamination-form__textarea
+	&__textarea {
+	}
+
+	// .lamination-form__actions
+	&__actions {
+		margin-top: var(--padding);
+	}
+}
+
+
+
+
+

@@ -2,29 +2,32 @@
 @use '../core/mixins' as *;
 
 .operation-modal {
-	align-items: center;
-	box-shadow: var(--box-shadow);
-	display: flex;
-	height: 100vh;
-	inset: 0;
-	opacity: 0;
 	pointer-events: none;
 
 	position: fixed;
+	z-index: 15;
+	inset: 0;
+
+	display: flex;
+	align-items: center;
+
+	width: 100%;
+	height: 100vh;
+
+	visibility: hidden;
+	opacity: 0;
+	box-shadow: var(--box-shadow);
+
 	transition: visibility 0s linear 0.3s,
 	opacity 0.3s ease;
-	visibility: hidden;
-	width: 100%;
-
-	z-index: 15;
 
 	// .operation-modal.is-open
 	&.is-open {
-		opacity: 1;
 		pointer-events: auto;
+		visibility: visible;
+		opacity: 1;
 		transition: visibility 0s linear 0s,
 		opacity 0.3s ease;
-		visibility: visible;
 
 		.operation-modal__content {
 			transform: translateY(0);
@@ -35,52 +38,78 @@
 
 	// .operation-modal__overlay
 	&__overlay {
-		background: rgb(0 0 0 / 80%);
 		cursor: pointer;
-
-		inset: 0;
-
 		position: absolute;
+		inset: 0;
+		background: rgb(0 0 0 / 80%);
 	}
 
 	// .operation-modal__content
 	&__content {
-		background: #fff;
-		border-radius: 8px;
-		margin: auto;
-		max-height: calc(100vh - 60px);
-		overflow-y: auto;
-		padding: 4rem;
 		position: relative;
-		opacity: 0;
-
-		//		transform: translateY(20px) scale(0.98);
-		transform: translateY(20px) scale(0);
-		transition: transform 0.3s ease,
-		height 0.3s ease;
-
-		width: min(100%, 700px);
 
 		// Анимация появления содержимого
 		z-index: 1;
+		transform: translateY(20px) scale(0);
+
+		overflow-y: auto;
+
+		width: min(100%, 700px);
+		max-width: 500px;
+		max-height: calc(100vh - 60px);
+		margin: auto;
+		padding: 4rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--border-radius-8);
+
+		color: var(--color-text);
+
+		opacity: 0;
+		background-color: var(--background);
+		box-shadow: var(--box-shadow);
+
+		transition: transform 0.3s ease,
+		height 0.3s ease;
+
 	}
 
 	// .operation-modal__close
+
 	&__close {
-		align-items: center;
+
+		&:hover {
+			color: var(--color-text);
+			background-color: var(--background-gray);
+		}
+
+		&:focus-visible {
+			outline: none;
+			box-shadow: var(--focus-shadow);
+		}
+	}
+
+	&__close {
 		cursor: pointer;
-		display: flex;
-		font-size: inherit;
 
-		justify-content: center;
-		line-height: 1;
 		position: absolute;
-
-		right: 15px;
-		top: 4rem;
-
-		transition: opacity 0.2s ease;
 		z-index: 2;
+		top: 0.4em;
+		right: 1.4rem;
+
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		padding: calc(var(--gap) / 2);
+		border-radius: var(--border-radius);
+
+		font-size: inherit;
+		line-height: 1;
+		color: var(--text-muted);
+
+		background: transparent;
+
+		transition: color 0.2s ease, background-color 0.2s ease;
 
 		&:hover {
 			opacity: 0.6;
@@ -88,7 +117,81 @@
 	}
 }
 
-// Блокировка прокрутки страницы при открытом Модальном окне
+.operation-delete {
+	display: flex;
+	flex-direction: column;
+	gap: var(--gap-2);
+
+	&__header {
+		padding-right: var(--space-xs); // Отступ, чтобы заголовок не перекрывал кнопку закрытия
+	}
+
+	&__title {
+		margin: 0;
+		font-size: var(--clamp-24);
+		font-weight: var(--font-weight-bold);
+		color: var(--color-text);
+	}
+
+	&__content {
+		display: flex;
+		flex-direction: column;
+		gap: var(--gap);
+	}
+
+	&__message {
+		margin: 0;
+		font-size: var(--font-size-normal);
+		line-height: 1.5;
+		color: var(--color-text);
+	}
+
+	&__warning {
+		margin: 0;
+		font-size: var(--font-size-small);
+		font-weight: var(--font-weight-bold);
+		color: var(--alarm);
+	}
+
+	&__actions {
+		display: flex;
+		gap: var(--gap);
+		justify-content: flex-end;
+
+		padding-top: var(--gap);
+		border-top: 1px solid var(--color-border);
+
+		.button {
+			transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+
+			&:focus-visible {
+				outline: none;
+				box-shadow: var(--focus-shadow);
+			}
+
+			&--secondary {
+				border-color: var(--color-border);
+				color: var(--color-text);
+				background-color: var(--background-gray);
+
+				&:hover {
+					background-color: var(--color-selected);
+				}
+			}
+
+			&--danger {
+				color: var(--color-white);
+				background-color: var(--alarm);
+
+				&:hover {
+					opacity: 0.9;
+				}
+			}
+		}
+	}
+}
+
+//* Блокировка прокрутки страницы при открытом Модальном окне
 body.modal-open {
 	overflow: hidden;
 }

@@ -1,9 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
    const modal = document.querySelector('[data-operation-modal]');
+
    if (!modal) return;
 
    const content = modal.querySelector('[data-operation-modal-content]');
    const closeButtons = modal.querySelectorAll('[data-operation-modal-close]');
+   let previouslyFocusedElement = null;
+
+   if (!content) return;
 
    function open() {
       modal.classList.add('is-open');
@@ -12,15 +16,22 @@ document.addEventListener('DOMContentLoaded', () => {
    }
 
    function close() {
+      if (modal.contains(document.activeElement)) {
+         document.activeElement.blur();
+      }
+
       modal.classList.remove('is-open');
-      modal.setAttribute('aria-hidden', 'false');
+      modal.setAttribute('aria-hidden', 'true');
       document.body.classList.remove('modal-open');
       content.innerHTML = '';
+
+      previouslyFocusedElement?.focus();
+      previouslyFocusedElement = null;
    }
 
-   function load(url, errorMsg) {
-      content.innerHTML =
-         '<div class="operation-modal__loader">Загрузка...</div>';
+   function load(url) {
+      previouslyFocusedElement = document.activeElement;
+
       open();
 
       fetch(url, {
@@ -29,43 +40,85 @@ document.addEventListener('DOMContentLoaded', () => {
             Accept: 'text/html',
          },
       })
-         .then((r) => {
-            if (!r.ok) throw new Error();
-            return r.text();
+         .then((response) => {
+            if (!response.ok) {
+               throw new Error();
+            }
+
+            return response.text();
          })
          .then((html) => {
             content.innerHTML = html;
          })
          .catch(() => {
-            content.innerHTML = `<div class="operation-modal__error">${errorMsg}</div>`;
+            close();
          });
    }
 
-   // Открытие по клику на строку таблицы
-   document.addEventListener('click', (e) => {
-      const receipt = e.target.closest('[data-receipt-modal-open]');
-      if (receipt) {
+   function openContent(html) {
+      previouslyFocusedElement = document.activeElement;
+
+      content.innerHTML = html;
+      open();
+   }
+
+   window.operationModal = {
+      open: openContent,
+      close,
+      load,
+   };
+
+   document.addEventListener('click', (event) => {
+      const productionOperation = event.target.closest(
+         '[data-production-operation-open]'
+      );
+
+      if (productionOperation) {
+         event.preventDefault();
+
          load(
-            `/receipts/${receipt.dataset.receiptId}`,
-            'Не удалось загрузить приходный ордер.'
+            `/production/operations/${productionOperation.dataset.productionOperationId}`
          );
+
          return;
       }
 
-      const issue = e.target.closest('[data-issue-modal-open]');
+      const receipt = event.target.closest('[data-receipt-modal-open]');
+
+      if (receipt) {
+         event.preventDefault();
+
+         load(`/receipts/${receipt.dataset.receiptId}`);
+
+         return;
+      }
+
+      const issue = event.target.closest('[data-issue-modal-open]');
+
       if (issue) {
-         load(
-            `/issues/${issue.dataset.issueId}`,
-            'Не удалось загрузить расходный ордер.'
-         );
+         event.preventDefault();
+
+         load(`/issues/${issue.dataset.issueId}`);
+
+         return;
+      }
+
+      const closeButton = event.target.closest('[data-operation-modal-close]');
+
+      if (closeButton) {
+         close();
       }
    });
 
-   // Закрытие
-   closeButtons.forEach((btn) => btn.addEventListener('click', close));
+   closeButtons.forEach((button) => {
+      button.addEventListener('click', close);
+   });
 
-   document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modal.getAttribute('aria-hidden') === 'false') {
+   document.addEventListener('keydown', (event) => {
+      if (
+         event.key === 'Escape' &&
+         modal.getAttribute('aria-hidden') === 'false'
+      ) {
          close();
       }
    });

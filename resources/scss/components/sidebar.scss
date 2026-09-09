@@ -2,80 +2,85 @@
 @use '../core/mixins' as *;
 
 .sidebar {
-	border-radius: var(--border-radius);
-	color: var(--color-white);
-	height: 100%;
+	position: sticky;
+	z-index: 9;
+	top: calc(64px + 2rem);
+
+	height: calc(100vh - 64px - 4rem);
+	border-radius: var(--border-radius-8);
+
+	color: var(--color-text);
+
+	@include screen-768 {
+		position: fixed;
+	}
 
 	// .sidebar__body
 	&__body {
-		background: rgb(61 61 61);
-		border-radius: var(--border-radius);
-		padding: 7px;
-		position: sticky;
-		top: 64px;
-		height: calc(100vh - 64px);
+		height: 100%;
 	}
 
 	// .sidebar__nav
 	&__nav {
-		width: fit-content;
-		background-color: var(--color-black);
-		border-radius: 8px;
+		overflow-y: auto;
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
-		padding: 24px 16px;
-		height: calc(100vh - 76px);
+
+		width: fit-content;
+		height: 100%;
+		padding: var(--space-yxs);
+		border-radius: var(--border-radius-8);
+
+		background-color: var(--color-white);
+		box-shadow: var(--box-shadow);
 
 		.icon {
-			color: var(--color-orange);
+			margin-right: var(--padding);
 			font-size: 2rem;
-			padding-right: var(--padding);
+			color: var(--color-button);
 		}
 	}
 
 	// .sidebar__link
 	&__link {
-		align-items: center;
-		border-radius: 8px;
-		color: var(--color-white);
 		display: flex;
+		align-items: center;
+
+		padding: 1rem;
+		border-radius: var(--border-radius-8);
+
 		font-weight: var(--font-weight-bold);
 		line-height: 1;
+		white-space: nowrap;
 
-		padding: var(--padding);
 		transition: color 0.4s ease,
 		background-color 0.5s ease;
 
-		white-space: nowrap;
-
 		&:hover {
 			background-color: var(--border-color);
-			color: var(--color-black);
 		}
 
 		&.is-active {
 			background-color: var(--border-color);
-			color: var(--color-black);
 		}
 
 	}
 
 	// .sidebar__section
 	&__section {
-		width: fit-content;
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
+		width: fit-content;
 	}
 
 	// .sidebar__section-title
 	&__section-title {
-		color: var(--color-pink);
-
+		display: flex;
+		align-items: center;
+		padding: 1rem;
 		font-weight: var(--font-weight-bold);
-		letter-spacing: 0.08em;
-		padding: var(--space-yxs);
 	}
 
 	// .sidebar__submenu
@@ -87,6 +92,7 @@
 
 	// .sidebar__link--submenu
 	&__link--submenu {
-		padding-left: var(--space-xs);
+		margin-left: 2rem;
+		padding: 1rem 1.6rem;
 	}
 }

@@ -110,7 +110,7 @@ button:focus,
 button:active,
 textarea:focus,
 textarea:active {
-	// outline: none;
+	 outline: none;
 }
 
 button::-moz-focus-inner {
@@ -145,18 +145,19 @@ h6 {
 //  * Изменить стиль выделения текста
 ::selection {
 	color: var(--color-text);
-	background-color: var(--color-text-secondary);
+	background-color: var(--color-selected);
 }
 
 /// * Изменить стиль полосы прокрутки (scrollbar)
 ::-webkit-scrollbar {
 	position: fixed;
-	width: 0.4rem;
+	width: 0.3rem;
+	height: 0.3rem;
 	padding: 0.031em;
 }
 
 ::-webkit-scrollbar-track {
-	background-color: var(--scrollbar-thumb-color);
+	background-color: var(--transparent);
 }
 
 ::-webkit-scrollbar-thumb {

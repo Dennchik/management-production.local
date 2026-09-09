@@ -5,32 +5,41 @@
 @use 'core/iconfonts';
 
 //todo  --------------------------- Core ---------------------------------------
+
 @use 'core/reset' as *;
 @use 'core/variables' as *;
 @use 'core/mixins' as *;
-////@use 'core/extend' as *;
+
 //todo  --------------------------- layouts ------------------------------------
+
 @use 'layouts/page';
 @use 'layouts/header';
 @use 'layouts/main-content';
 @use 'layouts/bem';
 
 //todo  --------------------------- Pages --------------------------------------
+
+@use 'pages/material-modal';
 @use 'pages/warehouse';
-@use 'pages/material-receipt';
-@use 'pages/material-rolls';
+@use 'pages/operations';
 
 //todo  -------------------------- Partials ------------------------------------
+
 @use 'partials/message.blade';
 @use 'partials/its-select';
 
 //todo  -------------------------- Components ----------------------------------
+
 @use 'components/sidebar';
-@use 'components/receipt-order';
+@use 'components/order-form';
 @use 'components/warehouse-filter';
-@use 'components/warehouse-material';
+@use 'components/lamination-form';
+@use 'components/operation-form';
+@use 'components/operation-view';
+@use 'components/s';
 
 //todo  -------------------------- Modules -------------------------------------
+
 @use 'modules/operation-modal';
 
 // todo --------------------------- Style --------------------------------------
@@ -50,7 +59,7 @@
 	margin: 0 auto;
 	padding: 0 2rem;
 
-	@include screen-490 {
+	@include screen-320 {
 		padding: 0 10px;
 	}
 }

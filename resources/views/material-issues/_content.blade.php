@@ -1,5 +1,4 @@
 <div class="material-issue">
-
 	<div class="material-issue__header">
 
 		<h2 class="main-content__title">
@@ -9,7 +8,6 @@
 	</div>
 
 	<div class="material-issue__content">
-
 		<div class="material-issue__row">
 			<div class="material-issue__label">Дата</div>
 

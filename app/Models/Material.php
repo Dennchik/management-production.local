@@ -13,6 +13,7 @@
 			'thickness',
 			'format',
 			'identifier',
+			'is_active',
 			'lamination_allowed',
 			'priming_allowed',
 			'cutting_allowed',
@@ -25,6 +26,7 @@
 			return [
 					'grammage' => 'decimal:2',
 					'thickness' => 'decimal:2',
+					'is_active' => 'boolean',
 					'lamination_allowed' => 'boolean',
 					'priming_allowed' => 'boolean',
 					'cutting_allowed' => 'boolean',

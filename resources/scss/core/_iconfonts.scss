@@ -4,6 +4,7 @@
 	font-family: '#{$icomoon-font-family}';
 	font-weight: normal;
 	font-style: normal;
+
 	font-display: block;
 	src: url('#{$icomoon-font-path}/#{$icomoon-font-family}.eot?1q423w');
 	src: url('#{$icomoon-font-path}/#{$icomoon-font-family}.eot?1q423w#iefix') format('embedded-opentype'),
@@ -25,297 +26,280 @@
 	letter-spacing: 0;
 }
 
+.icon-user-minus {
+	&::before {
+		content: $icon-user-minus;
+	}
+}
+.icon-trash {
+	&::before {
+		content: $icon-trash;
+	}
+}
+.icon-upload {
+	&::before {
+		content: $icon-upload;
+	}
+}
+.icon-pencil {
+	&::before {
+		content: $icon-pencil;
+	}
+}
+.icon-quill {
+	&::before {
+		content: $icon-quill;
+	}
+}
+.icon-home-house {
+	&::before {
+		content: $icon-home-house;
+	}
+}
+.icon-indent-increase {
+	&::before {
+		content: $icon-indent-increase;
+	}
+}
+.icon-indent-decrease {
+	&::before {
+		content: $icon-indent-decrease;
+	}
+}
+.icon-angles-left-solid {
+	&::before {
+		content: $icon-angles-left-solid;
+	}
+}
+.icon-angles-right-solid {
+	&::before {
+		content: $icon-angles-right-solid;
+	}
+}
+.icon-angles-up-solid {
+	&::before {
+		content: $icon-angles-up-solid;
+	}
+}
+.icon-angles-down-solid {
+	&::before {
+		content: $icon-angles-down-solid;
+	}
+}
+.icon-file-excel {
+	&::before {
+		content: $icon-file-excel;
+	}
+}
+.icon-edit {
+	&::before {
+		content: $icon-edit;
+	}
+}
+.icon-pencil-square-o {
+	&::before {
+		content: $icon-pencil-square-o;
+	}
+}
 .icon-roll {
-	&:before {
+	&::before {
 		content: $icon-roll;
 	}
 }
-
 .icon-warehouse {
-	&:before {
+	&::before {
 		content: $icon-warehouse;
 	}
 }
-
 .icon-crane {
-	&:before {
+	&::before {
 		content: $icon-crane;
 	}
 }
-
 .icon-home-com {
-	&:before {
+	&::before {
 		content: $icon-home-com;
 	}
 }
-
 .icon-users-group {
-	&:before {
+	&::before {
 		content: $icon-users-group;
 	}
 }
-
 .icon-link {
-	&:before {
+	&::before {
 		content: $icon-link;
 	}
 }
-
 .icon-settings-cogs {
-	&:before {
+	&::before {
 		content: $icon-settings-cogs;
 	}
 }
-
 .icon-sign-out {
-	&:before {
+	&::before {
 		content: $icon-sign-out;
 	}
 }
-
 .icon-angle-left {
-	&:before {
+	&::before {
 		content: $icon-angle-left;
 	}
 }
-
 .icon-angle-right {
-	&:before {
+	&::before {
 		content: $icon-angle-right;
 	}
 }
-
 .icon-angle-up {
-	&:before {
+	&::before {
 		content: $icon-angle-up;
 	}
 }
-
 .icon-angle-down {
-	&:before {
+	&::before {
 		content: $icon-angle-down;
 	}
 }
-
 .icon-enter {
-	&:before {
+	&::before {
 		content: $icon-enter;
 	}
 }
-
 .icon-exit {
-	&:before {
+	&::before {
 		content: $icon-exit;
 	}
 }
-
 .icon-exchange {
-	&:before {
+	&::before {
 		content: $icon-exchange;
 	}
 }
-
 .icon-folder-open {
-	&:before {
+	&::before {
 		content: $icon-folder-open;
 	}
 }
-
 .icon-calculator {
-	&:before {
+	&::before {
 		content: $icon-calculator;
 	}
 }
-
 .icon-factory {
-	&:before {
+	&::before {
 		content: $icon-factory;
 	}
 }
-
 .icon-order-list {
-	&:before {
+	&::before {
 		content: $icon-order-list;
 	}
 }
-
 .icon-search-doc {
-	&:before {
+	&::before {
 		content: $icon-search-doc;
 	}
 }
-
 .icon-copy-files {
-	&:before {
+	&::before {
 		content: $icon-copy-files;
 	}
 }
-
 .icon-file-word {
-	&:before {
+	&::before {
 		content: $icon-file-word;
 	}
 }
-
 .icon-file-text {
-	&:before {
+	&::before {
 		content: $icon-file-text;
 	}
 }
-
 .icon-print1 {
-	&:before {
+	&::before {
 		content: $icon-print1;
 	}
 }
-
 .icon-close {
-	&:before {
+	&::before {
 		content: $icon-close;
 	}
 }
-
 .icon-caret-right {
-	&:before {
+	&::before {
 		content: $icon-caret-right;
 	}
 }
-
+.icon-eye {
+	&::before {
+		content: $icon-eye;
+	}
+}
+.icon-equalizer-settings {
+	&::before {
+		content: $icon-equalizer-settings;
+	}
+}
+.icon-settings-options {
+	&::before {
+		content: $icon-settings-options;
+	}
+}
+.icon-settings-generate {
+	&::before {
+		content: $icon-settings-generate;
+	}
+}
+.icon-recycle-arrows {
+	&::before {
+		content: $icon-recycle-arrows;
+	}
+}
+.icon-archive {
+	&::before {
+		content: $icon-archive;
+	}
+}
+.icon-lock-security {
+	&::before {
+		content: $icon-lock-security;
+	}
+}
+.icon-catalog {
+	&::before {
+		content: $icon-catalog;
+	}
+}
+.icon-print {
+	&::before {
+		content: $icon-print;
+	}
+}
+.icon-cut {
+	&::before {
+		content: $icon-cut;
+	}
+}
+.icon-check {
+	&::before {
+		content: $icon-check;
+	}
+}
+.icon-minus {
+	&::before {
+		content: $icon-minus;
+	}
+}
+.icon-plus {
+	&::before {
+		content: $icon-plus;
+	}
+}
 .icon-information-outline {
-	&:before {
+	&::before {
 		content: $icon-information-outline;
 	}
 }
 
-.icon-home-house {
-	&:before {
-		content: $icon-home-house;
-	}
-}
-
-.icon-embed {
-	&:before {
-		content: $icon-embed;
-	}
-}
-
-.icon-embed-code {
-	&:before {
-		content: $icon-embed-code;
-	}
-}
-
-.icon-indent-increase {
-	&:before {
-		content: $icon-indent-increase;
-	}
-}
-
-.icon-indent-decrease {
-	&:before {
-		content: $icon-indent-decrease;
-	}
-}
-
-.icon-angles-left-solid {
-	&:before {
-		content: $icon-angles-left-solid;
-	}
-}
-
-.icon-angles-right-solid {
-	&:before {
-		content: $icon-angles-right-solid;
-	}
-}
-
-.icon-angles-up-solid {
-	&:before {
-		content: $icon-angles-up-solid;
-	}
-}
-
-.icon-angles-down-solid {
-	&:before {
-		content: $icon-angles-down-solid;
-	}
-}
-
-.icon-bin-trashcan {
-	&:before {
-		content: $icon-bin-trashcan;
-	}
-}
-
-.icon-file-excel {
-	&:before {
-		content: $icon-file-excel;
-	}
-}
-
-.icon-equalizer-settings {
-	&:before {
-		content: $icon-equalizer-settings;
-	}
-}
-
-.icon-settings-options {
-	&:before {
-		content: $icon-settings-options;
-	}
-}
-
-.icon-settings-generate {
-	&:before {
-		content: $icon-settings-generate;
-	}
-}
-
-.icon-recycle-arrows {
-	&:before {
-		content: $icon-recycle-arrows;
-	}
-}
-
-.icon-archive {
-	&:before {
-		content: $icon-archive;
-	}
-}
-
-.icon-lock-security {
-	&:before {
-		content: $icon-lock-security;
-	}
-}
-
-.icon-catalog {
-	&:before {
-		content: $icon-catalog;
-	}
-}
-
-.icon-print {
-	&:before {
-		content: $icon-print;
-	}
-}
-
-.icon-cut {
-	&:before {
-		content: $icon-cut;
-	}
-}
-
-.icon-minus {
-	&:before {
-		content: $icon-minus;
-	}
-}
-
-.icon-plus {
-	&:before {
-		content: $icon-plus;
-	}
-}
 

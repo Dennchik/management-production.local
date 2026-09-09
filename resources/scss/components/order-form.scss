@@ -1,0 +1,151 @@
+@use '../core/variables' as *;
+@use '../core/mixins' as *;
+
+.issue-order {
+	// .receipt-order__line
+	&__line {
+		display: grid;
+		grid-template-columns:  1.5fr repeat(2, 0.5fr);
+		gap: 2rem;
+	}
+}
+
+.receipt-order {
+	// receipt-order__rolls
+	&__rolls {
+		display: flex;
+		flex-direction: column;
+		gap: var(--gap);
+	}
+
+	// .receipt-order__roll
+	&__roll {
+		display: flex;
+		flex-direction: column;
+		gap: var(--gap);
+	}
+
+	// .receipt-order__rolls-list
+	&__rolls-list {
+		display: flex;
+		gap: var(--gap);
+	}
+
+	// .receipt-order__rolls-header
+	&__rolls-header {
+		display: flex;
+		gap: var(--gap);
+		align-items: center;
+	}
+
+	// .receipt-order__line
+	&__line {
+		display: flex;
+		gap: 2rem;
+
+		&:nth-child(1) {
+
+			.receipt-order__field {
+				flex: 1 1 48%;
+				width: calc(48% - 6rem);
+
+			}
+		}
+
+		&:nth-child(2) {
+			flex: 1 1 auto;
+			width: 100%;
+
+			.receipt-order__field {
+				width: 100%;
+			}
+		}
+	}
+}
+
+.receipt-order, .issue-order {
+	// receipt-order__body
+	&__body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--gap-3);
+
+		padding: var(--padding);
+		border-radius: var(--border-radius-8);
+
+		background: var(--color-white);
+		box-shadow: var(--box-shadow);
+	}
+
+	// .receipt-order__header
+	&__header {
+		margin-bottom: var(--padding);
+	}
+
+	// .receipt-order__field
+	&__field {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		width: 100%;
+	}
+
+	// .receipt-order__label
+	&__label {
+		padding-left: 1.6rem;
+		font-size: 1.4rem;
+		color: var(--color-text);
+		opacity: 0.7;
+	}
+
+	// .receipt-order__input
+	&__input {
+		width: 100%;
+		min-height: 44px;
+		padding: 0 14px;
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius-32);
+
+		color: var(--color-text);
+
+		outline: none;
+
+		transition: box-shadow 0.2s ease,
+		background-color 0.2s ease;
+
+		&:focus {
+			border-color: var(--border-color);
+		}
+
+		&:read-only {
+			user-select: none;
+			opacity: 0.7;
+			background-color: var(--background-gray);
+		}
+	}
+
+	// .receipt-order__textarea
+	&__textarea {
+		resize: vertical;
+		width: 100%;
+		min-height: 120px;
+		padding: 12px 14px;
+	}
+
+	// .receipt-order__actions
+	&__actions {
+		display: flex;
+		gap: 2.4rem;
+	}
+
+	// .receipt-order__button
+	&__button {
+		transition: opacity 0.2s ease;
+
+		&:hover {
+			opacity: 0.8;
+		}
+	}
+}
+
+

@@ -104,11 +104,11 @@ export function initMaterialIssueModule() {
     * Hidden input material_id уже содержит old('material_id'),
     * а roll_id содержит old('roll_id').
     *
-    * CustomSelect восстанавливает визуальный выбор материала,
-    * но намеренно не вызывает select:change.
+    * CustomSelect восстанавливает визуальный выбор материала, но намеренно
+    * не вызывает select:change.
     * Поэтому здесь вручную запускаем необходимую логику.
     */
-   restoreFormState();
+   void restoreFormState();
 
    /*
     * Заполняет информацию о выбранном материале.
@@ -193,24 +193,24 @@ export function initMaterialIssueModule() {
       rollList.innerHTML = rolls
          .map(
             (roll) => `
-<button
-class="material-select__select-option select__item"
-type="button"
-role="option"
-data-value="${escapeHtml(roll.id ?? '')}"
-data-roll="${escapeHtml(roll.roll_number ?? '')}"
-data-weight="${escapeHtml(roll.weight ?? '')}"
-aria-selected="false">
-
-	<span>
-	${escapeHtml(roll.roll_number ?? '')}
-|
-${escapeHtml(roll.weight ?? '')}
-кг
-</span>
-
-</button>
-`
+                  <button
+                  class="material-select__select-option select__item"
+                  type="button"
+                  role="option"
+                  data-value="${escapeHtml(roll.id ?? '')}"
+                  data-roll="${escapeHtml(roll.roll_number ?? '')}"
+                  data-weight="${escapeHtml(roll.weight ?? '')}"
+                  aria-selected="false">
+                  
+                     <span>
+                     ${escapeHtml(roll.roll_number ?? '')}
+                  |
+                  ${escapeHtml(roll.weight ?? '')}
+                  кг
+                  </span>
+                  
+                  </button>
+                  `
          )
          .join('');
 

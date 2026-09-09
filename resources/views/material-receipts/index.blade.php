@@ -4,7 +4,7 @@
 
 @section('content')
 
-	<div class="material-receipts">
+	<div class="main-content__content">
 
 		{{-- Фильтр --}}
 		@include('layouts.filters-actions', [
@@ -13,23 +13,19 @@
 			'filterReset' => route('material-receipts.index'),
 		])
 
-		<h1 class="main-content__title">Приходные ордера</h1>
-
 		{{-- Действия --}}
-		<div class="material-receipts__actions">
-
-			<a class="material-receipts__create button"
+		<div class="main-content__header">
+			<h1 class="main-content__title">Приходные ордера</h1>
+			<a class="material__create button"
 					href="{{ route('material-receipts.create') }}">
 				<span>Новый приход</span>
 			</a>
-
 		</div>
-
+		<div class="material">
 		{{-- Список приходных ордеров --}}
-		<div class="material-receipts__table-wrapper">
+			<div class="material__table-wrapper">
 
-			<table class="material-receipts__table">
-
+			<table class="material__table">
 				<thead>
 				<tr>
 					<th>Дата</th>
@@ -43,61 +39,32 @@
 				<tbody>
 				{{-- @var \App\Models\MaterialReceipt $receipt --}}
 				@forelse ($receipts as $receipt)
-
-					<tr class="material-receipts__row"
-							data-receipt-modal-open
-							data-receipt-id="{{ $receipt->getKey()}}">
-
+					<tr class="material__material-row" data-receipt-modal-open data-receipt-id="{{ $receipt->getKey()}}">
 						{{-- Дата --}}
 						<td> {{ $receipt->created_at->format('d.m.Y H:i') }} </td>
-
 						{{-- Материалы --}}
 						<td>
-
 							@foreach ($receipt->items->unique('material_id') as $item)
-
-								<div>
-									{{ $item->material->name }}
-								</div>
-
+								<div>{{ $item->material->name }}</div>
 							@endforeach
-
 						</td>
-
 						{{-- Количество рулонов --}}
-						<td>
-							{{ $receipt->items->count() }}
-						</td>
-
+						<td>{{ $receipt->items->count() }}</td>
 						{{-- Общий вес --}}
-						<td>
-							{{ number_format($receipt->items->sum('weight'), 3, '.', '') }}
-							кг
-						</td>
-
+						<td>{{ number_format($receipt->items->sum('weight'), 3, '.', '') }} кг</td>
 						{{-- Пользователь --}}
-						<td>
-							{{ $receipt->user->name }}
-						</td>
-
+						<td>{{ $receipt->user->name }}</td>
 					</tr>
 
 				@empty
-
 					<tr>
-						<td class="material-receipts__empty" colspan="5">
-							Приходных ордеров пока нет
-						</td>
+						<td class="material__empty" colspan="5">Приходных ордеров пока нет</td>
 					</tr>
-
 				@endforelse
-
 				</tbody>
-
 			</table>
-
 		</div>
-
+		</div>
 	</div>
 
 @endsection

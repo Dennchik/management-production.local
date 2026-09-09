@@ -1,32 +1,194 @@
 @use '../core/variables' as *;
 @use '../core/mixins' as *;
 
-.warehouse, .material-receipts,
-.material-issues, .warehouse-material, .material {
-	width: 100%;
-
-	// .material-receipts__actions
-	&__actions {
-		display: flex;
-		justify-content: flex-end;
-		margin-block: 0 1.5rem;
+.materials {
+	// .materials__row--edit
+	&__row--edit {
+		border-color: var(--color-blue) !important;
+		border-style: solid;
+		border-width: 0 3px;
 	}
 
-	// material-receipts__row
+	// .materials__table-edit
+	&__table-edit {
+		text-align: center;
+	}
+
+	// .materials__actions-icons
+	&__actions-icons {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+
+		.icon {
+			display: flex;
+			align-items: center;
+			font-size: var(--materials-icon-size);
+		}
+
+		.icon-eye {
+			color: var(--color-orange);
+		}
+
+		.icon-edit {
+			color: var(--color-blue);
+		}
+
+		.icon-trash {
+			font-size: var(--materials-icon-size-middle);
+			color: var(--alarm);
+		}
+
+		.icon-close {
+			font-size: var(--materials-icon-size-middle);
+			color: var(--alarm);
+		}
+
+		.icon-check {
+			font-size: 2.4rem;
+			color: var(---color-green);
+		}
+	}
+}
+
+.material {
+	width: 100%;
+	font-size: 1.4rem;
+
+	// .material__content
+	&__content {
+		display: flex;
+		flex-direction: column;
+		gap: var(--gap-3);
+	}
+
+	&__table-wrapper {
+		position: relative;
+		overflow: auto;
+		max-height: 70vh;
+	}
+
+	// .material__back
+	&__back {
+	}
+
+	// .material__section
+	&__section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--gap-2);
+		width: 100%;
+		
+		@include min-690 {
+			flex-direction: row;
+		}
+	}
+
+	// .material__section-title
+	&__section-title {
+		margin-bottom: var(--padding);
+	}
+
+	// .main-content__head
+	&__head {
+		display: flex;
+	}
+
+	// .warehouse-material__label
+	&__label {
+		flex: 1 0 auto;
+
+		padding: var(--spacing);
+
+		font-weight: 500;
+		color: var(--color-white);
+
+		background: var(--color-black);
+	}
+
+	&__label, &__value, &__stat {
+		flex: 1 1;
+
+		&:nth-child(1) {
+			flex: 0 0 20%;
+		}
+
+		&:not(:last-child) {
+			border-right: 1px solid var(--border-color);
+		}
+	}
+
+	// .material__column
+	&__column {
+		display: flex;
+		flex: 0 1 calc(50% - var(--gap-2));
+		flex-direction: column;
+
+		.material__stat,
+		.material__label {
+			flex: 0 1 auto;
+			width: 50%;
+		}
+
+		.material__value {
+			flex: 0 1 auto;
+			width: 50%;
+		}
+	}
+
+	// .material__rows
+	&__rows {
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+
+		width: 100%;
+		border-radius: var(--border-radius-8);
+
+		background: var(--color-gray);
+		box-shadow: var(--box-shadow);
+
+		&.show-roll {
+			.material__row {
+				display: grid;
+				grid-template-columns: minmax(140px, 1fr) 2.3fr;
+			}
+		}
+	}
+
+	// .material__row
 	&__row {
 		cursor: pointer;
+
 		position: relative;
+
+		display: flex;
+		flex: 1 1;
+
+		border-bottom: 1px solid var(--border-color);
 
 		&::after {
 			content: '';
 			position: absolute;
 			inset: 0;
 		}
+
+		&:not(:last-child) {
+			border-right: 1px solid var(--border-color);
+		}
+
+		&:last-child {
+			border-bottom: 0;
+		}
 	}
 
-	// .warehouse__material-row
+	// .material__value
+	&__value {
+		padding: var(--spacing);
+		white-space: nowrap;
+	}
 
-	&__roll-row, &__material-row, &__row {
+	&__roll-row, &__row, &__material-row {
 		cursor: pointer;
 		transition: background 0.2s ease-in-out;
 
@@ -41,7 +203,50 @@
 		}
 	}
 
-	// .warehouse__material-link
+	// .material__stats
+	&__stats {
+		overflow: hidden;
+		display: inline-flex;
+
+		width: 100%;
+		border-radius: var(--border-radius-8);
+
+		background: var(--color-gray);
+		box-shadow: var(--box-shadow);
+	}
+
+	// .material__stat
+	&__stat {
+		display: flex;
+		flex-direction: column;
+	}
+
+	// .material__stat-label
+	&__stat-label {
+		padding: var(--spacing);
+		font-weight: 500;
+		color: var(--color-white);
+		background: var(--color-black);
+	}
+
+	// .material__stat-value
+	&__stat-value {
+		padding: var(--spacing);
+	}
+
+	// .material__table-wrapper
+	&__table-wrapper {
+	}
+
+	// .material__table
+	&__table {
+	}
+
+	// .material__roll-link
+	&__roll-link {
+	}
+
+	// .material__material-link
 	&__material-link {
 		&::after {
 			content: '';
@@ -50,9 +255,13 @@
 		}
 	}
 
-	// .warehouse__empty
+	// .material__empty
 	&__empty {
 		padding: 30px;
+
+		font-size: var(--font-size-normal);
+		font-weight: 500;
+		color: red;
 		text-align: center;
 	}
 }

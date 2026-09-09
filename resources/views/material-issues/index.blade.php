@@ -4,8 +4,7 @@
 
 @section('content')
 
-	<div class="material-issues">
-
+	<div class="main-content__content">
 		{{-- Фильтр --}}
 		@include('layouts.filters-actions', [
 			'filterType' => 'issues',
@@ -13,64 +12,47 @@
 			'filterReset' => route('material-issues.index'),
 		])
 
-		<h1 class="main-content__title">Расходные ордера</h1>
-
 		{{-- Действия --}}
-		<div class="material-issues__actions">
-
-			<a
-					class="material-issues__create button"
-					href="{{ route('material-issues.create') }}">
+		<div class="main-content__header">
+			<h1 class="main-content__title">Расходные ордера</h1>
+			<a class="material__create button" href="{{ route('material-issues.create') }}">
 				<span>Новый расход</span>
 			</a>
-
 		</div>
-
-		{{-- Список расходных ордеров --}}
-		<div class="material-issues__table-wrapper">
-
-			<table class="material-issues__table">
-
-				<thead>
-				<tr>
-					<th>Дата</th>
-					<th>Материал</th>
-					<th>Рулон</th>
-					<th>Пользователь</th>
-				</tr>
-				</thead>
-
-				<tbody>
-
-				@forelse ($issues as $issue)
-
-					<tr class="material-issues__row"
-							data-issue-modal-open
-							data-issue-id="{{ $issue->getKey()}}">
-
-						{{-- Дата --}}
-						<td> {{ $issue->created_at->format('d.m.Y H:i') }} </td>
-						<td> {{ $issue->material->name }} </td>
-						<td> {{ $issue->roll->roll_number }} </td>
-						<td> {{ $issue->user->name }} </td>
-					</tr>
-
-				@empty
-
+		<div class="material">
+			{{-- Список расходных ордеров --}}
+			<div class="material__table-wrapper">
+				<table class="material__table">
+					<thead>
 					<tr>
-						<td class="material-issues__empty" colspan="4">
-							Расходных ордеров пока нет
-						</td>
+						<th>Дата</th>
+						<th>Материал</th>
+						<th>Рулон</th>
+						<th>Пользователь</th>
 					</tr>
+					</thead>
+					<tbody>
 
-				@endforelse
+					@forelse ($issues as $issue)
+						<tr class="material__material-row" data-issue-modal-open data-issue-id="{{ $issue->getKey()}}">
+							{{-- Дата --}}
+							<td> {{ $issue->created_at->format('d.m.Y H:i') }} </td>
+							<td> {{ $issue->material->name }} </td>
+							<td> {{ $issue->roll->roll_number }} </td>
+							<td> {{ $issue->user->name }} </td>
+						</tr>
 
-				</tbody>
-
-			</table>
-
+					@empty
+						<tr>
+							<td class="material__empty" colspan="4">
+								Расходных ордеров пока нет
+							</td>
+						</tr>
+					@endforelse
+					</tbody>
+				</table>
+			</div>
 		</div>
-
 	</div>
 
 @endsection

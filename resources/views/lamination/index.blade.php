@@ -5,10 +5,10 @@
 @section('content')
 
 	<div class="lamination">
-		<h1 class="main-content__title">Ламинация</h1>
 
 		{{-- Действия --}}
-		<div class="lamination__actions">
+		<div class="material__actions">
+			<h1 class="main-content__title">Ламинация</h1>
 			<a class="lamination__create button" href="{{ route('lamination.create') }}">
 				<span>Новое задание</span>
 			</a>

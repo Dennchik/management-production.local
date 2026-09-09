@@ -3,9 +3,9 @@
 @section('title', 'Главная')
 
 @section('content')
-
-	<h1 class="main-content__title">Главная</h1>
-
+	<div class="main-content__header">
+		<h1 class="main-content__title">Главная</h1>
+	</div>
 	{{-- Информационные блоки --}}
 	<section class="main-content__section">
 		<h2 class="main-content__section-title">Состояние производства</h2>
@@ -52,9 +52,7 @@
 				<strong class="main-content__stat-value">
 					{{ number_format($cuttingPfWeight, 0, '.', ' ') }} кг
 				</strong>
-				<span class="main-content__stat-sub">
-				  {{ $cuttingPfRolls }} рулонов
-				</span>
+				<span class="main-content__stat-sub">{{ $cuttingPfRolls }} рулонов </span>
 			</a>
 
 			{{-- 5. ПФ на печать --}}
@@ -142,41 +140,41 @@
 
 								{{-- Приход --}}
 								<span class="main-content__operation-material">
-								@foreach ($operation['receipt']->items as $item)
+										@foreach ($operation['receipt']->items as $item)
 										{{ $item->material->name }}@if (!$loop->last)
 											,
 										@endif
 									@endforeach </span>
 								<span class="main-content__operation-roll">
-									Рулонов: {{ $operation['receipt']->items->count() }}
-								</span>
+											Рулонов: {{ $operation['receipt']->items->count() }}
+										</span>
 
 								<strong class="main-content__operation-weight">
 									+{{ number_format( $operation['receipt']->items->sum('weight'), 3, '.', '' ) }} кг
 								</strong>
 
 								<span class="main-content__operation-user">
-									{{ $operation['receipt']->user->name }}
-								</span>
+											{{ $operation['receipt']->user->name }}
+										</span>
 
 							@else
 								{{-- Расход --}}
 								<span class="main-content__operation-material">
-								 {{ $operation['issue']->material->name }}
-							  </span>
+										 {{ $operation['issue']->material->name }}
+									  </span>
 
 								<span class="main-content__operation-roll">
-								 Рулон №{{ $operation['issue']->roll->roll_number }}
-							  </span>
+										 Рулон №{{ $operation['issue']->roll->roll_number }}
+									  </span>
 
 								<strong class="main-content__operation-weight">
 									−{{ number_format(
-								$operation['issue']->weight, 3, '.', '' ) }} кг
+										$operation['issue']->weight, 3, '.', '' ) }} кг
 								</strong>
 
 								<span class="main-content__operation-user">
-									{{ $operation['issue']->user->name }}
-								</span>
+											{{ $operation['issue']->user->name }}
+										</span>
 							@endif
 						</div>
 					</article>

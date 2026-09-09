@@ -1,11 +1,7 @@
 <div class="material-receipt">
 
 	<div class="material-receipt__header">
-
-		<h2 class="main-content__title">
-			Приходный ордер
-		</h2>
-
+		<h2 class="main-content__title">Приходный ордер</h2>
 	</div>
 
 	<div class="material-receipt__content">
@@ -38,24 +34,10 @@
 
 					<div class="material-receipt__roll">
 
-						<div>
-							<strong>{{ $item->material->name }}</strong>
-						</div>
-
-						<div>
-							Идентификатор:
-							{{ $item->material->identifier }}
-						</div>
-
-						<div>
-							Номер рулона:
-							{{ $item->roll->roll_number }}
-						</div>
-
-						<div>
-							Вес:
-							{{ number_format($item->weight, 3, '.', '') }} кг
-						</div>
+						<div><strong>{{ $item->material->name }}</strong></div>
+						<div>Идентификатор: {{ $item->material->identifier }}</div>
+						<div>Номер рулона: {{ $item->roll->roll_number }}</div>
+						<div>Вес: {{ number_format($item->weight, 3, '.', '') }} кг </div>
 
 					</div>
 
@@ -78,14 +60,9 @@
 
 			<div class="material-receipt__row">
 				<div class="material-receipt__label">Комментарий</div>
-
-				<div class="material-receipt__value">
-					{{ $receipt->comment }}
-				</div>
+				<div class="material-receipt__value">{{ $receipt->comment }}</div>
 			</div>
 
 		@endif
-
 	</div>
-
 </div>
