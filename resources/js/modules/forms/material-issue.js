@@ -2,7 +2,7 @@ import { CustomSelect } from '../../assets/select.js';
 import { RollsApiService } from '../../services/rollsApi.js';
 
 export function initMaterialIssueModule() {
-   const form = document.querySelector('.issue-order');
+   const form = document.querySelector('[data-issue-order]');
 
    if (!form) return;
 

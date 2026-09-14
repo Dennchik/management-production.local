@@ -45,6 +45,32 @@
 		</div>
 
 		<div class="material-show__row">
+			<span>Каталог:</span>
+			<label>
+				<select class="catalogs__parent-select" name="catalog_id">
+					<option value="">— Нет —</option>
+					@foreach ($catalogOptions as $catalogId => $catalogLabel)
+						<option value="{{ $catalogId }}" {{ ($selectedCatalogId ?? null) == $catalogId ? 'selected' : '' }}>
+							{{ $catalogLabel }}
+						</option>
+					@endforeach
+				</select>
+			</label>
+		</div>
+
+		<div class="material-show__row">
+			<span>Тип материала:</span>
+			<label>
+				<select class="catalogs__parent-select" name="material_type">
+					@foreach (\App\Models\Material::TYPES as $typeValue => $typeLabel)
+						<option value="{{ $typeValue }}" {{ $typeValue === 'raw' ? 'selected' : '' }}>{{ $typeLabel }}</option>
+					@endforeach
+				</select>
+			</label>
+		</div>
+
+		{{-- Разрешённые операции: скрыто до запуска функционала --}}
+		<div class="material-show__row" hidden>
 			<span>Разрешённые операции:</span>
 
 			<div class="material-form__operations">

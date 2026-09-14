@@ -7,7 +7,7 @@
 	@include('partials.message')
 
 
-	<form class="issue-order" method="POST" action="{{ route('material-issues.store') }}" novalidate>
+	<form class="issue-order" method="POST" action="{{ route('material-issues.store') }}" data-issue-order novalidate>
 		<div class="issue-order__header">
 			<h1 class="main-content__title">Расходный ордер</h1>
 		</div>

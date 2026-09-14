@@ -136,7 +136,7 @@
 				DB::transaction(function () use ($validated) {
 					$receipt = MaterialReceipt::create([
 							'comment' => $validated['comment'] ?? null,
-							'user_id' => 1, // Временно, пока нет авторизации
+							'user_id' => auth()->id(), // Временно, пока нет авторизации
 					]);
 
 					foreach ($validated['rolls'] as $rollData) {

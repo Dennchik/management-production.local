@@ -25,10 +25,25 @@ export function initMaterialsModule() {
    }
 
    createButton.addEventListener('click', () => {
-      void createMaterial();
+      void createEntry();
    });
 
    tableBody.addEventListener('click', (event) => {
+      const catalogViewButton = event.target.closest('[data-action="catalog-view"]');
+
+      if (catalogViewButton) {
+         const catalogId = catalogViewButton.dataset.catalogId;
+
+         if (catalogId) {
+            window.operationModal.load(
+               `/catalogs/${catalogId}`,
+               'Не удалось загрузить каталог.'
+            );
+         }
+
+         return;
+      }
+
       const actionButton = event.target.closest('[data-action]');
 
       if (!actionButton) {
@@ -84,11 +99,113 @@ export function initMaterialsModule() {
 }
 
 /**
+ * Возвращает идентификатор текущего каталога страницы материалов.
+ *
+ * @returns {string|null} Идентификатор каталога.
+ */
+function getCurrentCatalogId() {
+   return (
+      document.querySelector('[data-materials-page]')?.dataset.currentCatalog ||
+      null
+   );
+}
+
+/**
+ * Возвращает признак включённой иерархии каталогов.
+ *
+ * @returns {boolean} Результат.
+ */
+function isHierarchyEnabled() {
+   return (
+      document.querySelector('[data-materials-page]')?.dataset.hierarchy ===
+      '1'
+   );
+}
+
+/**
+ * Обрабатывает кнопку «Создать»: при включённой иерархии
+ * сначала предлагает выбор между каталогом и материалом.
+ */
+async function createEntry() {
+   if (!isHierarchyEnabled()) {
+      await createMaterial();
+      return;
+   }
+
+   try {
+      const response = await fetch('/materials/create-choice', {
+         headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'text/html',
+         },
+      });
+
+      if (!response.ok) {
+         return;
+      }
+
+      window.operationModal.open(await response.text());
+
+      const choice = document.querySelector('[data-create-choice]');
+
+      if (!choice) {
+         return;
+      }
+
+      choice.querySelector('[data-choice-material]')?.addEventListener('click', () => {
+         void createMaterial();
+      });
+
+      choice.querySelector('[data-choice-catalog]')?.addEventListener('click', () => {
+         void createCatalog();
+      });
+   } catch (error) {
+      return;
+   }
+}
+
+/**
+ * Открывает форму создания каталога с родителем = текущий каталог.
+ */
+async function createCatalog() {
+   try {
+      const catalogId = getCurrentCatalogId();
+      const url = catalogId
+         ? `/catalogs/create?parent=${encodeURIComponent(catalogId)}`
+         : '/catalogs/create';
+
+      const response = await fetch(url, {
+         headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'text/html',
+         },
+      });
+
+      if (!response.ok) {
+         return;
+      }
+
+      window.operationModal.open(await response.text());
+
+      const form = document.querySelector('[data-catalog-form]');
+
+      form?.querySelector('input[name="catalog-name"]')?.focus();
+   } catch (error) {
+      return;
+   }
+}
+
+/**
  * Открывает форму создания материала.
  */
 async function createMaterial() {
    try {
-      const response = await fetch('/materials/create', {
+      const catalogId = getCurrentCatalogId();
+      const url = catalogId
+         ? `/materials/create?catalog=${encodeURIComponent(catalogId)}`
+         : '/materials/create';
+
+      const response = await fetch(url, {
          headers: {
             'X-Requested-With': 'XMLHttpRequest',
             Accept: 'text/html',
@@ -283,8 +400,11 @@ async function refreshMaterialsTable() {
       return false;
    }
 
+   const catalogId = getCurrentCatalogId();
+   const url = catalogId ? `/materials?catalog=${encodeURIComponent(catalogId)}` : '/materials';
+
    try {
-      const response = await fetch('/materials', {
+      const response = await fetch(url, {
          headers: {
             'X-Requested-With': 'XMLHttpRequest',
             Accept: 'text/html',
@@ -332,6 +452,11 @@ function getMaterialData(form) {
       thickness: form.querySelector('input[name="thickness"]')?.value || null,
 
       format: form.querySelector('input[name="format"]')?.value.trim() || '',
+
+      catalog_id: form.querySelector('select[name="catalog_id"]')?.value || null,
+
+      material_type:
+         form.querySelector('select[name="material_type"]')?.value || 'raw',
 
       lamination_allowed:
          form.querySelector('input[name="lamination_allowed"]')?.checked ??

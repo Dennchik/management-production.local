@@ -163,7 +163,7 @@
 							'roll_id' => $roll->id,
 							'weight' => $issueWeight,
 							'comment' => $validated['comment'] ?? null,
-							'user_id' => 1,
+							'user_id' => auth()->id(),
 					]);
 
 					/*

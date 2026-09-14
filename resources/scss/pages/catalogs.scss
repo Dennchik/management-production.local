@@ -1,0 +1,57 @@
+// Каталоги: отступы дерева, переключатель иерархии, выбор родителя.
+
+.catalogs__header-actions {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.catalogs__hierarchy-toggle {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.catalogs__name {
+	display: inline-block;
+	padding-left: calc(var(--catalog-depth, 0) * 1.5rem);
+}
+
+.catalogs__parent-select {
+	width: 100%;
+	padding: 0.4rem 0.6rem;
+
+	border: 1px solid rgba(0, 0, 0, 0.15);
+	border-radius: 0.5rem;
+}
+
+.materials__breadcrumbs {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+
+	margin-bottom: 0.75rem;
+
+	font-size: 0.95rem;
+}
+
+.materials__breadcrumbs-current {
+	font-weight: 600;
+}
+
+.materials__catalog-link {
+	font-weight: 600;
+	text-decoration: none;
+
+	&:hover {
+		text-decoration: underline;
+	}
+}
+
+.materials__choice-actions {
+	display: flex;
+	gap: 1rem;
+}
