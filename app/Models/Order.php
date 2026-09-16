@@ -3,8 +3,10 @@
 	namespace App\Models;
 
 	use Illuminate\Database\Eloquent\Attributes\Fillable;
+	use Illuminate\Database\Eloquent\Builder;
 	use Illuminate\Database\Eloquent\Model;
 	use Illuminate\Database\Eloquent\Relations\HasMany;
+	use Illuminate\Support\Facades\DB;
 
 	#[Fillable([
 			'client_name',
@@ -20,6 +22,45 @@
 				'done' => 'Выполнен',
 				'cancelled' => 'Отменён',
 		];
+
+		/**
+		 * Статусы закрытых заказов: по ним нельзя создавать задачи.
+		 */
+		public const CLOSED_STATUSES = ['done', 'cancelled'];
+
+		/**
+		 * Заказы, по которым ещё можно создавать производственные задачи.
+		 */
+		public function scopeOpen(Builder $query): void
+		{
+			$query->whereNotIn('status', static::CLOSED_STATUSES);
+		}
+
+		public function isClosed(): bool
+		{
+			return in_array($this->status, static::CLOSED_STATUSES, true);
+		}
+
+		/**
+		 * Номер, который получит следующий созданный заказ.
+		 * Значение последовательности читается без её сдвига.
+		 */
+		public static function nextNumber(): int
+		{
+			$table = (new static())->getTable();
+
+			if (DB::connection()->getDriverName() === 'pgsql') {
+				$sequence = DB::selectOne('SELECT pg_get_serial_sequence(?, ?) AS name', [$table, 'id'])?->name;
+
+				if ($sequence !== null) {
+					$state = DB::selectOne("SELECT last_value, is_called FROM {$sequence}");
+
+					return $state->is_called ? (int) $state->last_value + 1 : (int) $state->last_value;
+				}
+			}
+
+			return (int) static::query()->max('id') + 1;
+		}
 
 		public function statusLabel(): string
 		{

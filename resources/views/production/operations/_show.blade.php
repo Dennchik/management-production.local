@@ -107,9 +107,9 @@
 	</div>
 
 	<div class="operation-view__actions">
-		<button class="button" type="button" data-production-operation-edit="{{ $operation->id }}">
+		<a class="button" href="{{ route('production.operations.edit', $operation) }}">
 			Редактировать
-		</button>
+		</a>
 
 		<button class="button" type="button" data-production-operation-delete="{{ $operation->id }}">
 			Удалить

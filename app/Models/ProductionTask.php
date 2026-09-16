@@ -36,6 +36,14 @@
 			];
 		}
 
+		/**
+		 * Задачу можно редактировать, пока она не завершена и не отменена.
+		 */
+		public function isEditable(): bool
+		{
+			return in_array($this->status, ['pending', 'in_progress'], true);
+		}
+
 		public function order(): BelongsTo
 		{
 			return $this->belongsTo(Order::class);

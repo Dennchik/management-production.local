@@ -39,26 +39,12 @@
 
 		public function create(): View
 		{
-			return view('tasks.create', [
-					'products' => Material::query()
-							->where('material_type', 'product')
-							->where('is_active', true)
-							->orderBy('name')
-							->get(),
-					'machines' => DB::table('machines')->orderBy('name')->get(),
-					'orders' => Order::query()->orderByDesc('id')->get(),
-			]);
+			return view('tasks.create', $this->formOptions());
 		}
 
 		public function store(Request $request)
 		{
-			$validated = $request->validate([
-					'order_id' => ['nullable', 'integer', 'exists:orders,id'],
-					'material_id' => ['required', 'integer', 'exists:materials,id'],
-					'quantity' => ['required', 'numeric', 'min:0.001'],
-					'machine_id' => ['nullable', 'integer', 'exists:machines,id'],
-					'comment' => ['nullable', 'string'],
-			]);
+			$validated = $request->validate($this->taskRules($request));
 
 			$task = ProductionTask::create($validated + [
 					'status' => 'pending',
@@ -68,6 +54,37 @@
 			return redirect()
 					->route('tasks.show', $task)
 					->with('success', 'Задача создана.');
+		}
+
+		public function edit(ProductionTask $task): View
+		{
+			abort_unless($task->isEditable(), 422, 'Завершённую или отменённую задачу нельзя редактировать.');
+
+			return view('tasks.edit', $this->formOptions($task) + [
+					'task' => $task->load(['order', 'material']),
+			]);
+		}
+
+		public function update(Request $request, ProductionTask $task)
+		{
+			abort_unless($task->isEditable(), 422, 'Завершённую или отменённую задачу нельзя редактировать.');
+
+			// У начатой задачи уже выбраны рулоны-сырьё, поэтому заказ и продукция фиксируются
+			if ($task->status === 'pending') {
+				$validated = $request->validate($this->taskRules($request, $task));
+			} else {
+				$validated = $request->validate([
+						'quantity' => ['required', 'numeric', 'min:0.001'],
+						'machine_id' => ['nullable', 'integer', 'exists:machines,id'],
+						'comment' => ['nullable', 'string'],
+				]);
+			}
+
+			$task->update($validated);
+
+			return redirect()
+					->route('tasks.show', $task)
+					->with('success', 'Задача сохранена.');
 		}
 
 		public function show(ProductionTask $task): View
@@ -263,6 +280,80 @@
 			return redirect()
 					->route('tasks.show', $task)
 					->with('success', 'Задача завершена: сырьё списано, продукция оприходована.');
+		}
+
+		/**
+		 * Справочники для формы задачи.
+		 * При редактировании в списке остаётся текущий заказ, даже если он уже закрыт.
+		 */
+		private function formOptions(?ProductionTask $task = null): array
+		{
+			return [
+					'products' => Material::query()
+							->where('material_type', 'product')
+							->where('is_active', true)
+							->orderBy('name')
+							->get(),
+					'machines' => DB::table('machines')->orderBy('name')->get(),
+					'orders' => Order::query()
+							->where(static function ($query) use ($task) {
+								$query->open();
+
+								if ($task?->order_id !== null) {
+									$query->orWhere('id', $task->order_id);
+								}
+							})
+							->with('items')
+							->orderByDesc('id')
+							->get(),
+			];
+		}
+
+		/**
+		 * Правила проверки задачи (создание и редактирование ожидающей задачи).
+		 */
+		private function taskRules(Request $request, ?ProductionTask $task = null): array
+		{
+			return [
+					'order_id' => [
+							'nullable',
+							'integer',
+							'exists:orders,id',
+							// По закрытому заказу задачу создать нельзя; текущий заказ задачи оставить можно
+							static function ($attribute, $value, $fail) use ($task) {
+								if ($task !== null && (int) $value === $task->order_id) {
+									return;
+								}
+
+								if (Order::query()->whereKey($value)->open()->doesntExist()) {
+									$fail('Заказ закрыт, задачи по нему создавать нельзя.');
+								}
+							},
+					],
+					'material_id' => [
+							'required',
+							'integer',
+							'exists:materials,id',
+							// При выбранном заказе продукция должна быть одной из его позиций
+							static function ($attribute, $value, $fail) use ($request) {
+								if (!$request->filled('order_id')) {
+									return;
+								}
+
+								$inOrder = DB::table('order_items')
+										->where('order_id', $request->integer('order_id'))
+										->where('material_id', $value)
+										->exists();
+
+								if (!$inOrder) {
+									$fail('Выбранная продукция не входит в позиции заказа.');
+								}
+							},
+					],
+					'quantity' => ['required', 'numeric', 'min:0.001'],
+					'machine_id' => ['nullable', 'integer', 'exists:machines,id'],
+					'comment' => ['nullable', 'string'],
+			];
 		}
 
 		private function rollsForMaterials(\Illuminate\Support\Collection $materialIds): array

@@ -23,6 +23,8 @@ export function initOrderFormModule() {
 
    initSelect(form);
 
+   initTaskOrderProducts(form);
+
    const updateRemoveButtons = () => {
       const rows = form.querySelectorAll('[data-order-item]');
 
@@ -147,4 +149,59 @@ export function initOrderFormModule() {
          });
       });
    }
+}
+
+/**
+ * Форма производственной задачи: при выбранном заказе
+ * в списке продукции остаются только материалы из позиций заказа.
+ */
+function initTaskOrderProducts(form) {
+   const orderSelect = form.querySelector('[data-task-order]');
+   const productSelectEl = form.querySelector('[data-task-product-select]');
+
+   if (!orderSelect || !productSelectEl) {
+      return;
+   }
+
+   const listEl = productSelectEl.querySelector('.select__dropdown');
+   const emptyEl = productSelectEl.querySelector('.select__empty');
+   const allOptions = Array.from(productSelectEl.querySelectorAll('.select__item'));
+
+   const getSelectInstance = () =>
+      (window._activeSelects || []).find((select) =>
+         productSelectEl.contains(select.hiddenInput)
+      );
+
+   const applyFilter = () => {
+      const selectedOrder = orderSelect.selectedOptions[0];
+      const materialIds = selectedOrder?.value
+         ? JSON.parse(selectedOrder.dataset.materials || '[]').map(String)
+         : null;
+
+      const visibleOptions = materialIds
+         ? allOptions.filter((option) => materialIds.includes(option.dataset.value))
+         : allOptions;
+
+      allOptions.forEach((option) => option.remove());
+      visibleOptions.forEach((option) => listEl.insertBefore(option, emptyEl));
+
+      const select = getSelectInstance();
+
+      if (!select) {
+         return;
+      }
+
+      select.refresh();
+
+      // Сбрасываем выбранную продукцию, если её нет в заказе
+      const current = select.hiddenInput?.value;
+
+      if (current && !visibleOptions.some((option) => option.dataset.value === current)) {
+         select.selectOption(null, false);
+      }
+   };
+
+   orderSelect.addEventListener('change', applyFilter);
+
+   applyFilter();
 }

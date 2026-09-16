@@ -58,7 +58,7 @@
 					<div class="sidebar__submenu">
 						<a class="sidebar__link sidebar__link--submenu {{ request()->routeIs('orders.*') ? 'is-active' : '' }}" href="{{ route('orders.index') }}">
 							<i class="icon-indent-increase icon"></i>
-							<span>Заказы клиентов</span>
+							<span>Производственные заказы</span>
 						</a>
 					</div>
 				</div>

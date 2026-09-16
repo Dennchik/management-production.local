@@ -111,7 +111,7 @@
 					->orderBy('id')
 					->get();
 
-			return view('production.operations._edit', [
+			return view('production.operations.edit', [
 					'operation' => $productionOperation,
 					'materials' => $materials,
 			]);

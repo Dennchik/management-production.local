@@ -61,7 +61,15 @@
 				->middleware('can.do:orders,create')
 				->name('orders.store');
 
-		Route::post('/orders/{order}/status', [OrderController::class, 'updateStatus'])
+		Route::get('/orders/{order}/edit', [OrderController::class, 'edit'])
+				->middleware('can.do:orders,edit')
+				->name('orders.edit');
+
+		Route::put('/orders/{order}', [OrderController::class, 'update'])
+				->middleware('can.do:orders,edit')
+				->name('orders.update');
+
+		Route::post('/orders/{order}/status',[OrderController::class, 'updateStatus'])
 				->middleware('can.do:orders,edit')
 				->name('orders.status');
 
@@ -91,7 +99,15 @@
 				->middleware('can.do:tasks,create')
 				->name('tasks.store');
 
-		Route::get('/tasks/{task}/start', [ProductionTaskController::class, 'startForm'])
+		Route::get('/tasks/{task}/edit', [ProductionTaskController::class, 'edit'])
+				->middleware('can.do:tasks,edit')
+				->name('tasks.edit');
+
+		Route::put('/tasks/{task}', [ProductionTaskController::class, 'update'])
+				->middleware('can.do:tasks,edit')
+				->name('tasks.update');
+
+		Route::get('/tasks/{task}/start',[ProductionTaskController::class, 'startForm'])
 				->middleware('can.do:tasks,edit')
 				->name('tasks.start-form');
 

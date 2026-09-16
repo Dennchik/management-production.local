@@ -7,6 +7,12 @@
 		<div class="main-content__header">
 			<h1 class="main-content__title">Заказ №{{ $order->id }} — {{ $order->client_name }}</h1>
 
+			@if (!$order->isClosed() && auth()->user()?->may('orders', 'edit'))
+				<a class="button button--primary" href="{{ route('orders.edit', $order) }}">
+					<span>Редактировать</span>
+				</a>
+			@endif
+
 			<a class="button button--secondary" href="{{ route('orders.index') }}">
 				<span>К списку заказов</span>
 			</a>
@@ -76,12 +82,14 @@
 		<div class="main-content__header" style="margin-top: 2rem;">
 			<h2 class="main-content__title" style="font-size: 1.3rem;">Производственные задачи</h2>
 
-			<form method="POST" action="{{ route('orders.tasks', $order) }}">
-				@csrf
-				<button class="button button--primary" type="submit">
-					<span>Создать задачи по позициям</span>
-				</button>
-			</form>
+			@unless ($order->isClosed())
+				<form method="POST" action="{{ route('orders.tasks', $order) }}">
+					@csrf
+					<button class="button button--primary" type="submit">
+						<span>Создать задачи по позициям</span>
+					</button>
+				</form>
+			@endunless
 		</div>
 
 		<div class="materials__content">

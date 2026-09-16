@@ -1,5 +1,11 @@
 @use '../core/variables';
 
+.materials-action {
+	display: flex;
+	justify-content: space-between;
+	margin: 2rem 0;
+}
+
 textarea {
 	cursor: pointer;
 	resize: vertical;
@@ -39,6 +45,10 @@ textarea {
 	span {
 		font-weight: var(--font-weight-bold);
 		white-space: nowrap;
+	}
+
+	&.button--danger {
+		align-self: flex-end;
 	}
 
 	&:hover {

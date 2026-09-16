@@ -8,6 +8,7 @@
 	use App\Models\ProductionTask;
 	use Illuminate\Http\Request;
 	use Illuminate\Support\Facades\DB;
+	use Illuminate\Validation\ValidationException;
 	use Illuminate\View\View;
 
 	class OrderController extends Controller
@@ -28,6 +29,7 @@
 		public function create(): View
 		{
 			return view('orders.create', [
+					'orderNumber' => Order::nextNumber(),
 					'products' => $this->productOptions(),
 			]);
 		}
@@ -53,6 +55,57 @@
 			return redirect()
 					->route('orders.show', $order)
 					->with('success', 'Заказ создан.');
+		}
+
+		public function edit(Order $order): View
+		{
+			abort_if($order->isClosed(), 422, 'Закрытый заказ нельзя редактировать.');
+
+			return view('orders.edit', [
+					'order' => $order->load('items'),
+					'products' => $this->productOptions(),
+			]);
+		}
+
+		public function update(Request $request, Order $order)
+		{
+			abort_if($order->isClosed(), 422, 'Закрытый заказ нельзя редактировать.');
+
+			$validated = $this->validateOrder($request);
+
+			// Позиции, по которым уже созданы задачи, удалять из заказа нельзя
+			$taskMaterialIds = ProductionTask::query()
+					->where('order_id', $order->id)
+					->pluck('material_id')
+					->unique();
+
+			$missing = $taskMaterialIds->diff(collect($validated['items'])->pluck('material_id')->map('intval'));
+
+			if ($missing->isNotEmpty()) {
+				$names = Material::query()->whereIn('id', $missing)->pluck('name')->implode(', ');
+
+				throw ValidationException::withMessages([
+						'items' => "Нельзя удалить позиции, по которым есть производственные задачи: {$names}",
+				]);
+			}
+
+			DB::transaction(static function () use ($validated, $order) {
+				$order->update([
+						'client_name' => $validated['client_name'],
+						'address' => $validated['address'] ?? null,
+						'comment' => $validated['comment'] ?? null,
+				]);
+
+				$order->items()->delete();
+
+				foreach ($validated['items'] as $index => $item) {
+					$order->items()->create($item + ['sort_order' => $index]);
+				}
+			});
+
+			return redirect()
+					->route('orders.show', $order)
+					->with('success', 'Заказ сохранён.');
 		}
 
 		public function show(Order $order): View
@@ -87,6 +140,12 @@
 		 */
 		public function createTasks(Order $order)
 		{
+			abort_if(
+					$order->isClosed(),
+					422,
+					'Заказ закрыт, задачи по нему создавать нельзя.'
+			);
+
 			$existing = ProductionTask::query()
 					->where('order_id', $order->id)
 					->pluck('material_id');

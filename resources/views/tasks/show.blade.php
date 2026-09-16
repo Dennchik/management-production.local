@@ -7,6 +7,12 @@
 		<div class="main-content__header">
 			<h1 class="main-content__title">Задача №{{ $task->id }} — {{ $task->material?->name }}</h1>
 
+			{{--			@if ($task->isEditable() && auth()->user()?->may('tasks', 'edit'))--}}
+			{{--				<a class="button button--primary" href="{{ route('tasks.edit', $task) }}">--}}
+			{{--					<span>Редактировать</span>--}}
+			{{--				</a>--}}
+			{{--			@endif--}}
+
 			<a class="button button--secondary" href="{{ route('tasks.index') }}">
 				<span>К списку задач</span>
 			</a>
@@ -65,16 +71,23 @@
 					</tbody>
 				</table>
 			</div>
+			<div class="materials-action">
+				@if ($task->status === 'pending')
+					<a class="button button--primary" href="{{ route('tasks.start-form', $task) }}">
+						<span>Начать задачу</span>
+					</a>
+				@elseif ($task->status === 'in_progress')
+					<a class="button button--primary" href="{{ route('tasks.complete-form', $task) }}">
+						<span>Завершить задачу</span>
+					</a>
+				@endif
 
-			@if ($task->status === 'pending')
-				<a class="button button--primary" href="{{ route('tasks.start-form', $task) }}">
-					<span>Начать задачу</span>
-				</a>
-			@elseif ($task->status === 'in_progress')
-				<a class="button button--primary" href="{{ route('tasks.complete-form', $task) }}">
-					<span>Завершить задачу</span>
-				</a>
-			@endif
+				@if ($task->isEditable() && auth()->user()?->may('tasks', 'edit'))
+					<a class="button button--primary" href="{{ route('tasks.edit', $task) }}">
+						<span>Редактировать</span>
+					</a>
+				@endif
+			</div>
 		</div>
 
 		{{-- Входные рулоны --}}
@@ -92,7 +105,9 @@
 							<th>Рулон</th>
 							<th>Остаток рулона, кг</th>
 							<th>Планируемый вес, кг</th>
-							@if ($task->status === 'done')<th>Фактически, кг</th>@endif
+							@if ($task->status === 'done')
+								<th>Фактически, кг</th>
+							@endif
 						</tr>
 						</thead>
 						<tbody>
