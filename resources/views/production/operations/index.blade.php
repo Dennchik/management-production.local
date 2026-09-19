@@ -3,10 +3,10 @@
 @section('content')
 	<div class="main-content__content" data-production-operations-page>
 		<div class="main-content__header">
-			<h1 class="main-content__title">Производственные операции</h1>
+			<h1 class="main-content__title">Технологические линии</h1>
 
 			<a class="button" href="{{ route('production.operations.create') }}">
-				Добавить операцию
+				Добавить линию
 			</a>
 		</div>
 
@@ -14,7 +14,7 @@
 			<div class="operations__content" data-production-operations-content>
 				@if ($operations->isEmpty())
 					<div class="empty-state" data-production-operations-empty>
-						<p>Производственные операции пока не созданы.</p>
+						<p>Технологические линии пока не созданы.</p>
 					</div>
 				@else
 					<div class="table">

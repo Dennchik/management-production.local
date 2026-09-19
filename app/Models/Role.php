@@ -13,12 +13,10 @@
 	{
 		public const OBJECTS = [
 				'materials' => 'Материалы',
-				'orders' => 'Заказы',
 				'tasks' => 'Производственные задачи',
 				'warehouse' => 'Склад',
 				'rolls' => 'Рулоны',
-				'lamination' => 'Ламинация',
-				'operations' => 'Технологические операции',
+				'operations' => 'Технологические линии',
 				'reports' => 'Отчёты',
 				'users' => 'Пользователи и роли',
 		];

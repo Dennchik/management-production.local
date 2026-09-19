@@ -25,12 +25,12 @@
 		</div>
 
 		@if ($hierarchyEnabled && $breadcrumbs->isNotEmpty())
-			<nav class="materials__breadcrumbs">
+			<nav class="main-content__breadcrumbs">
 				<a href="{{ route('materials.index') }}">Материалы</a>
 				@foreach ($breadcrumbs as $breadcrumb)
 					<span> / </span>
 					@if ($loop->last)
-						<span class="materials__breadcrumbs-current">{{ $breadcrumb->name }}</span>
+						<span class="main-content__breadcrumbs-current">{{ $breadcrumb->name }}</span>
 					@else
 						<a href="{{ route('materials.index', ['catalog' => $breadcrumb->id]) }}">{{ $breadcrumb->name }}</a>
 					@endif
@@ -81,6 +81,16 @@
 									<button type="button" data-action="catalog-view" data-catalog-id="{{ $catalog->id }}"
 											aria-label="Просмотр каталога" title="Просмотр каталога">
 										<i class="icon icon-eye" aria-hidden="true"></i>
+									</button>
+
+									<button type="button" data-action="catalog-edit" data-catalog-id="{{ $catalog->id }}"
+											aria-label="Редактировать каталог" title="Редактировать каталог">
+										<i class="icon icon-edit" aria-hidden="true"></i>
+									</button>
+
+									<button type="button" data-action="catalog-delete" data-catalog-id="{{ $catalog->id }}"
+											aria-label="Удалить каталог" title="Удалить каталог">
+										<i class="icon icon-trash" aria-hidden="true"></i>
 									</button>
 								</td>
 							</tr>

@@ -25,8 +25,9 @@
 		padding-block: var(--padding);
 
 		&:first-child {
-			flex: 0 0 fit-content;
+			flex: 0 0 320px;
 			width: fit-content;
+			width: 320px;
 		}
 
 		&:last-child {
@@ -48,6 +49,22 @@
 		gap: var(--gap);
 		justify-content: space-between;
 		margin-bottom: var(--padding);
+	}
+
+	// .main-content__breadcrumbs
+	&__breadcrumbs {
+		display: flex;
+		gap: 0.25rem;
+		align-items: center;
+
+		margin-bottom: 0.75rem;
+
+		font-size: 1.6rem;
+	}
+
+	// .materials__breadcrumbs-current
+	&__breadcrumbs-current {
+		font-weight: 600
 	}
 
 	// .main-content__title

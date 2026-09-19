@@ -3,6 +3,7 @@
 	namespace App\Models;
 
 	use Illuminate\Database\Eloquent\Model;
+	use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 	use Illuminate\Database\Eloquent\Relations\HasMany;
 
 	class ProductionOperation extends Model
@@ -17,6 +18,25 @@
 		protected $casts = [
 				'is_active' => 'boolean',
 		];
+
+		/**
+		 * Материалы, для которых линия разрешена.
+		 */
+		public function materials(): BelongsToMany
+		{
+			return $this->belongsToMany(
+					Material::class,
+					'material_production_operation'
+			);
+		}
+
+		/**
+		 * Производственные линии, относящиеся к этому шаблону.
+		 */
+		public function productionLines(): HasMany
+		{
+			return $this->hasMany(ProductionLine::class, 'production_operation_id')->orderBy('id');
+		}
 
 		public function routeSteps(): HasMany
 		{

@@ -69,30 +69,21 @@
 			</label>
 		</div>
 
-		{{-- Разрешённые операции: скрыто до запуска функционала --}}
-		<div class="material-show__row" hidden>
+		<div class="material-show__row">
 			<span>Разрешённые операции:</span>
 
-			<div class="material-form__operations">
-				<label>
-					<input type="checkbox" name="lamination_allowed" {{ $material->lamination_allowed ? 'checked' : '' }}>
-					Ламинация
-				</label>
-
-				<label>
-					<input type="checkbox" name="priming_allowed" {{ $material->priming_allowed ? 'checked' : '' }}>
-					Праймирование
-				</label>
-
-				<label>
-					<input type="checkbox" name="cutting_allowed" {{ $material->cutting_allowed ? 'checked' : '' }}>
-					Резка
-				</label>
-
-				<label>
-					<input type="checkbox" name="printing_allowed" {{ $material->printing_allowed ? 'checked' : '' }}>
-					Печать
-				</label>
+			<div class="material-show__operations">
+				@if ($productionLines->isEmpty())
+					<span>Нет активных технологических линий.</span>
+				@else
+					@foreach ($productionLines as $line)
+						<label>
+							<input type="checkbox" name="allowed_operations[]" value="{{ $line->id }}"
+									{{ in_array($line->id, $selectedOperationIds ?? [], false) ? 'checked' : '' }}>
+							{{ $line->name }}
+						</label>
+					@endforeach
+				@endif
 			</div>
 		</div>
 

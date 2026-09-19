@@ -48,22 +48,6 @@
 				</div>
 			@endif
 
-			@if ($user?->may('orders'))
-				<div class="sidebar__section">
-					<div class="sidebar__section-title">
-						<i class="icon-order-list icon"></i>
-						<span>Заказы</span>
-					</div>
-
-					<div class="sidebar__submenu">
-						<a class="sidebar__link sidebar__link--submenu {{ request()->routeIs('orders.*') ? 'is-active' : '' }}" href="{{ route('orders.index') }}">
-							<i class="icon-indent-increase icon"></i>
-							<span>Производственные заказы</span>
-						</a>
-					</div>
-				</div>
-			@endif
-
 			@if ($user?->may('tasks'))
 				<div class="sidebar__section">
 					<div class="sidebar__section-title">
@@ -80,23 +64,16 @@
 				</div>
 			@endif
 
-			@if ($user?->may('operations') || $user?->may('lamination'))
+			@if ($user?->may('operations'))
 				<div class="sidebar__section" data-production-operations>
 					<div class="sidebar__section-title">
 						<i class="icon-factory icon"></i>
-						<span>Производственные операции</span>
+						<span>Производственные линии (шаблоны)</span>
 					</div>
 
 					<div class="sidebar__submenu" data-production-operations-list>
-						@if ($user->may('lamination'))
-							<a class="sidebar__link sidebar__link--submenu {{ request()->routeIs('lamination.index') ? 'is-active' : '' }}" href="{{ route('lamination.index') }}">
-								<i class="icon-recycle-arrows icon"></i>
-								<span>Ламинация</span>
-							</a>
-						@endif
-
 						@foreach ($productionOperations as $operation)
-							<a class="sidebar__link sidebar__link--submenu {{ request()->routeIs('production.operations.show') && request()->route('productionOperation')?->id === $operation->id ? 'is-active' : '' }}" href="{{ route('production.operations.show', $operation) }}" data-production-operation-id="{{ $operation->id }}">
+							<a class="sidebar__link sidebar__link--submenu {{ request()->routeIs('production.lines.show') && request()->route('productionOperation')?->id === $operation->id ? 'is-active' : '' }}" href="{{ route('production.lines.show', $operation) }}" data-production-operation-id="{{ $operation->id }}">
 								<i class="icon-factory icon"></i>
 								<span>{{ $operation->name }}</span>
 							</a>
@@ -123,7 +100,7 @@
 						@if ($user->may('operations'))
 							<a class="sidebar__link sidebar__link--submenu {{ request()->routeIs('production.operations.*') ? 'is-active' : '' }}" href="{{ route('production.operations.index') }}">
 								<i class="icon-factory icon"></i>
-								<span>Технологические операции</span>
+								<span>Технологические линии</span>
 							</a>
 						@endif
 

@@ -5,6 +5,7 @@
 	use Illuminate\Database\Eloquent\Attributes\Fillable;
 	use Illuminate\Database\Eloquent\Model;
 	use Illuminate\Database\Eloquent\Relations\BelongsTo;
+	use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 	use Illuminate\Database\Eloquent\Relations\HasMany;
 
 	#[Fillable([
@@ -17,10 +18,6 @@
 			'catalog_id',
 			'material_type',
 			'is_active',
-			'lamination_allowed',
-			'priming_allowed',
-			'cutting_allowed',
-			'printing_allowed',
 	])]
 	class Material extends Model
 	{
@@ -36,10 +33,6 @@
 					'thickness' => 'decimal:2',
 					'is_active' => 'boolean',
 				'material_type' => 'string',
-					'lamination_allowed' => 'boolean',
-					'priming_allowed' => 'boolean',
-					'cutting_allowed' => 'boolean',
-					'printing_allowed' => 'boolean',
 			];
 		}
 
@@ -49,6 +42,17 @@
 		public function catalog(): BelongsTo
 		{
 			return $this->belongsTo(Catalog::class);
+		}
+
+		/**
+		 * Разрешённые технологические линии материала.
+		 */
+		public function allowedOperations(): BelongsToMany
+		{
+			return $this->belongsToMany(
+					ProductionOperation::class,
+					'material_production_operation'
+			)->orderBy('id');
 		}
 
 		/**

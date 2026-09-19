@@ -40,6 +40,13 @@
 		</div>
 
 		<div class="material-show__row">
+			<span>Разрешённые операции:</span>
+			<strong>
+				{{ $material->allowedOperations->pluck('name')->implode(', ') ?: '—' }}
+			</strong>
+		</div>
+
+		<div class="material-show__row">
 			<span>Статус:</span>
 			<strong>{{ $material->is_active ? 'Активен' : 'Неактивен' }}</strong>
 		</div>

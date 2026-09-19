@@ -28,7 +28,7 @@
 						<th style="width: 220px; text-align: left;">Заказ</th>
 						<td>
 							@if ($task->order_id !== null)
-								<a href="{{ route('orders.show', $task->order_id) }}">№{{ $task->order_id }}</a>
+								№{{ $task->order_id }}
 							@else
 								—
 							@endif

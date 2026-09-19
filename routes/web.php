@@ -8,11 +8,9 @@
 	use App\Http\Controllers\MaterialMovementController;
 	use App\Http\Controllers\MaterialReceiptController;
 	use App\Http\Controllers\MaterialRollController;
-	use App\Http\Controllers\OrderController;
 	use App\Http\Controllers\ProductionOperationController;
 	use App\Http\Controllers\ProductionTaskController;
 	use App\Http\Controllers\WarehouseController;
-	use App\Http\Controllers\LaminationController;
 	use App\Http\Controllers\RoleController;
 	use App\Http\Controllers\UserController;
 	use Illuminate\Support\Facades\Route;
@@ -42,44 +40,6 @@
 
 		Route::get('/', [DashboardController::class, 'index'])
 				->name('dashboard');
-
-		/*
-		|--------------------------------------------------------------------------
-		| Заказы
-		|--------------------------------------------------------------------------
-		*/
-
-		Route::get('/orders', [OrderController::class, 'index'])
-				->middleware('can.do:orders')
-				->name('orders.index');
-
-		Route::get('/orders/create', [OrderController::class, 'create'])
-				->middleware('can.do:orders,create')
-				->name('orders.create');
-
-		Route::post('/orders', [OrderController::class, 'store'])
-				->middleware('can.do:orders,create')
-				->name('orders.store');
-
-		Route::get('/orders/{order}/edit', [OrderController::class, 'edit'])
-				->middleware('can.do:orders,edit')
-				->name('orders.edit');
-
-		Route::put('/orders/{order}', [OrderController::class, 'update'])
-				->middleware('can.do:orders,edit')
-				->name('orders.update');
-
-		Route::post('/orders/{order}/status',[OrderController::class, 'updateStatus'])
-				->middleware('can.do:orders,edit')
-				->name('orders.status');
-
-		Route::post('/orders/{order}/tasks', [OrderController::class, 'createTasks'])
-				->middleware('can.do:tasks,create')
-				->name('orders.tasks');
-
-		Route::get('/orders/{order}', [OrderController::class, 'show'])
-				->middleware('can.do:orders')
-				->name('orders.show');
 
 		/*
 		|--------------------------------------------------------------------------
@@ -129,24 +89,6 @@
 
 		/*
 		|--------------------------------------------------------------------------
-		| Ламинация
-		|--------------------------------------------------------------------------
-		*/
-
-		Route::get('/lamination', [LaminationController::class, 'index'])
-				->middleware('can.do:lamination')
-				->name('lamination.index');
-
-		Route::get('/lamination/create', [LaminationController::class, 'create'])
-				->middleware('can.do:lamination,create')
-				->name('lamination.create');
-
-		Route::post('/lamination', [LaminationController::class, 'store'])
-				->middleware('can.do:lamination,create')
-				->name('lamination.store');
-
-		/*
-		|--------------------------------------------------------------------------
 		| Производственные операции
 		|--------------------------------------------------------------------------
 		*/
@@ -182,6 +124,47 @@
 		Route::delete('/production/operations/{productionOperation}', [ProductionOperationController::class, 'destroy'])
 				->middleware('can.do:operations,delete')
 				->name('production.operations.destroy');
+
+		/*
+		|--------------------------------------------------------------------------
+		| Производственные линии
+		|--------------------------------------------------------------------------
+		*/
+
+		Route::get('/production/lines/{productionOperation}', [ProductionOperationController::class, 'lines'])
+				->middleware('can.do:operations')
+				->name('production.lines.show');
+
+		Route::get('/production/lines/{productionOperation}/create', [ProductionOperationController::class, 'createLine'])
+				->middleware('can.do:operations,create')
+				->name('production.lines.create');
+
+
+		Route::get('/production/lines/{productionOperation}/{productionLine}', [ProductionOperationController::class, 'showLine'])
+				->middleware('can.do:operations')
+				->whereNumber('productionLine')
+				->name('production.lines.line.show');
+
+		Route::get('/production/lines/{productionOperation}/{productionLine}/edit', [ProductionOperationController::class, 'editLine'])
+				->middleware('can.do:operations,edit')
+				->whereNumber('productionLine')
+				->name('production.lines.line.edit');
+
+		Route::put('/production/lines/{productionOperation}/{productionLine}', [ProductionOperationController::class, 'updateLine'])
+				->middleware('can.do:operations,edit')
+				->whereNumber('productionLine')
+				->name('production.lines.line.update');
+		Route::post('/production/lines/{productionOperation}', [ProductionOperationController::class, 'storeLine'])
+				->middleware('can.do:operations,create')
+				->name('production.lines.store');
+
+		Route::get('/production/lines/{productionLine}/delete', [ProductionOperationController::class, 'deleteLine'])
+				->middleware('can.do:operations,delete')
+				->name('production.lines.delete');
+
+		Route::delete('/production/lines/{productionLine}', [ProductionOperationController::class, 'destroyLine'])
+				->middleware('can.do:operations,delete')
+				->name('production.lines.destroy');
 
 		/*
 		|--------------------------------------------------------------------------

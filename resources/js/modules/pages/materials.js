@@ -8,6 +8,7 @@
  * - удаление материала;
  * - сохранение нового материала;
  * - обновление существующего материала;
+ * - просмотр, редактирование и удаление каталога;
  * - обновление таблицы без перезагрузки страницы.
  */
 export function initMaterialsModule() {
@@ -41,6 +42,20 @@ export function initMaterialsModule() {
             );
          }
 
+         return;
+      }
+
+      const catalogEditButton = event.target.closest('[data-action="catalog-edit"]');
+
+      if (catalogEditButton) {
+         void editCatalog(catalogEditButton);
+         return;
+      }
+
+      const catalogDeleteButton = event.target.closest('[data-action="catalog-delete"]');
+
+      if (catalogDeleteButton) {
+         deleteCatalog(catalogDeleteButton);
          return;
       }
 
@@ -196,6 +211,58 @@ async function createCatalog() {
 }
 
 /**
+ * Открывает форму редактирования каталога.
+ *
+ * @param {HTMLElement} button Кнопка редактирования каталога.
+ */
+async function editCatalog(button) {
+   const catalogId = button.dataset.catalogId;
+
+   if (!catalogId) {
+      return;
+   }
+
+   try {
+      const response = await fetch(`/catalogs/${catalogId}/edit`, {
+         headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'text/html',
+         },
+      });
+
+      if (!response.ok) {
+         return;
+      }
+
+      window.operationModal.open(await response.text());
+
+      const form = document.querySelector('[data-catalog-form]');
+
+      form?.querySelector('input[name="catalog-name"]')?.focus();
+   } catch (error) {
+      return;
+   }
+}
+
+/**
+ * Открывает подтверждение удаления каталога.
+ *
+ * @param {HTMLElement} button Кнопка удаления каталога.
+ */
+function deleteCatalog(button) {
+   const catalogId = button.dataset.catalogId;
+
+   if (!catalogId) {
+      return;
+   }
+
+   window.operationModal.load(
+      `/catalogs/${catalogId}/delete`,
+      'Не удалось загрузить окно удаления каталога.'
+   );
+}
+
+/**
  * Открывает форму создания материала.
  */
 async function createMaterial() {
@@ -246,6 +313,8 @@ async function saveMaterial(button) {
 
    const data = getMaterialData(form);
 
+   clearMaterialFormError(form);
+
    button.disabled = true;
 
    try {
@@ -263,9 +332,10 @@ async function saveMaterial(button) {
          body: JSON.stringify(data),
       });
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
       if (!response.ok || !result.material) {
+         showMaterialFormError(form, result.message);
          button.disabled = false;
          return;
       }
@@ -349,6 +419,8 @@ async function updateMaterial(button) {
 
    const data = getMaterialData(form);
 
+   clearMaterialFormError(form);
+
    button.disabled = true;
 
    try {
@@ -366,9 +438,10 @@ async function updateMaterial(button) {
          body: JSON.stringify(data),
       });
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
       if (!response.ok || !result.material) {
+         showMaterialFormError(form, result.message);
          button.disabled = false;
          return;
       }
@@ -458,22 +531,53 @@ function getMaterialData(form) {
       material_type:
          form.querySelector('select[name="material_type"]')?.value || 'raw',
 
-      lamination_allowed:
-         form.querySelector('input[name="lamination_allowed"]')?.checked ??
-         false,
-
-      priming_allowed:
-         form.querySelector('input[name="priming_allowed"]')?.checked ?? false,
-
-      cutting_allowed:
-         form.querySelector('input[name="cutting_allowed"]')?.checked ?? false,
-
-      printing_allowed:
-         form.querySelector('input[name="printing_allowed"]')?.checked ?? false,
+      allowed_operations: Array.from(
+         form.querySelectorAll('input[name="allowed_operations[]"]:checked')
+      ).map((input) => input.value),
 
       is_active:
          form.querySelector('input[name="is_active"]')?.checked ?? false,
    };
+}
+
+/**
+ * Показывает ошибку сохранения внутри формы материала.
+ *
+ * @param {HTMLElement} form Контейнер формы материала.
+ * @param {string} message Текст ошибки.
+ */
+function showMaterialFormError(form, message) {
+   if (!form || !message) {
+      return;
+   }
+
+   let error = form.querySelector('[data-material-form-error]');
+
+   if (!error) {
+      error = document.createElement('div');
+      error.setAttribute('data-material-form-error', '');
+      error.style.color = '#c0392b';
+      error.style.paddingTop = '8px';
+
+      const actions = form.querySelector('.material-show__actions');
+
+      if (actions) {
+         form.insertBefore(error, actions);
+      } else {
+         form.appendChild(error);
+      }
+   }
+
+   error.textContent = message;
+}
+
+/**
+ * Убирает показанную ошибку сохранения из формы материала.
+ *
+ * @param {HTMLElement} form Контейнер формы материала.
+ */
+function clearMaterialFormError(form) {
+   form?.querySelector('[data-material-form-error]')?.remove();
 }
 
 /**
