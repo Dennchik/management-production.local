@@ -138,7 +138,7 @@ export class CustomSelect {
 
       const label = option
          ? option.textContent.trim()
-         : this.options.placeholder || 'Выберите значение';
+         : this.options.placeholder || 'Выберите материал';
 
       if (this.hiddenInput) {
          this.hiddenInput.value = value;

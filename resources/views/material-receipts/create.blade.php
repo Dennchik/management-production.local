@@ -26,9 +26,7 @@
 
 							<button class="material-select__select-button select__button select-button"
 									id="material_select" type="button" aria-haspopup="listbox" aria-expanded="false">
-								<span class="material-select__select-value select__button-text">
-								Выберите материал
-								</span>
+								<span class="material-select__select-value select__button-text">Выберите материал</span>
 
 								<span class="material-select__select-arrow" aria-hidden="true"></span>
 							</button>
@@ -53,20 +51,11 @@
 											data-format="{{ $material->format }}" data-identifier="{{ $material->identifier }}"
 											aria-selected="{{ old('material_id') == $material->id ? 'true' : 'false' }}">
 
-										<span>
-										  {{ preg_replace('/\s*гр\.?\s*$/ui', '', $material->name) }}
-											@if ($material->grammage)
-												|
-												{{ rtrim(rtrim(number_format($material->grammage, 2, '.', ''), '0'), '.') }}
-												гр
-											@endif
-
-											@if ($material->thickness)
+										<span>{{ preg_replace('/\s*гр\.?\s*$/ui', '', $material->name) }}@if ($material->grammage)
+												| {{ rtrim(rtrim(number_format($material->grammage, 2, '.', ''), '0'), '.') }} гр
+											@endif @if ($material->thickness)
 												| {{ $material->thickness }} мкм
-											@endif
-
-										  | {{ $material->format }}
-										</span>
+											@endif | {{ $material->format }}</span>
 									</button>
 
 								@endforeach
@@ -166,9 +155,9 @@
 			<div class="receipt-order__line">
 				<fieldset class="receipt-order__field">
 					<label class="receipt-order__label" for="comment"> Комментарий </label>
-					<textarea class="receipt-order__input receipt-order__textarea" id="comment" name="comment">
-						{{ old('comment') }}
-					</textarea>
+					<textarea class="receipt-order__input receipt-order__textarea"
+							id="comment"
+							name="comment">{{ old('comment') }}</textarea>
 				</fieldset>
 			</div>
 

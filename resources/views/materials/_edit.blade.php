@@ -45,28 +45,45 @@
 		</div>
 
 		<div class="material-show__row">
+			<span>Каталог:</span>
+			<label>
+				<select class="catalogs__parent-select" name="catalog_id">
+					<option value="">— Нет —</option>
+					@foreach ($catalogOptions as $catalogId => $catalogLabel)
+						<option value="{{ $catalogId }}" {{ $material->catalog_id === $catalogId ? 'selected' : '' }}>
+							{{ $catalogLabel }}
+						</option>
+					@endforeach
+				</select>
+			</label>
+		</div>
+
+		<div class="material-show__row">
+			<span>Тип материала:</span>
+			<label>
+				<select class="catalogs__parent-select" name="material_type">
+					@foreach (\App\Models\Material::TYPES as $typeValue => $typeLabel)
+						<option value="{{ $typeValue }}" {{ $material->material_type === $typeValue ? 'selected' : '' }}>{{ $typeLabel }}</option>
+					@endforeach
+				</select>
+			</label>
+		</div>
+
+		<div class="material-show__row">
 			<span>Разрешённые операции:</span>
 
-			<div class="material-form__operations">
-				<label>
-					<input type="checkbox" name="lamination_allowed" {{ $material->lamination_allowed ? 'checked' : '' }}>
-					Ламинация
-				</label>
-
-				<label>
-					<input type="checkbox" name="priming_allowed" {{ $material->priming_allowed ? 'checked' : '' }}>
-					Праймирование
-				</label>
-
-				<label>
-					<input type="checkbox" name="cutting_allowed" {{ $material->cutting_allowed ? 'checked' : '' }}>
-					Резка
-				</label>
-
-				<label>
-					<input type="checkbox" name="printing_allowed" {{ $material->printing_allowed ? 'checked' : '' }}>
-					Печать
-				</label>
+			<div class="material-show__operations">
+				@if ($productionLines->isEmpty())
+					<span>Нет активных технологических линий.</span>
+				@else
+					@foreach ($productionLines as $line)
+						<label>
+							<input type="checkbox" name="allowed_operations[]" value="{{ $line->id }}"
+									{{ in_array($line->id, $selectedOperationIds ?? [], false) ? 'checked' : '' }}>
+							{{ $line->name }}
+						</label>
+					@endforeach
+				@endif
 			</div>
 		</div>
 

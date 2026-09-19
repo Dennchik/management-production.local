@@ -21,6 +21,12 @@
 				</button>
 				@auth
 					<div class="header__user"> {{ auth()->user()->name }}
+						<form method="POST" action="{{ route('logout') }}" style="display:inline; margin-left: .5rem;">
+							@csrf
+							<button type="submit" style="background:none;border:none;cursor:pointer;text-decoration:underline;color:inherit;">
+								Выйти
+							</button>
+						</form>
 					</div>
 				@endauth
 			</div>

@@ -2,22 +2,51 @@
 
 	namespace Database\Seeders;
 
+	use App\Models\Machine;
+	use App\Models\Role;
 	use App\Models\User;
 	use Illuminate\Database\Seeder;
 
 	class UserSeeder extends Seeder
 	{
-		/**
-		 * Создаёт начальную учётную запись администратора системы.
-		 */
 		public function run(): void
 		{
-			User::create([
-				// Имя пользователя используется как логин для входа в систему.
-					'name' => 'admin',
+			$adminRole = Role::firstOrCreate(['name' => 'Администратор']);
 
-				// Пароль автоматически хешируется моделью User.
-					'password' => 'admin',
+			$operatorRole = Role::firstOrCreate(['name' => 'Оператор']);
+			$operatorRole->syncPermissions([
+					'tasks' => ['view', 'edit'],
+					'warehouse' => ['view'],
+					'rolls' => ['view'],
 			]);
+
+			$managerRole = Role::firstOrCreate(['name' => 'Менеджер']);
+			$managerRole->syncPermissions([
+					'materials' => ['view', 'create', 'edit', 'delete'],
+					'orders' => ['view', 'create', 'edit'],
+					'tasks' => ['view', 'create', 'edit'],
+					'warehouse' => ['view'],
+					'rolls' => ['view'],
+					'operations' => ['view', 'create', 'edit', 'delete'],
+					'reports' => ['view'],
+			]);
+
+			$machine = Machine::firstOrCreate(['name' => 'Кашировальная линия']);
+			Machine::firstOrCreate(['name' => 'Ламинатор']);
+
+			User::query()->updateOrCreate(
+					['name' => 'admin'],
+					['password' => 'admin', 'role_id' => $adminRole->id]
+			);
+
+			User::query()->updateOrCreate(
+					['name' => 'operator'],
+					['password' => 'operator', 'role_id' => $operatorRole->id, 'machine_id' => $machine->id]
+			);
+
+			User::query()->updateOrCreate(
+					['name' => 'manager'],
+					['password' => 'manager', 'role_id' => $managerRole->id]
+			);
 		}
 	}

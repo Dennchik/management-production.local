@@ -8,6 +8,7 @@
  * - удаление материала;
  * - сохранение нового материала;
  * - обновление существующего материала;
+ * - просмотр, редактирование и удаление каталога;
  * - обновление таблицы без перезагрузки страницы.
  */
 export function initMaterialsModule() {
@@ -25,10 +26,39 @@ export function initMaterialsModule() {
    }
 
    createButton.addEventListener('click', () => {
-      void createMaterial();
+      void createEntry();
    });
 
    tableBody.addEventListener('click', (event) => {
+      const catalogViewButton = event.target.closest('[data-action="catalog-view"]');
+
+      if (catalogViewButton) {
+         const catalogId = catalogViewButton.dataset.catalogId;
+
+         if (catalogId) {
+            window.operationModal.load(
+               `/catalogs/${catalogId}`,
+               'Не удалось загрузить каталог.'
+            );
+         }
+
+         return;
+      }
+
+      const catalogEditButton = event.target.closest('[data-action="catalog-edit"]');
+
+      if (catalogEditButton) {
+         void editCatalog(catalogEditButton);
+         return;
+      }
+
+      const catalogDeleteButton = event.target.closest('[data-action="catalog-delete"]');
+
+      if (catalogDeleteButton) {
+         deleteCatalog(catalogDeleteButton);
+         return;
+      }
+
       const actionButton = event.target.closest('[data-action]');
 
       if (!actionButton) {
@@ -84,11 +114,165 @@ export function initMaterialsModule() {
 }
 
 /**
+ * Возвращает идентификатор текущего каталога страницы материалов.
+ *
+ * @returns {string|null} Идентификатор каталога.
+ */
+function getCurrentCatalogId() {
+   return (
+      document.querySelector('[data-materials-page]')?.dataset.currentCatalog ||
+      null
+   );
+}
+
+/**
+ * Возвращает признак включённой иерархии каталогов.
+ *
+ * @returns {boolean} Результат.
+ */
+function isHierarchyEnabled() {
+   return (
+      document.querySelector('[data-materials-page]')?.dataset.hierarchy ===
+      '1'
+   );
+}
+
+/**
+ * Обрабатывает кнопку «Создать»: при включённой иерархии
+ * сначала предлагает выбор между каталогом и материалом.
+ */
+async function createEntry() {
+   if (!isHierarchyEnabled()) {
+      await createMaterial();
+      return;
+   }
+
+   try {
+      const response = await fetch('/materials/create-choice', {
+         headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'text/html',
+         },
+      });
+
+      if (!response.ok) {
+         return;
+      }
+
+      window.operationModal.open(await response.text());
+
+      const choice = document.querySelector('[data-create-choice]');
+
+      if (!choice) {
+         return;
+      }
+
+      choice.querySelector('[data-choice-material]')?.addEventListener('click', () => {
+         void createMaterial();
+      });
+
+      choice.querySelector('[data-choice-catalog]')?.addEventListener('click', () => {
+         void createCatalog();
+      });
+   } catch (error) {
+      return;
+   }
+}
+
+/**
+ * Открывает форму создания каталога с родителем = текущий каталог.
+ */
+async function createCatalog() {
+   try {
+      const catalogId = getCurrentCatalogId();
+      const url = catalogId
+         ? `/catalogs/create?parent=${encodeURIComponent(catalogId)}`
+         : '/catalogs/create';
+
+      const response = await fetch(url, {
+         headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'text/html',
+         },
+      });
+
+      if (!response.ok) {
+         return;
+      }
+
+      window.operationModal.open(await response.text());
+
+      const form = document.querySelector('[data-catalog-form]');
+
+      form?.querySelector('input[name="catalog-name"]')?.focus();
+   } catch (error) {
+      return;
+   }
+}
+
+/**
+ * Открывает форму редактирования каталога.
+ *
+ * @param {HTMLElement} button Кнопка редактирования каталога.
+ */
+async function editCatalog(button) {
+   const catalogId = button.dataset.catalogId;
+
+   if (!catalogId) {
+      return;
+   }
+
+   try {
+      const response = await fetch(`/catalogs/${catalogId}/edit`, {
+         headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'text/html',
+         },
+      });
+
+      if (!response.ok) {
+         return;
+      }
+
+      window.operationModal.open(await response.text());
+
+      const form = document.querySelector('[data-catalog-form]');
+
+      form?.querySelector('input[name="catalog-name"]')?.focus();
+   } catch (error) {
+      return;
+   }
+}
+
+/**
+ * Открывает подтверждение удаления каталога.
+ *
+ * @param {HTMLElement} button Кнопка удаления каталога.
+ */
+function deleteCatalog(button) {
+   const catalogId = button.dataset.catalogId;
+
+   if (!catalogId) {
+      return;
+   }
+
+   window.operationModal.load(
+      `/catalogs/${catalogId}/delete`,
+      'Не удалось загрузить окно удаления каталога.'
+   );
+}
+
+/**
  * Открывает форму создания материала.
  */
 async function createMaterial() {
    try {
-      const response = await fetch('/materials/create', {
+      const catalogId = getCurrentCatalogId();
+      const url = catalogId
+         ? `/materials/create?catalog=${encodeURIComponent(catalogId)}`
+         : '/materials/create';
+
+      const response = await fetch(url, {
          headers: {
             'X-Requested-With': 'XMLHttpRequest',
             Accept: 'text/html',
@@ -129,6 +313,8 @@ async function saveMaterial(button) {
 
    const data = getMaterialData(form);
 
+   clearMaterialFormError(form);
+
    button.disabled = true;
 
    try {
@@ -146,9 +332,10 @@ async function saveMaterial(button) {
          body: JSON.stringify(data),
       });
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
       if (!response.ok || !result.material) {
+         showMaterialFormError(form, result.message);
          button.disabled = false;
          return;
       }
@@ -232,6 +419,8 @@ async function updateMaterial(button) {
 
    const data = getMaterialData(form);
 
+   clearMaterialFormError(form);
+
    button.disabled = true;
 
    try {
@@ -249,9 +438,10 @@ async function updateMaterial(button) {
          body: JSON.stringify(data),
       });
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
       if (!response.ok || !result.material) {
+         showMaterialFormError(form, result.message);
          button.disabled = false;
          return;
       }
@@ -283,8 +473,11 @@ async function refreshMaterialsTable() {
       return false;
    }
 
+   const catalogId = getCurrentCatalogId();
+   const url = catalogId ? `/materials?catalog=${encodeURIComponent(catalogId)}` : '/materials';
+
    try {
-      const response = await fetch('/materials', {
+      const response = await fetch(url, {
          headers: {
             'X-Requested-With': 'XMLHttpRequest',
             Accept: 'text/html',
@@ -333,22 +526,58 @@ function getMaterialData(form) {
 
       format: form.querySelector('input[name="format"]')?.value.trim() || '',
 
-      lamination_allowed:
-         form.querySelector('input[name="lamination_allowed"]')?.checked ??
-         false,
+      catalog_id: form.querySelector('select[name="catalog_id"]')?.value || null,
 
-      priming_allowed:
-         form.querySelector('input[name="priming_allowed"]')?.checked ?? false,
+      material_type:
+         form.querySelector('select[name="material_type"]')?.value || 'raw',
 
-      cutting_allowed:
-         form.querySelector('input[name="cutting_allowed"]')?.checked ?? false,
-
-      printing_allowed:
-         form.querySelector('input[name="printing_allowed"]')?.checked ?? false,
+      allowed_operations: Array.from(
+         form.querySelectorAll('input[name="allowed_operations[]"]:checked')
+      ).map((input) => input.value),
 
       is_active:
          form.querySelector('input[name="is_active"]')?.checked ?? false,
    };
+}
+
+/**
+ * Показывает ошибку сохранения внутри формы материала.
+ *
+ * @param {HTMLElement} form Контейнер формы материала.
+ * @param {string} message Текст ошибки.
+ */
+function showMaterialFormError(form, message) {
+   if (!form || !message) {
+      return;
+   }
+
+   let error = form.querySelector('[data-material-form-error]');
+
+   if (!error) {
+      error = document.createElement('div');
+      error.setAttribute('data-material-form-error', '');
+      error.style.color = '#c0392b';
+      error.style.paddingTop = '8px';
+
+      const actions = form.querySelector('.material-show__actions');
+
+      if (actions) {
+         form.insertBefore(error, actions);
+      } else {
+         form.appendChild(error);
+      }
+   }
+
+   error.textContent = message;
+}
+
+/**
+ * Убирает показанную ошибку сохранения из формы материала.
+ *
+ * @param {HTMLElement} form Контейнер формы материала.
+ */
+function clearMaterialFormError(form) {
+   form?.querySelector('[data-material-form-error]')?.remove();
 }
 
 /**
