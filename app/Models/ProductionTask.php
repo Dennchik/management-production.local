@@ -5,13 +5,16 @@
 	use Illuminate\Database\Eloquent\Attributes\Fillable;
 	use Illuminate\Database\Eloquent\Model;
 	use Illuminate\Database\Eloquent\Relations\BelongsTo;
+	use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 	use Illuminate\Database\Eloquent\Relations\HasMany;
 
 	#[Fillable([
 			'order_id',
 			'material_id',
+			'production_line_id',
+			'number',
 			'quantity',
-			'machine_id',
+			'operator_id',
 			'status',
 			'started_at',
 			'completed_at',
@@ -30,9 +33,9 @@
 		protected function casts(): array
 		{
 			return [
-					'quantity' => 'decimal:3',
-					'started_at' => 'datetime',
-					'completed_at' => 'datetime',
+				'quantity' => 'decimal:3',
+				'started_at' => 'datetime',
+				'completed_at' => 'datetime',
 			];
 		}
 
@@ -54,10 +57,18 @@
 			return $this->belongsTo(Material::class);
 		}
 
-		public function machine(): BelongsTo
+		/**
+		 * Шаблон производства, по которому создана задача.
+		 */
+		public function productionLine(): BelongsTo
 		{
-			return $this->belongsTo(Machine::class);
+			return $this->belongsTo(ProductionLine::class);
 		}
+
+	public function operator(): BelongsTo
+	{
+		return $this->belongsTo(User::class, 'operator_id');
+	}
 
 		public function author(): BelongsTo
 		{
@@ -74,10 +85,58 @@
 			return $this->hasMany(ProductionTaskOutput::class, 'task_id');
 		}
 
-		public function statusLabel(): string
+		/**
+		 * Материалы этой задачи (входы и выход) — состав
+		 * копируется из шаблона, но может быть изменён для задачи.
+		 * Материал всегда входит с конкретным форматом.
+		 */
+		public function materials(): BelongsToMany
 		{
-			return static::STATUSES[$this->status] ?? $this->status;
+			return $this->belongsToMany(
+				Material::class,
+				'production_task_material',
+				'task_id',
+				'material_id'
+			)
+				->withPivot('direction', 'format')
+				->orderBy('id');
 		}
+
+		public function inputMaterials(): BelongsToMany
+		{
+			return $this->materials()->wherePivot('direction', 'input');
+		}
+
+		public function outputMaterials(): BelongsToMany
+		{
+			return $this->materials()->wherePivot('direction', 'output');
+		}
+
+	public function statusLabel(): string
+	{
+		return static::STATUSES[$this->status] ?? $this->status;
+	}
+
+	/**
+	 * Модификатор чипа статуса: серый / жёлтый / зелёный / красный.
+	 */
+	public function statusClass(): string
+	{
+		return match ($this->status) {
+			'in_progress' => 'yellow',
+			'done' => 'green',
+			'cancelled' => 'red',
+			default => 'gray',
+		};
+	}
+
+	/**
+	 * Сколько продукции уже произведено, кг.
+	 */
+	public function producedWeight(): float
+	{
+		return round((float) $this->outputs->sum('actual_weight'), 3);
+	}
 
 		/**
 		 * Входные материалы по рецепту операции, выпускающей материал задачи.
@@ -87,15 +146,15 @@
 			$materialId = $this->material_id;
 
 			return ProductionOperation::query()
-					->where('is_active', true)
-					->whereHas('components', static function ($query) use ($materialId) {
-						$query->where('direction', 'output')
-								->where('material_id', $materialId);
-					})
-					->with(['components' => static function ($query) {
-						$query->where('direction', 'input')->orderBy('sort_order');
-					}])
-					->get()
-					->flatMap(static fn ($operation) => $operation->components);
+				->where('is_active', true)
+				->whereHas('components', static function ($query) use ($materialId) {
+					$query->where('direction', 'output')
+						->where('material_id', $materialId);
+				})
+				->with(['components' => static function ($query) {
+					$query->where('direction', 'input')->orderBy('sort_order');
+				}])
+				->get()
+				->flatMap(static fn ($operation) => $operation->components);
 		}
 	}

@@ -73,10 +73,11 @@
 
 			@if ($user?->may('operations'))
 				<div class="sidebar__section" data-production-operations>
-					<div class="sidebar__section-title">
+					<a class="sidebar__section-title {{ request()->routeIs('production.operations.*') ? 'is-active' : '' }}"
+							href="{{ route('production.operations.index') }}">
 						<i class="icon-factory icon"></i>
 						<span>Производственные линии (шаблоны)</span>
-					</div>
+					</a>
 
 					<div class="sidebar__submenu" data-production-operations-list>
 						@foreach ($productionOperations as $operation)
@@ -104,14 +105,6 @@
 									href="{{ route('materials.index') }}">
 								<i class="icon-warehouse icon"></i>
 								<span>Материалы</span>
-							</a>
-						@endif
-
-						@if ($user->may('operations'))
-							<a class="sidebar__link sidebar__link--submenu {{ request()->routeIs('production.operations.*') ? 'is-active' : '' }}"
-									href="{{ route('production.operations.index') }}">
-								<i class="icon-factory icon"></i>
-								<span>Технологические линии</span>
 							</a>
 						@endif
 

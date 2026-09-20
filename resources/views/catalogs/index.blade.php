@@ -27,10 +27,7 @@
 					<tr>
 						<th>№</th>
 						<th>Каталог</th>
-						<th>Родительский каталог</th>
 						<th>Материалов</th>
-						<th>Сортировка</th>
-						<th>Статус</th>
 
 						<th class="materials__table-edit">
 							<i class="icon-settings-cogs icon"></i>
@@ -41,7 +38,7 @@
 					<tbody class="materials__body" data-catalogs-body>
 					@if ($catalogs->isEmpty())
 						<tr class="materials__empty">
-							<td colspan="7">Каталоги не добавлены.</td>
+							<td colspan="4">Каталоги не добавлены.</td>
 						</tr>
 					@else
 						@php
@@ -76,15 +73,13 @@
 							@php $catalog = $row['catalog']; $depth = $row['depth']; @endphp
 							<tr data-catalog-id="{{ $catalog->id }}">
 								<td>{{ $loop->iteration }}</td>
-								<td>
-									<span class="catalogs__name" style="--catalog-depth: {{ $depth }}">
+								<td class="catalogs__name-cell">
+									<a class="catalogs__name catalogs__name-link" style="--catalog-depth: {{ $depth }}"
+											href="{{ route('materials.index', ['catalog' => $catalog->id]) }}">
 										{{ $catalog->name }}
-									</span>
+									</a>
 								</td>
-								<td>{{ $catalog->parent?->name }}</td>
 								<td>{{ $catalog->materials_count ?? $catalog->materials()->count() }}</td>
-								<td>{{ $catalog->sort_order }}</td>
-								<td>{{ $catalog->is_active ? 'Активен' : 'Неактивен' }}</td>
 
 								<td class="materials__actions-icons">
 									<button type="button" data-action="view" aria-label="Просмотр" title="Просмотр">

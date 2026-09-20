@@ -43,14 +43,14 @@
 					$query->where('material_id', $materialId);
 				})
 				->when($search, function ($query) use ($search) {
-					$query->whereHas('material', function ($query) use ($search) {
+					$query->where(function ($query) use ($search) {
 						$query
-							->where('name', 'ilike', '%' . $search . '%')
-							->orWhere(
-								'identifier',
-								'ilike',
-								'%' . $search . '%'
-							);
+							->whereHas('material', function ($query) use ($search) {
+								$query->where('name', 'ilike', '%' . $search . '%');
+							})
+							->orWhereHas('roll', function ($query) use ($search) {
+								$query->where('identifier', 'ilike', '%' . $search . '%');
+							});
 					});
 				})
 				->get()
@@ -85,14 +85,14 @@
 					$query->where('material_id', $materialId);
 				})
 				->when($search, function ($query) use ($search) {
-					$query->whereHas('material', function ($query) use ($search) {
+					$query->where(function ($query) use ($search) {
 						$query
-							->where('name', 'ilike', '%' . $search . '%')
-							->orWhere(
-								'identifier',
-								'ilike',
-								'%' . $search . '%'
-							);
+							->whereHas('material', function ($query) use ($search) {
+								$query->where('name', 'ilike', '%' . $search . '%');
+							})
+							->orWhereHas('roll', function ($query) use ($search) {
+								$query->where('identifier', 'ilike', '%' . $search . '%');
+							});
 					});
 				})
 				->get()

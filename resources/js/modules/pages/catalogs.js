@@ -10,6 +10,8 @@
  * - сохранение и обновление каталога;
  * - обновление таблицы без перезагрузки страницы.
  */
+import { initSelects } from '../../assets/select.js';
+
 export function initCatalogsModule() {
    const catalogsPage = document.querySelector('[data-catalogs-page]');
 
@@ -163,6 +165,9 @@ async function createCatalog() {
 
       const form = document.querySelector('[data-catalog-form]');
 
+      // Кастомные селекты внутри модалки инициализируются после вставки.
+      initSelects(form);
+
       form?.querySelector('input[name="catalog-name"]')?.focus();
    } catch (error) {
       return;
@@ -257,6 +262,8 @@ async function editCatalog(button) {
       window.operationModal.open(html);
 
       const form = document.querySelector('[data-catalog-form]');
+
+      initSelects(form);
 
       form?.querySelector('input[name="catalog-name"]')?.focus();
    } catch (error) {
@@ -373,7 +380,7 @@ async function refreshCatalogsTable() {
  * @returns {Object} Данные каталога.
  */
 function getCatalogData(form) {
-   const parentId = form.querySelector('select[name="parent_id"]')?.value;
+   const parentId = form.querySelector('[name="parent_id"]')?.value;
 
    return {
       name:

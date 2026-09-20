@@ -181,6 +181,32 @@
 				grid-template-columns: minmax(140px, 1fr) 2.3fr;
 			}
 		}
+
+		/*
+		 * Список рулонов: заголовок и строки — единая сетка,
+		 * чтобы колонки не разъезжались из-за длинных значений.
+		 */
+		&--rolls {
+			.material__head,
+			.material__row {
+				display: grid;
+				grid-template-columns:
+					minmax(70px, 0.6fr)
+					minmax(0, 2.4fr)
+					minmax(110px, 1.1fr)
+					minmax(70px, 0.6fr)
+					minmax(100px, 1fr);
+			}
+
+			.material__label,
+			.material__value {
+				overflow: hidden;
+				min-width: 0;
+
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+		}
 	}
 
 	// .material__row

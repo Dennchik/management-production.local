@@ -29,7 +29,6 @@
 						<th>№</th>
 						<th>Имя</th>
 						<th>Роль</th>
-						<th>Станок</th>
 						<th></th>
 					</tr>
 					</thead>
@@ -39,7 +38,6 @@
 							<td>{{ $user->id }}</td>
 							<td>{{ $user->name }}</td>
 							<td>{{ $user->role?->name ?? '—' }}</td>
-							<td>{{ $user->machine?->name ?? '—' }}</td>
 							<td class="materials__actions-icons">
 								<a href="{{ route('users.edit', $user) }}" title="Редактировать">
 									<i class="icon icon-edit" aria-hidden="true"></i>

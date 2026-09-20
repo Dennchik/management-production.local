@@ -66,12 +66,15 @@
 		/**
 		 * Отображает форму расходного ордера.
 		 */
-		public function create(): View
-		{
-			$materials = Material::orderBy('name')->get();
+	public function create(): View
+	{
+		$materials = Material::query()
+			->with('rolls:id,material_id,format')
+			->orderBy('name')
+			->get();
 
-			return view('material-issues.create', compact('materials'));
-		}
+		return view('material-issues.create', compact('materials'));
+	}
 
 		/**
 		 * Сохраняет операцию расхода сырья.

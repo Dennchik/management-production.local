@@ -63,7 +63,7 @@ export function initMaterialIssueModule() {
    });
 
    /*
-    * Выбор рулона -> отображение текущего остатка
+    * Выбор рулона -> отображение идентификатора, текущего остатка
     * и установка максимального веса расхода.
     */
    rollSelectEl.addEventListener('select:change', (e) => {
@@ -112,26 +112,15 @@ export function initMaterialIssueModule() {
 
    /*
     * Заполняет информацию о выбранном материале.
+    * Идентификатор заполняется позже — с выбранного рулона.
     */
    function fillMaterialInfo(option) {
-      if (!option) {
-         if (materialNameInput) {
-            materialNameInput.value = '';
-         }
-
-         if (materialIdentifierInput) {
-            materialIdentifierInput.value = '';
-         }
-
-         return;
-      }
-
       if (materialNameInput) {
-         materialNameInput.value = option.dataset.name || '';
+         materialNameInput.value = option?.dataset.name || '';
       }
 
       if (materialIdentifierInput) {
-         materialIdentifierInput.value = option.dataset.identifier || '';
+         materialIdentifierInput.value = '';
       }
    }
 
@@ -190,29 +179,32 @@ export function initMaterialIssueModule() {
          rollEmptyMsg.hidden = true;
       }
 
-      rollList.innerHTML = rolls
-         .map(
-            (roll) => `
-                  <button
-                  class="material-select__select-option select__item"
-                  type="button"
-                  role="option"
-                  data-value="${escapeHtml(roll.id ?? '')}"
-                  data-roll="${escapeHtml(roll.roll_number ?? '')}"
-                  data-weight="${escapeHtml(roll.weight ?? '')}"
-                  aria-selected="false">
-                  
-                     <span>
-                     ${escapeHtml(roll.roll_number ?? '')}
-                  |
+   rollList.innerHTML = rolls
+      .map(
+         (roll) => `
+               <button
+               class="material-select__select-option select__item"
+               type="button"
+               role="option"
+               data-value="${escapeHtml(roll.id ?? '')}"
+               data-roll="${escapeHtml(roll.roll_number ?? '')}"
+               data-weight="${escapeHtml(roll.weight ?? '')}"
+               data-format="${escapeHtml(roll.format ?? '')}"
+               data-identifier="${escapeHtml(roll.identifier ?? '')}"
+               aria-selected="false">
+
+                  <span>
+                  ${escapeHtml(roll.roll_number ?? '')}
+               |
+                  ${roll.format ? `ф. ${escapeHtml(roll.format)} | ` : ''}
                   ${escapeHtml(roll.weight ?? '')}
                   кг
                   </span>
-                  
-                  </button>
-                  `
-         )
-         .join('');
+
+               </button>
+               `
+      )
+      .join('');
 
       /*
        * Обновляем DOM-список внутри CustomSelect.
@@ -244,11 +236,15 @@ export function initMaterialIssueModule() {
    }
 
    /*
-    * Отображает остаток выбранного рулона
+    * Отображает идентификатор и остаток выбранного рулона
     * и ограничивает поле веса расхода.
     */
    function setRollWeight(option) {
       const weight = option?.dataset.weight || '';
+
+      if (materialIdentifierInput) {
+         materialIdentifierInput.value = option?.dataset.identifier || '';
+      }
 
       if (remainingWeightInput) {
          remainingWeightInput.value = weight;

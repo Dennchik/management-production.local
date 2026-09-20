@@ -22,11 +22,15 @@
 	box-shadow: var(--shadow);
 
 	&__row {
-		grid-template-columns: 40px 2fr 1fr 1fr 1fr;
+		grid-template-columns: 40px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
 	}
 
 	&__row-line {
-		grid-template-columns: 40px 2fr 1fr 1fr 0.5fr;
+		/*
+		 * minmax(0, Nfr): ширины колонок не зависят от содержимого строк,
+		 * иначе заголовок и строки с селектами разъезжаются.
+		 */
+		grid-template-columns: 40px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) 56px;
 	}
 
 	// .table__row
@@ -108,6 +112,13 @@
 
 		&:last-child {
 			padding-right: 0;
+		}
+
+		// Список значений в ячейке (материалы линии и т.п.)
+		&--stack {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 2px;
 		}
 	}
 }

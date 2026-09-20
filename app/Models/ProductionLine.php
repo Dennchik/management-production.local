@@ -23,13 +23,16 @@
 
 		/**
 		 * Все материалы, обрабатываемые на линии.
+		 * Материал всегда входит в состав с конкретным форматом.
 		 */
 		public function materials(): BelongsToMany
 		{
 			return $this->belongsToMany(
 					Material::class,
 					'production_line_material'
-			)->orderBy('id');
+			)
+				->withPivot('direction', 'format')
+				->orderBy('id');
 		}
 
 		/**

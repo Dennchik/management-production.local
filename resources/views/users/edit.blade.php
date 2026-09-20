@@ -12,7 +12,7 @@
 
 		@include('partials.message')
 
-		<form class="issue-order" method="POST"
+		<form class="issue-order" method="POST" data-users-form
 				action="{{ $user->exists ? route('users.update', $user) : route('users.store') }}"
 				style="max-width: 560px;">
 			@csrf
@@ -38,28 +38,29 @@
 				<div class="issue-order__line">
 					<fieldset class="issue-order__field" style="width: 100%;">
 						<label class="issue-order__label" for="role_id">Роль</label>
-						<select class="catalogs__parent-select" id="role_id" name="role_id">
-							<option value="">— Нет роли —</option>
-							@foreach ($roles as $role)
-								<option value="{{ $role->id }}" {{ old('role_id', $user->role_id) == $role->id ? 'selected' : '' }}>
-									{{ $role->name }}
-								</option>
-							@endforeach
-						</select>
-					</fieldset>
-				</div>
 
-				<div class="issue-order__line">
-					<fieldset class="issue-order__field" style="width: 100%;">
-						<label class="issue-order__label" for="machine_id">Станок</label>
-						<select class="catalogs__parent-select" id="machine_id" name="machine_id">
-							<option value="">— Без станка —</option>
-							@foreach ($machines as $machine)
-								<option value="{{ $machine->id }}" {{ old('machine_id', $user->machine_id) == $machine->id ? 'selected' : '' }}>
-									{{ $machine->name }}
-								</option>
-							@endforeach
-						</select>
+						<div class="select material-select">
+							<input class="select__value" id="role_id" name="role_id" type="hidden"
+									value="{{ old('role_id', $user->role_id) }}">
+
+							<button class="material-select__select-button select__button select-button" type="button"
+									aria-haspopup="listbox" aria-expanded="false">
+								<span class="material-select__select-value select__button-text">
+									{{ $roles->firstWhere('id', (int) old('role_id', $user->role_id))?->name ?? '— Нет роли —' }}
+								</span>
+								<span class="material-select__select-arrow" aria-hidden="true"></span>
+							</button>
+
+							<div class="select__dropdown material-select__select-list _collapse" role="listbox">
+								<button class="material-select__select-option select__item" type="button" role="option"
+										data-value="">— Нет роли —</button>
+
+								@foreach ($roles as $role)
+									<button class="material-select__select-option select__item" type="button" role="option"
+											data-value="{{ $role->id }}">{{ $role->name }}</button>
+								@endforeach
+							</div>
+						</div>
 					</fieldset>
 				</div>
 

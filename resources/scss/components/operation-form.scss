@@ -166,3 +166,18 @@
 		}
 	}
 }
+
+/*
+ * Состав материалов, взятый из шаблона производства, —
+ * только просмотр до нажатия кнопки разблокировки.
+ */
+.operation-form__section--locked {
+	[data-production-line-add-material],
+	.production-line-materials__actions {
+		display: none;
+	}
+
+	.material-select {
+		pointer-events: none;
+	}
+}

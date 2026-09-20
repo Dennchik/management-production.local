@@ -14,14 +14,27 @@
 		<div class="material-show__row">
 			<span>Родительский каталог:</span>
 			<label>
-				<select class="catalogs__parent-select" name="parent_id">
-					<option value="">— Нет —</option>
-					@foreach ($parents as $parent)
-						<option value="{{ $parent->id }}" {{ $catalog->parent_id === $parent->id ? 'selected' : '' }}>
-							{{ $parent->name }}
-						</option>
-					@endforeach
-				</select>
+				<div class="select material-select">
+					<input class="select__value" name="parent_id" type="hidden" value="{{ $catalog->parent_id ?? '' }}">
+
+					<button class="material-select__select-button select__button select-button" type="button"
+							aria-haspopup="listbox" aria-expanded="false">
+						<span class="material-select__select-value select__button-text">
+							{{ $parents->firstWhere('id', $catalog->parent_id)?->name ?? '— Нет —' }}
+						</span>
+						<span class="material-select__select-arrow" aria-hidden="true"></span>
+					</button>
+
+					<div class="select__dropdown material-select__select-list _collapse" role="listbox">
+						<button class="material-select__select-option select__item" type="button" role="option"
+								data-value="">— Нет —</button>
+
+						@foreach ($parents as $parent)
+							<button class="material-select__select-option select__item" type="button" role="option"
+									data-value="{{ $parent->id }}">{{ $parent->name }}</button>
+						@endforeach
+					</div>
+				</div>
 			</label>
 		</div>
 

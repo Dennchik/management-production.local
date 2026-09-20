@@ -15,7 +15,7 @@
 			$hierarchyEnabled = Catalog::hierarchyEnabled();
 
 			$catalogs = Catalog::query()
-					->with('parent')
+					->withCount('materials')
 					->orderBy('sort_order')
 					->orderBy('name')
 					->get();
@@ -46,7 +46,7 @@
 			$catalog = Catalog::create([
 					'name' => $validated['name'],
 					'parent_id' => $validated['parent_id'] ?? null,
-					'sort_order' => $validated['sort_order'] ?? 0,
+					'sort_order' => $validated['sort_order'] ?? 500,
 					'is_active' => $validated['is_active'] ?? false,
 			]);
 

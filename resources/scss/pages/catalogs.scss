@@ -25,6 +25,27 @@
 		padding-left: calc(var(--catalog-depth, 0) * 1.5rem);
 	}
 
+	// .catalogs__name-cell — вся ячейка является ссылкой на материалы каталога.
+	&__name-cell {
+		position: relative;
+	}
+
+	// .catalogs__name-link
+	&__name-link {
+		color: inherit;
+		text-decoration: none;
+
+		&::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+		}
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+
 	// .catalogs__parent-select
 	&__parent-select {
 		width: 100%;

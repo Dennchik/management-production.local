@@ -7,7 +7,6 @@
 	use App\Models\ProductionOperation;
 	use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 	class MaterialController extends Controller
@@ -35,7 +34,9 @@ use Illuminate\View\View;
 				}
 			}
 
-			$materialsQuery = Material::query()->orderBy('id');
+			$materialsQuery = Material::query()
+				->with('rolls:id,material_id,format,identifier')
+				->orderBy('id');
 
 			if ($hierarchyEnabled) {
 				$materialsQuery->where('catalog_id', $currentCatalog?->id);
@@ -107,42 +108,27 @@ use Illuminate\View\View;
 
 		public function store(Request $request): JsonResponse
 		{
-			$validated = $request->validate([
-					'name' => ['required', 'string', 'max:255'],
-					'code' => ['required', 'string', 'max:10'],
-					'grammage' => ['nullable', 'numeric', 'min:0'],
-					'thickness' => ['nullable', 'numeric', 'min:0'],
-					'format' => ['nullable', 'integer', 'min:0', 'max:65535'],
-					'catalog_id' => ['nullable', 'integer', 'exists:catalogs,id'],
-					'material_type' => ['nullable', 'in:raw,product'],
-					'allowed_operations' => ['nullable', 'array'],
-					'allowed_operations.*' => ['integer', 'exists:production_operations,id'],
-					'is_active' => ['boolean'],
-			]);
+		$validated = $request->validate([
+				'name' => ['required', 'string', 'max:255'],
+				'code' => ['required', 'string', 'max:10'],
+				'grammage' => ['nullable', 'numeric', 'min:0'],
+				'thickness' => ['nullable', 'numeric', 'min:0'],
+				'catalog_id' => ['nullable', 'integer', 'exists:catalogs,id'],
+				'material_type' => ['nullable', 'in:raw,product'],
+				'allowed_operations' => ['nullable', 'array'],
+				'allowed_operations.*' => ['integer', 'exists:production_operations,id'],
+				'is_active' => ['boolean'],
+		]);
 
-			$grammage = $validated['grammage'] ?? null;
-			$format = $validated['format'] ?? null;
-
-			$identifier = $this->buildIdentifier(
-					$validated['code'],
-					$grammage,
-					$validated['thickness'] ?? null,
-					$format
-			);
-
-			$this->ensureIdentifierIsFree($identifier);
-
-			$material = Material::create([
-					'name' => $validated['name'],
-					'code' => $validated['code'],
-					'grammage' => $grammage,
-					'thickness' => $validated['thickness'] ?? null,
-					'format' => $format,
-					'identifier' => $identifier,
-					'catalog_id' => $validated['catalog_id'] ?? null,
-					'material_type' => $validated['material_type'] ?? 'raw',
-					'is_active' => $validated['is_active'] ?? false,
-			]);
+		$material = Material::create([
+				'name' => $validated['name'],
+				'code' => $validated['code'],
+				'grammage' => $validated['grammage'] ?? null,
+				'thickness' => $validated['thickness'] ?? null,
+				'catalog_id' => $validated['catalog_id'] ?? null,
+				'material_type' => $validated['material_type'] ?? 'raw',
+				'is_active' => $validated['is_active'] ?? false,
+		]);
 
 			$material->allowedOperations()->sync($validated['allowed_operations'] ?? []);
 
@@ -152,56 +138,39 @@ use Illuminate\View\View;
 			]);
 		}
 
-		public function show(Material $material): View
-		{
-			return view('materials._show', [
-					'material' => $material->load('allowedOperations'),
-			]);
-		}
+	public function show(Material $material): View
+	{
+		return view('materials._show', [
+			'material' => $material->load([
+				'allowedOperations',
+				'rolls:id,material_id,format,identifier',
+			]),
+		]);
+	}
 
 		public function update(Request $request, Material $material): JsonResponse
 		{
-			$validated = $request->validate([
-					'name' => ['required', 'string', 'max:255'],
-					'code' => ['required', 'string', 'max:10'],
-					'grammage' => ['nullable', 'numeric', 'min:0'],
-					'thickness' => ['nullable', 'numeric', 'min:0'],
-					'format' => ['nullable', 'integer', 'min:0', 'max:65535'],
-					'catalog_id' => ['nullable', 'integer', 'exists:catalogs,id'],
-					'material_type' => ['nullable', 'in:raw,product'],
-					'allowed_operations' => ['nullable', 'array'],
-					'allowed_operations.*' => ['integer', 'exists:production_operations,id'],
-					'is_active' => ['boolean'],
-			]);
+		$validated = $request->validate([
+				'name' => ['required', 'string', 'max:255'],
+				'code' => ['required', 'string', 'max:10'],
+				'grammage' => ['nullable', 'numeric', 'min:0'],
+				'thickness' => ['nullable', 'numeric', 'min:0'],
+				'catalog_id' => ['nullable', 'integer', 'exists:catalogs,id'],
+				'material_type' => ['nullable', 'in:raw,product'],
+				'allowed_operations' => ['nullable', 'array'],
+				'allowed_operations.*' => ['integer', 'exists:production_operations,id'],
+				'is_active' => ['boolean'],
+		]);
 
-			$grammage = $validated['grammage'] ?? null;
-			$format = $validated['format'] ?? null;
-
-			/*
-			 * Идентификатор пересчитывается при каждом сохранении;
-			 * если данных (код + грамматура/толщина + формат) недостаточно,
-			 * он остаётся пустым.
-			 */
-			$identifier = $this->buildIdentifier(
-					$validated['code'],
-					$grammage,
-					$validated['thickness'] ?? null,
-					$format
-			);
-
-			$this->ensureIdentifierIsFree($identifier, $material->id);
-
-			$material->update([
-					'name' => $validated['name'],
-					'code' => $validated['code'],
-					'grammage' => $grammage,
-					'thickness' => $validated['thickness'] ?? null,
-					'format' => $format,
-					'identifier' => $identifier,
-					'catalog_id' => $validated['catalog_id'] ?? null,
-					'material_type' => $validated['material_type'] ?? $material->material_type,
-					'is_active' => $validated['is_active'] ?? false,
-			]);
+		$material->update([
+				'name' => $validated['name'],
+				'code' => $validated['code'],
+				'grammage' => $validated['grammage'] ?? null,
+				'thickness' => $validated['thickness'] ?? null,
+				'catalog_id' => $validated['catalog_id'] ?? null,
+				'material_type' => $validated['material_type'] ?? $material->material_type,
+				'is_active' => $validated['is_active'] ?? false,
+		]);
 
 			$material->allowedOperations()->sync($validated['allowed_operations'] ?? []);
 
@@ -251,54 +220,4 @@ use Illuminate\View\View;
 					->get();
 		}
 
-		/**
-		 * Вычисляет идентификатор материала: код + грамматура (для бумаги)
-		 * или толщина (для плёнки и фольги) + цифры формата.
-		 * Возвращает null, если данных для вычисления недостаточно.
-		 */
-		private function buildIdentifier(string $code, $grammage, $thickness, $format): ?string
-		{
-			$value = $grammage ?? $thickness;
-
-			$formatPart = $format === null ? '' : preg_replace('/\D/', '', (string) $format);
-
-			if ($code === '' || $value === null || $formatPart === '') {
-				return null;
-			}
-
-			$valueValue = (float) $value;
-
-			$valuePart = fmod($valueValue, 1) === 0.0
-					? (string) (int) $valueValue
-					: rtrim(
-							rtrim(
-									number_format($valueValue, 2, '.', ''),
-									'0'
-							),
-							'.'
-					);
-
-			return $code . $valuePart . $formatPart;
-		}
-
-		/**
-		 * Гарантирует, что вычисленный идентификатор не занят другим материалом.
-		 */
-		private function ensureIdentifierIsFree(?string $identifier, ?int $ignoreId = null): void
-		{
-			if ($identifier === null) {
-				return;
-			}
-
-			$exists = Material::query()
-					->where('identifier', $identifier)
-					->when($ignoreId !== null, fn ($query) => $query->where('id', '!=', $ignoreId))
-					->exists();
-
-			if ($exists) {
-				throw ValidationException::withMessages([
-						'identifier' => 'Материал с идентификатором «' . $identifier . '» уже существует.',
-				]);
-			}
-		}
-	}
+}

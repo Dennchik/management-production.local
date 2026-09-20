@@ -13,8 +13,6 @@
 			'code',
 			'grammage',
 			'thickness',
-			'format',
-			'identifier',
 			'catalog_id',
 			'material_type',
 			'is_active',
@@ -34,6 +32,43 @@
 					'is_active' => 'boolean',
 				'material_type' => 'string',
 			];
+		}
+
+		/**
+		 * Форматы этого материала по его рулонам, через запятую.
+		 */
+		public function getRollFormatsAttribute(): string
+		{
+			return $this->rolls
+				->pluck('format')
+				->filter()
+				->unique()
+				->sort()
+				->map(static fn ($format) => (string) $format)
+				->implode(', ');
+		}
+
+		/**
+		 * Идентификаторы этого материала по его рулонам, через запятую.
+		 */
+		public function getRollIdentifiersAttribute(): string
+		{
+			return $this->rolls
+				->pluck('identifier')
+				->filter()
+				->unique()
+				->sort(SORT_STRING)
+				->implode(', ');
+		}
+
+		/**
+		 * Идентификатор рулонов заданного формата этого материала.
+		 */
+		public function identifierForFormat($format): ?string
+		{
+			return $this->rolls
+				->first(static fn ($roll) => (string) $roll->format === (string) $format)
+				?->identifier;
 		}
 
 		/**

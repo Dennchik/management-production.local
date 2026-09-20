@@ -10,7 +10,6 @@
 			'task_id',
 			'material_id',
 			'roll_number',
-			'planned_weight',
 			'actual_weight',
 			'roll_id',
 	])]
@@ -19,7 +18,6 @@
 		protected function casts(): array
 		{
 			return [
-					'planned_weight' => 'decimal:3',
 					'actual_weight' => 'decimal:3',
 			];
 		}

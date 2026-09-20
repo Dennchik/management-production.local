@@ -2,7 +2,6 @@
 
 	namespace App\Http\Controllers;
 
-	use App\Models\Machine;
 	use App\Models\Role;
 	use App\Models\User;
 	use Illuminate\Http\Request;
@@ -13,7 +12,7 @@
 		public function index(): View
 		{
 			return view('users.index', [
-					'users' => User::query()->with(['role', 'machine'])->orderBy('id')->get(),
+					'users' => User::query()->with(['role'])->orderBy('id')->get(),
 			]);
 		}
 
@@ -22,7 +21,6 @@
 			return view('users.edit', [
 					'user' => new User(),
 					'roles' => Role::query()->orderBy('name')->get(),
-					'machines' => Machine::query()->orderBy('name')->get(),
 			]);
 		}
 
@@ -40,7 +38,6 @@
 			return view('users.edit', [
 					'user' => $user,
 					'roles' => Role::query()->orderBy('name')->get(),
-					'machines' => Machine::query()->orderBy('name')->get(),
 			]);
 		}
 
@@ -64,8 +61,7 @@
 			return $request->validate([
 					'name' => ['required', 'string', 'max:255'],
 					'password' => $passwordRule,
-					'role_id' => ['nullable', 'integer', 'exists:roles,id'],
-					'machine_id' => ['nullable', 'integer', 'exists:machines,id'],
-			]);
+				'role_id' => ['nullable', 'integer', 'exists:roles,id'],
+		]);
 		}
 	}

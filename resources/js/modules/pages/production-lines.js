@@ -5,9 +5,13 @@
  * - добавление блока материала;
  * - удаление блока материала;
  * - подстановку характеристик выбранного материала из справочника;
- * - пересчёт порядковых номеров блоков.
+ * - пересчёт порядковых номеров блоков;
+ * - настройку разрешённых операций шаблона по каталогам.
  */
 import { initSelects } from '../../assets/select.js';
+
+// Подтверждаемое изменение статуса каталога.
+let pendingToggle = null;
 
 export function initProductionLinesModule() {
 	const page = document.querySelector('[data-production-lines-page]');
@@ -36,12 +40,61 @@ export function initProductionLinesModule() {
 			'[data-production-line-delete-confirm]'
 		);
 
-		if (!confirmButton) {
+		if (confirmButton) {
+			void confirmDeleteLine(confirmButton);
+
 			return;
 		}
 
-		void confirmDeleteLine(confirmButton);
+		const allowedApplyButton = event.target.closest('[data-allowed-catalogs-confirm-apply]');
+
+		if (allowedApplyButton) {
+			void confirmAllowedToggle(allowedApplyButton);
+		}
 	});
+
+	document.addEventListener('change', (event) => {
+		const materialCheckbox = event.target.closest('[data-allowed-material]');
+
+		if (materialCheckbox) {
+			// Изменение отдельного материала применяется сразу, без каскада.
+			void applyAllowedToggle(
+					{
+						materialId: materialCheckbox.dataset.materialId,
+						allowed: materialCheckbox.checked,
+					},
+					materialCheckbox
+			);
+
+			return;
+		}
+
+		const checkbox = event.target.closest('[data-allowed-catalog]');
+
+		if (!checkbox) {
+			return;
+		}
+
+		// Галочка возвращается к серверному состоянию до подтверждения изменения.
+		const allowed = checkbox.checked;
+
+		checkbox.checked = !allowed;
+
+		pendingToggle = {
+			checkbox,
+			catalogId: checkbox.dataset.catalogId,
+			allowed,
+		};
+
+		openAllowedConfirmModal(
+				checkbox.dataset.catalogName || '',
+				checkbox.dataset.materialsCount || '0',
+				allowed
+		);
+	});
+
+	// Частично выбранные каталоги отображаются «наполовину» отмеченными.
+	syncAllowedCatalogsStates();
 
 	if (!page) {
 		return;
@@ -49,11 +102,20 @@ export function initProductionLinesModule() {
 
 	const form = page.querySelector('[data-production-lines-form]');
 
-	// Невыбранные строки не отправляются на сервер.
+	// Невыбранные строки не отправляются на сервер
+	// (материал и формат отключаются парой, чтобы индексы совпали).
 	form?.addEventListener('submit', () => {
-		form.querySelectorAll('.select__value').forEach((input) => {
-			if (input.value === '') {
-				input.disabled = true;
+		form.querySelectorAll('[data-production-line-material]').forEach((row) => {
+			const valueInput = row.querySelector('.select__value');
+
+			if (valueInput && valueInput.value === '') {
+				valueInput.disabled = true;
+
+				const formatInput = row.querySelector('.select__format-value');
+
+				if (formatInput) {
+					formatInput.disabled = true;
+				}
 			}
 		});
 	});
@@ -101,6 +163,11 @@ export function initProductionLinesModule() {
 
 		if (row) {
 			fillMaterialCells(row, option);
+		}
+
+		// Название линии подставляется из выбранного выходного материала.
+		if (option.closest('[data-autofill-line-name]')) {
+			autofillLineName(option.dataset.name || '');
 		}
 	});
 
@@ -153,6 +220,183 @@ async function confirmDeleteLine(button) {
 }
 
 /**
+ * Подставляет название выходного материала в название линии.
+ *
+ * @param {string} name Название материала.
+ */
+function autofillLineName(name) {
+	if (!name) {
+		return;
+	}
+
+	const nameInput = document.querySelector('[data-production-lines-form] input[name="name"]');
+
+	if (nameInput) {
+		nameInput.value = name;
+	}
+}
+
+/**
+ * Выставляет «наполовину» отмеченные каталоги (частично разрешённые).
+ */
+function syncAllowedCatalogsStates() {
+	document.querySelectorAll('[data-allowed-catalog]').forEach((checkbox) => {
+		checkbox.indeterminate = checkbox.dataset.state === 'partial';
+	});
+}
+
+/**
+ * Перезагружает таблицу каталогов страницы без перезагрузки окна.
+ *
+ * @returns {Promise<boolean>} Признак успешного обновления.
+ */
+async function refreshAllowedCatalogsTable() {
+	const body = document.querySelector('[data-allowed-catalogs-body]');
+
+	if (!body) {
+		return false;
+	}
+
+	const response = await fetch(window.location.href, {
+		headers: {
+			'X-Requested-With': 'XMLHttpRequest',
+			Accept: 'text/html',
+		},
+	});
+
+	if (!response.ok) {
+		return false;
+	}
+
+	const parsedDocument = new DOMParser().parseFromString(
+			await response.text(),
+			'text/html'
+	);
+
+	const newBody = parsedDocument.querySelector('[data-allowed-catalogs-body]');
+
+	if (!newBody) {
+		return false;
+	}
+
+	body.replaceChildren(...Array.from(newBody.childNodes));
+
+	syncAllowedCatalogsStates();
+
+	return true;
+}
+
+/**
+ * Открывает универсальное окно подтверждения каскадного изменения каталога.
+ *
+ * @param {string} name Название каталога.
+ * @param {string} count Количество материалов поддерева.
+ * @param {boolean} allowed Целевое состояние разрешения.
+ */
+function openAllowedConfirmModal(name, count, allowed) {
+	const action = allowed ? 'разрешена' : 'запрещена';
+
+	const wrapper = document.createElement('div');
+
+	wrapper.className = 'operation-confirm';
+	wrapper.innerHTML = `
+		<div class="operation-confirm__header">
+			<h2 class="operation-confirm__title">Подтверждение изменения</h2>
+		</div>
+		<div class="operation-confirm__text"></div>
+		<div class="operation-confirm__actions">
+			<button type="button" class="button button--secondary" data-operation-modal-close>
+				<span>Отмена</span>
+			</button>
+			<button type="button" class="button button--primary" data-allowed-catalogs-confirm-apply>
+				<span>Применить</span>
+			</button>
+		</div>`;
+
+	wrapper.querySelector('.operation-confirm__text').textContent =
+		`Изменение будет применено ко всем вложенным подкаталогам и материалам каталога «${name}» (материалов: ${count}). Операция будет ${action} для всех. Продолжить?`;
+
+	window.operationModal?.open(wrapper.outerHTML);
+}
+
+/**
+ * Применяет подтверждённое в окне изменение статуса каталога.
+ *
+ * @param {HTMLElement} button Кнопка «Применить».
+ */
+async function confirmAllowedToggle(button) {
+	if (!pendingToggle) {
+		window.operationModal?.close();
+
+		return;
+	}
+
+	const {checkbox, catalogId, allowed} = pendingToggle;
+
+	pendingToggle = null;
+	button.disabled = true;
+
+	await applyAllowedToggle({catalogId, allowed}, checkbox);
+
+	window.operationModal?.close();
+}
+
+/**
+ * Применяет изменение статуса разрешения каталога или материала.
+ *
+ * @param {{catalogId?: string, materialId?: string, allowed: boolean}} payload Данные изменения.
+ * @param {HTMLInputElement} checkbox Переключённый чекбокс.
+ */
+async function applyAllowedToggle(payload, checkbox) {
+	const updateUrl = document.querySelector('[data-allowed-catalogs-page]')?.dataset.allowedCatalogsUpdate;
+
+	if (!updateUrl) {
+		return;
+	}
+
+	const body = {allowed: payload.allowed};
+
+	if (payload.catalogId) {
+		body.catalog_id = payload.catalogId;
+	} else {
+		body.material_id = payload.materialId;
+	}
+
+	try {
+		const csrfToken = document.querySelector(
+			'meta[name="csrf-token"]'
+		)?.content;
+
+		const response = await fetch(updateUrl, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Accept: 'application/json',
+				'X-CSRF-TOKEN': csrfToken,
+			},
+			body: JSON.stringify(body),
+		});
+
+		const result = await response.json().catch(() => ({}));
+
+		if (!response.ok || !result.success) {
+			checkbox.checked = !payload.allowed;
+
+			return;
+		}
+
+		// Таблица перезагружается, чтобы обновить статусы всех каталогов.
+		const refreshed = await refreshAllowedCatalogsTable();
+
+		if (!refreshed) {
+			window.location.reload();
+		}
+	} catch (error) {
+		checkbox.checked = !payload.allowed;
+	}
+}
+
+/**
  * Добавляет новый блок материала по образцу первого.
  *
  * @param {HTMLElement|null} list Контейнер блоков материалов.
@@ -195,6 +439,12 @@ function resetRow(row) {
 		valueInput.value = '';
 	}
 
+	const formatInput = row.querySelector('.select__format-value');
+
+	if (formatInput) {
+		formatInput.value = '';
+	}
+
 	const buttonText = row.querySelector('.select__button-text');
 
 	if (buttonText) {
@@ -215,6 +465,12 @@ function resetRow(row) {
  * @param {HTMLElement} option Выбранный вариант материала.
  */
 function fillMaterialCells(row, option) {
+	const formatInput = row.querySelector('.select__format-value');
+
+	if (formatInput) {
+		formatInput.value = option.dataset.format || '';
+	}
+
 	setCell(row, 'code', option.dataset.code || '—');
 	setCell(row, 'identifier', option.dataset.identifier || '—');
 	setCell(

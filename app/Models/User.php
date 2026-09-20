@@ -17,7 +17,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 //? Базовая модель Laravel для пользователей и авторизации.
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'password', 'role_id', 'machine_id'])]
+#[Fillable(['name', 'password', 'role_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -39,11 +39,6 @@ class User extends Authenticatable
 	public function role(): BelongsTo
 	{
 		return $this->belongsTo(Role::class);
-	}
-
-	public function machine(): BelongsTo
-	{
-		return $this->belongsTo(Machine::class);
 	}
 
 	/**

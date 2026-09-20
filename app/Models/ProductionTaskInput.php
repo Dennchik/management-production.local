@@ -10,7 +10,6 @@
 			'task_id',
 			'material_id',
 			'roll_id',
-			'planned_weight',
 			'actual_weight',
 	])]
 	class ProductionTaskInput extends Model
@@ -18,7 +17,6 @@
 		protected function casts(): array
 		{
 			return [
-					'planned_weight' => 'decimal:3',
 					'actual_weight' => 'decimal:3',
 			];
 		}

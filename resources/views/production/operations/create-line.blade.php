@@ -42,14 +42,16 @@
 					'emptyText' => 'Нет материалов с разрешённой операцией «' . $operation->name . '».',
 			])
 
-			@include('production.operations._line-materials-table', [
-					'title' => 'Материалы (выход)',
-					'description' => 'Материалы со справочника с типом «Продукция».',
-					'inputName' => 'output_materials',
-					'materials' => $outputMaterials,
-					'emptyText' => 'В справочнике нет активных материалов с типом «Продукция».',
-					'allowAdd' => false,
-			])
+			<div data-autofill-line-name>
+				@include('production.operations._line-materials-table', [
+						'title' => 'Материалы (выход)',
+						'description' => 'Материалы со справочника с типом «Продукция».',
+						'inputName' => 'output_materials',
+						'materials' => $outputMaterials,
+						'emptyText' => 'В справочнике нет активных материалов с типом «Продукция».',
+						'allowAdd' => false,
+				])
+			</div>
 
 			<div class="operation-form__actions">
 				<a class="button button--secondary" href="{{ route('production.lines.show', $operation) }}">

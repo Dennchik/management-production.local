@@ -11,6 +11,8 @@
  * - просмотр, редактирование и удаление каталога;
  * - обновление таблицы без перезагрузки страницы.
  */
+import { initSelects } from '../../assets/select.js';
+
 export function initMaterialsModule() {
    const materialsPage = document.querySelector('[data-materials-page]');
 
@@ -289,6 +291,9 @@ async function createMaterial() {
 
       const form = document.querySelector('[data-material-form]');
 
+      // Кастомные селекты внутри модалки инициализируются после вставки.
+      initSelects(form);
+
       form?.querySelector('input[name="material-name"]')?.focus();
    } catch (error) {
       return;
@@ -388,6 +393,8 @@ async function editMaterial(button) {
       window.operationModal.open(html);
 
       const form = document.querySelector('[data-material-form]');
+
+      initSelects(form);
 
       form?.querySelector('input[name="material-name"]')?.focus();
    } catch (error) {
@@ -524,12 +531,10 @@ function getMaterialData(form) {
 
       thickness: form.querySelector('input[name="thickness"]')?.value || null,
 
-      format: form.querySelector('input[name="format"]')?.value.trim() || '',
-
-      catalog_id: form.querySelector('select[name="catalog_id"]')?.value || null,
+      catalog_id: form.querySelector('[name="catalog_id"]')?.value || null,
 
       material_type:
-         form.querySelector('select[name="material_type"]')?.value || 'raw',
+         form.querySelector('[name="material_type"]')?.value || 'raw',
 
       allowed_operations: Array.from(
          form.querySelectorAll('input[name="allowed_operations[]"]:checked')

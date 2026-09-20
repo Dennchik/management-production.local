@@ -2,7 +2,6 @@
 
 	namespace Database\Seeders;
 
-	use App\Models\Machine;
 	use App\Models\Role;
 	use App\Models\User;
 	use Illuminate\Database\Seeder;
@@ -31,18 +30,15 @@
 					'reports' => ['view'],
 			]);
 
-			$machine = Machine::firstOrCreate(['name' => 'Кашировальная линия']);
-			Machine::firstOrCreate(['name' => 'Ламинатор']);
+		User::query()->updateOrCreate(
+				['name' => 'admin'],
+				['password' => 'admin', 'role_id' => $adminRole->id]
+		);
 
-			User::query()->updateOrCreate(
-					['name' => 'admin'],
-					['password' => 'admin', 'role_id' => $adminRole->id]
-			);
-
-			User::query()->updateOrCreate(
-					['name' => 'operator'],
-					['password' => 'operator', 'role_id' => $operatorRole->id, 'machine_id' => $machine->id]
-			);
+		User::query()->updateOrCreate(
+				['name' => 'operator'],
+				['password' => 'operator', 'role_id' => $operatorRole->id]
+		);
 
 			User::query()->updateOrCreate(
 					['name' => 'manager'],

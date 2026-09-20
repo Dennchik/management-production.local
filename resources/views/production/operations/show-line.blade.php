@@ -45,8 +45,8 @@
 					<div class="table__row-line">
 						<div class="table__cell">{{ $loop->iteration }}</div>
 						<div class="table__cell">{{ $material->name }}</div>
-						<div class="table__cell">{{ $material->identifier }}</div>
-						<div class="table__cell">{{ $material->format }}</div>
+						<div class="table__cell">{{ $material->identifierForFormat($material->pivot->format) ?? '—' }}</div>
+						<div class="table__cell">{{ $material->pivot->format ?? '—' }}</div>
 					</div>
 				@endforeach
 			</div>
@@ -69,8 +69,8 @@
 					<div class="table__row-line">
 						<div class="table__cell">{{ $loop->iteration }}</div>
 						<div class="table__cell">{{ $material->name }}</div>
-						<div class="table__cell">{{ $material->identifier }}</div>
-						<div class="table__cell">{{ $material->format }}</div>
+						<div class="table__cell">{{ $material->identifierForFormat($material->pivot->format) ?? '—' }}</div>
+						<div class="table__cell">{{ $material->pivot->format ?? '—' }}</div>
 					</div>
 				@endforeach
 			</div>

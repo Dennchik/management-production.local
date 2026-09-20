@@ -45,18 +45,38 @@
 
 								@foreach ($materials as $material)
 
+									@php
+										/*
+										 * Отдельный пункт на каждый формат;
+										 * без рулонов — один пункт без формата.
+										 */
+										$formatGroups = $material->rolls
+											->groupBy(fn ($roll) => $roll->format ?? '')
+											->sortBy(fn ($group, $format) => (int) $format);
+									@endphp
+
+								@foreach ($formatGroups->isEmpty() ? collect([null]) : $formatGroups as $group)
+									@php
+										$groupFormat = $group?->pluck('format')->filter()->unique()->first();
+										$groupFormatsLabel = $group?->pluck('format')->filter()->unique()->values()->implode(', ');
+									@endphp
+
 									<button class="material-select__select-option select__item"
 											type="button" role="option" data-value="{{ $material->id }}"
 											data-grammage="{{ $material->grammage }}" data-thickness="{{ $material->thickness }}"
-											data-format="{{ $material->format }}" data-identifier="{{ $material->identifier }}"
+											data-code="{{ $material->code }}" data-format="{{ $groupFormat ?? '' }}"
 											aria-selected="{{ old('material_id') == $material->id ? 'true' : 'false' }}">
 
 										<span>{{ preg_replace('/\s*гр\.?\s*$/ui', '', $material->name) }}@if ($material->grammage)
 												| {{ rtrim(rtrim(number_format($material->grammage, 2, '.', ''), '0'), '.') }} гр
 											@endif @if ($material->thickness)
 												| {{ $material->thickness }} мкм
-											@endif | {{ $material->format }}</span>
+											@endif @if ($groupFormatsLabel)
+												| {{ $groupFormatsLabel }}
+											@endif</span>
 									</button>
+
+									@endforeach
 
 								@endforeach
 
@@ -83,7 +103,8 @@
 				{{-- Формат --}}
 				<fieldset class="receipt-order__field">
 					<label class="receipt-order__label" for="format">Формат</label>
-					<input class="receipt-order__input" id="format" type="text" readonly>
+					<input class="receipt-order__input" id="format" name="format" type="number"
+							min="0" step="1" inputmode="numeric" value="{{ old('format') }}">
 				</fieldset>
 
 				{{-- Идентификатор --}}

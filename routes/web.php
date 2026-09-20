@@ -67,21 +67,25 @@
 				->middleware('can.do:tasks,edit')
 				->name('tasks.update');
 
-		Route::get('/tasks/{task}/start',[ProductionTaskController::class, 'startForm'])
-				->middleware('can.do:tasks,edit')
-				->name('tasks.start-form');
+	// Старт задачи — сразу переводит её «В работу»;
+	// рулоны берутся на самой странице задачи.
+	Route::post('/tasks/{task}/start', [ProductionTaskController::class, 'start'])
+			->middleware('can.do:tasks,edit')
+			->name('tasks.start');
 
-		Route::post('/tasks/{task}/start', [ProductionTaskController::class, 'start'])
-				->middleware('can.do:tasks,edit')
-				->name('tasks.start');
+	// Дозабор рулона прямо со страницы задачи
+	Route::post('/tasks/{task}/inputs', [ProductionTaskController::class, 'addInput'])
+			->middleware('can.do:tasks,edit')
+			->name('tasks.inputs.store');
 
-		Route::get('/tasks/{task}/complete', [ProductionTaskController::class, 'completeForm'])
-				->middleware('can.do:tasks,edit')
-				->name('tasks.complete-form');
+	// Текущий расход по взятому рулону сохраняется сразу, без завершения задачи
+	Route::put('/tasks/{task}/inputs/{input}', [ProductionTaskController::class, 'saveInput'])
+			->middleware('can.do:tasks,edit')
+			->name('tasks.inputs.update');
 
-		Route::post('/tasks/{task}/complete', [ProductionTaskController::class, 'complete'])
-				->middleware('can.do:tasks,edit')
-				->name('tasks.complete');
+	Route::post('/tasks/{task}/complete', [ProductionTaskController::class, 'complete'])
+			->middleware('can.do:tasks,edit')
+			->name('tasks.complete');
 
 		Route::get('/tasks/{task}', [ProductionTaskController::class, 'show'])
 				->middleware('can.do:tasks')
@@ -124,6 +128,14 @@
 		Route::delete('/production/operations/{productionOperation}', [ProductionOperationController::class, 'destroy'])
 				->middleware('can.do:operations,delete')
 				->name('production.operations.destroy');
+
+		Route::get('/production/operations/{productionOperation}/allowed-catalogs', [ProductionOperationController::class, 'allowedCatalogs'])
+				->middleware('can.do:operations')
+				->name('production.operations.allowed-catalogs');
+
+		Route::post('/production/operations/{productionOperation}/allowed-catalogs', [ProductionOperationController::class, 'updateAllowedCatalogs'])
+				->middleware('can.do:operations,edit')
+				->name('production.operations.allowed-catalogs.update');
 
 		/*
 		|--------------------------------------------------------------------------

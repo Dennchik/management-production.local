@@ -15,20 +15,15 @@
 
 		@include('partials.message')
 
-		@if ($ownMachineOnly)
-			<p>Показаны задачи вашего станка.</p>
-		@endif
-
 		<div class="materials__content">
 			<div class="materials__table">
 				<table>
 					<thead>
 					<tr>
 						<th>№</th>
-						<th>Заказ</th>
 						<th>Материал</th>
-						<th>Количество, кг</th>
-						<th>Станок</th>
+						<th>Сделано / план, кг</th>
+						<th>Оператор</th>
 						<th>Статус</th>
 					</tr>
 					</thead>
@@ -36,17 +31,22 @@
 					<tbody>
 					@if ($tasks->isEmpty())
 						<tr class="materials__empty">
-							<td colspan="6">Задач нет.</td>
+							<td colspan="5">Задач нет.</td>
 						</tr>
 					@else
 						@foreach ($tasks as $task)
+							@php
+								$made = rtrim(rtrim(number_format((float) ($task->produced_weight ?? 0), 3, '.', ''), '0'), '.');
+								$plan = rtrim(rtrim($task->quantity, '0'), '.');
+								$left = rtrim(rtrim(number_format($task->quantity - (float) ($task->produced_weight ?? 0), 3, '.', ''), '0'), '.');
+							@endphp
+
 							<tr style="cursor: pointer;" onclick="window.location='{{ route('tasks.show', $task) }}'">
-								<td>{{ $task->id }}</td>
-								<td>{{ $task->order_id !== null ? '№' . $task->order_id : '—' }}</td>
+								<td>{{ $task->number }}</td>
 								<td>{{ $task->material?->name }}</td>
-								<td>{{ rtrim(rtrim($task->quantity, '0'), '.') }}</td>
-								<td>{{ $task->machine?->name ?? '—' }}</td>
-								<td>{{ $task->statusLabel() }}</td>
+								<td>{{ $made }} из {{ $plan }} <span style="color: var(--text-muted);">осталось {{ $left }}</span></td>
+								<td>{{ $task->operator?->name ?? '—' }}</td>
+								<td><span class="status-chip status-chip--{{ $task->statusClass() }}">{{ $task->statusLabel() }}</span></td>
 							</tr>
 						@endforeach
 					@endif

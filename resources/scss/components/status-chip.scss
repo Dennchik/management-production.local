@@ -1,0 +1,57 @@
+@use '../core/variables' as *;
+
+//* Чип статуса задачи: светлый фон + тонкий бордер + лёгкая тень.
+
+.status-chip {
+	display: inline-flex;
+
+	align-items: center;
+
+	min-width: max-content;
+	padding: 0.3rem 1.2rem;
+	border: 1px solid transparent;
+	border-radius: var(--border-radius-32);
+
+	font-size: var(--font-size-small);
+	font-weight: var(--font-weight-bold);
+	line-height: 1.5;
+	white-space: nowrap;
+
+	box-shadow: var(--shadow);
+
+	// Ожидает
+	&--gray {
+		border-color: rgb(148 163 184 / 60%);
+
+		color: rgb(71 85 105);
+
+		background-color: rgb(241 245 249);
+	}
+
+	// В работе
+	&--yellow {
+		border-color: rgb(202 178 58 / 70%);
+
+		color: rgb(133 106 11);
+
+		background-color: rgb(254 249 195);
+	}
+
+	// Выполнена
+	&--green {
+		border-color: rgb(134 190 148 / 80%);
+
+		color: rgb(21 128 61);
+
+		background-color: rgb(220 242 228);
+	}
+
+	// Отменена
+	&--red {
+		border-color: rgb(214 132 132 / 70%);
+
+		color: rgb(153 27 27);
+
+		background-color: rgb(254 226 226);
+	}
+}

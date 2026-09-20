@@ -28,7 +28,7 @@
 			<div class="material-issue__label">Идентификатор</div>
 
 			<div class="material-issue__value">
-				{{ $issue->material->identifier }}
+				{{ $issue->roll->identifier ?? '—' }}
 			</div>
 		</div>
 
