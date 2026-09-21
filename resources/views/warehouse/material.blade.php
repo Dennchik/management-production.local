@@ -30,7 +30,7 @@
 
 							<div class="material__row">
 								<div class="material__label">Идентификатор</div>
-								<div class="material__value">{{ $material->identifier }}</div>
+								<div class="material__value">{{ $material->roll_identifiers ?: '—' }}</div>
 							</div>
 
 							<div class="material__row">
@@ -53,7 +53,7 @@
 
 							<div class="material__row">
 								<div class="material__label">Формат</div>
-								<div class="material__value">{{ $material->format ?? '—' }}</div>
+								<div class="material__value">{{ $material->roll_formats ?: '—' }}</div>
 							</div>
 						</div>
 					</div>
@@ -88,6 +88,8 @@
 									<thead>
 									<tr>
 										<th>Номер рулона</th>
+										<th>Идентификатор</th>
+										<th>Формат</th>
 										<th>Остаток, кг</th>
 										<th>Дата поступления</th>
 									</tr>
@@ -99,6 +101,8 @@
 										<tr class="material__roll-row" data-row-link="{{ route('material-rolls.show', $roll) }}"
 												tabindex="0" role="link">
 											<td>{{ $roll->roll_number }}</td>
+											<td>{{ $roll->identifier ?? '—' }}</td>
+											<td>{{ $roll->format ?? '—' }}</td>
 											<td>{{ number_format($roll->weight, 3, '.', '') }}</td>
 											<td>{{ $roll->created_at->format('d.m.Y H:i') }}</td>
 										</tr>

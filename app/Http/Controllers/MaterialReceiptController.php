@@ -65,15 +65,18 @@
 			]);
 		}
 
-		/**
-		 * Отображает форму нового оприходования сырья.
-		 */
-		public function create(): View
-		{
-			$materials = Material::orderBy('name')->get();
+	/**
+	 * Отображает форму нового оприходования сырья.
+	 */
+	public function create(): View
+	{
+		$materials = Material::query()
+			->with('rolls:id,material_id,format')
+			->orderBy('name')
+			->get();
 
-			return view('material-receipts.create', compact('materials'));
-		}
+		return view('material-receipts.create', compact('materials'));
+	}
 
 		/**
 		 * Сохраняет приходный ордер с одним или несколькими рулонами.
@@ -88,17 +91,39 @@
 									'exists:materials,id',
 							],
 
+							'format' => [
+									'nullable',
+									'integer',
+									'min:0',
+									'max:65535',
+							],
+
 							'rolls' => [
 									'required',
 									'array',
 									'min:1',
 							],
 
-							'rolls.*.roll_number' => [
-									'required',
-									'string',
-									'max:50',
-							],
+						'rolls.*.roll_number' => [
+								'required',
+								'string',
+								'max:50',
+								// Жёсткий индекс снят (номера «задача/порядковый» повторяются
+								// каждый год), поэтому уникальность вручную введённых номеров
+								// проверяется здесь.
+								static function ($attribute, $value, $fail) use ($request) {
+										$materialId = (int) $request->input('material_id');
+
+										$exists = MaterialRoll::query()
+												->where('material_id', $materialId)
+												->where('roll_number', $value)
+												->exists();
+
+										if ($exists) {
+												$fail("Рулон с номером «{$value}» для этого материала уже существует.");
+										}
+								},
+						],
 
 							'rolls.*.weight' => [
 									'required',
@@ -116,6 +141,10 @@
 							'material_id.integer' => 'Некорректный материал.',
 							'material_id.exists' => 'Выбранный материал не существует.',
 
+							'format.integer' => 'Формат должен быть целым числом.',
+							'format.min' => 'Формат должен быть не меньше 0.',
+							'format.max' => 'Формат не должен превышать 65535.',
+
 							'rolls.required' => 'Добавьте хотя бы один рулон.',
 							'rolls.array' => 'Некорректный список рулонов.',
 							'rolls.min' => 'Добавьте хотя бы один рулон.',
@@ -132,23 +161,40 @@
 					]
 			);
 
+			$material = Material::findOrFail($validated['material_id']);
+
+			/*
+			 * Формат вводится при оприходовании и сохраняется
+			 * на каждом рулоне вместе с вычисленным идентификатором.
+			 */
+			$format = $validated['format'] ?? null;
+
+			$identifier = MaterialRoll::composeIdentifier(
+					$material->code,
+					$material->grammage,
+					$material->thickness,
+					$format
+			);
+
 			try {
-				DB::transaction(function () use ($validated) {
+				DB::transaction(function () use ($validated, $material, $format, $identifier) {
 					$receipt = MaterialReceipt::create([
 							'comment' => $validated['comment'] ?? null,
-							'user_id' => 1, // Временно, пока нет авторизации
+							'user_id' => auth()->id(), // Временно, пока нет авторизации
 					]);
 
 					foreach ($validated['rolls'] as $rollData) {
 						$roll = MaterialRoll::create([
-								'material_id' => $validated['material_id'],
+								'material_id' => $material->id,
 								'roll_number' => $rollData['roll_number'],
 								'weight' => $rollData['weight'],
+								'format' => $format,
+								'identifier' => $identifier,
 						]);
 
 						MaterialReceiptItem::create([
 								'material_receipt_id' => $receipt->id,
-								'material_id' => $validated['material_id'],
+								'material_id' => $material->id,
 								'roll_id' => $roll->id,
 								'weight' => $rollData['weight'],
 						]);

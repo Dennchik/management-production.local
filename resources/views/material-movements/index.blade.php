@@ -52,7 +52,7 @@
 							{{-- Материал --}}
 							<td> {{ $movement['material']->name }} </td>
 							{{-- Идентификатор --}}
-							<td> {{ $movement['material']->identifier }} </td>
+							<td> {{ $movement['roll']->identifier ?? '—' }} </td>
 							{{-- Рулон --}}
 							<td class="material-movements__date">{{ $movement['roll']->roll_number }}</td>
 							{{-- Изменение веса --}}

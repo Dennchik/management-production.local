@@ -28,19 +28,36 @@
 				<tbody>
 
 				@forelse ($materials as $material)
+					@php
+						/*
+						 * Группы рулонов по формату: отдельная строка
+						 * на каждый формат; без рулонов — одна строка «—».
+						 */
+						$formatGroups = $material->rolls
+							->groupBy(fn ($roll) => $roll->format ?? '')
+							->sortBy(fn ($group, $format) => (int) $format);
+					@endphp
 
-					<tr class="material__material-row" data-row-link="{{ route('warehouse.material', $material) }}"
-							tabindex="0" role="link">
+					@foreach ($formatGroups->isEmpty() ? collect([null]) : $formatGroups as $group)
+						@php
+							$groupRolls = $group ?? collect();
+							$groupFormats = $groupRolls->pluck('format')->filter()->unique()->values();
+							$groupIdentifiers = $groupRolls->pluck('identifier')->filter()->unique()->sort(SORT_STRING)->values();
+						@endphp
 
-						<td> {{ $material->name }} </td>
-						<td> {{ $material->identifier }} </td>
-						<td> {{ $material->format }} </td>
-						<td> {{ $material->rolls_count }} </td>
-						<td>
-							{{ number_format($material->total_weight ?? 0, 3, '.', '') }}
-						</td>
+						<tr class="material__material-row" data-row-link="{{ route('warehouse.material', $material) }}"
+								tabindex="0" role="link">
 
-					</tr>
+							<td> {{ $material->name }} </td>
+							<td> {{ $groupIdentifiers->implode(', ') ?: '—' }} </td>
+							<td> {{ $groupFormats->implode(', ') ?: '—' }} </td>
+							<td> {{ $groupRolls->count() }} </td>
+							<td>
+								{{ number_format($groupRolls->sum('weight'), 3, '.', '') }}
+							</td>
+
+						</tr>
+					@endforeach
 
 				@empty
 

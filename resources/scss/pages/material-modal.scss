@@ -2,7 +2,7 @@
 @use '../core/mixins' as *;
 
 .material-show {
-		// .material-show__title
+	// .material-show__title
 	&__title {
 		font-family: $font-family-secondary;
 		font-size: var(--clamp-32);
@@ -16,13 +16,22 @@
 	}
 
 	// .material-show__row
-	&__row {padding: var(--spacing);
+	&__row {
+		padding: var(--spacing);
 	}
 
 	// .material-show__actions
-	&__actions{
+	&__actions {
 		margin-top: var(--padding);
 	}
+
+	// .material-form__operations
+	&__operations {
+		display: flex;
+		flex-direction: column;
+		gap: var(--gap);
+	}
+
 }
 
 .material-receipt, .material-issue, .operation-confirm, .material-show {

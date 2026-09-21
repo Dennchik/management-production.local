@@ -12,12 +12,54 @@ export function initMaterialReceiptModule() {
    const inputs = {
       grammage: form.querySelector('#grammage'),
       thickness: form.querySelector('#thickness'),
-      format: form.querySelector('#format'),
       identifier: form.querySelector('#identifier'),
    };
 
+   const formatInput = form.querySelector('#format');
+
+   /**
+    * Вычисляет идентификатор рулона:
+    * код материала + граммаж|толщина + цифры формата.
+    * Зеркалит MaterialRoll::composeIdentifier() на стороне PHP.
+    */
+   function composeIdentifier(option, format) {
+      const code = option?.dataset.code || '';
+      const value = option?.dataset.grammage || option?.dataset.thickness || '';
+      const formatPart = (format || '').replace(/\D/g, '');
+
+      const parsed = parseFloat(value);
+      const valuePart = Number.isFinite(parsed)
+         ? String(parsed)
+              .replace('.', '')
+              .replace(/^0+/, '')
+              .padStart(2, '0')
+         : '';
+
+      if (!code || !valuePart || !formatPart) {
+         return '';
+      }
+
+      return code + valuePart + formatPart;
+   }
+
+   /**
+    * Пересчитывает readonly-поле идентификатора.
+    */
+   function updateIdentifier() {
+      if (!inputs.identifier) return;
+
+      const selected = materialSelectEl.querySelector('.select__item._selected');
+
+      inputs.identifier.value = composeIdentifier(
+         selected,
+         formatInput?.value
+      );
+   }
+
    /**
     * Заполняет характеристики выбранного материала.
+    * Формат подставляется из выбранного пункта
+    * (материал + формат), но остаётся редактируемым.
     */
    function fillMaterialData(option) {
       if (inputs.grammage) {
@@ -28,13 +70,11 @@ export function initMaterialReceiptModule() {
          inputs.thickness.value = option?.dataset.thickness || '';
       }
 
-      if (inputs.format) {
-         inputs.format.value = option?.dataset.format || '';
+      if (formatInput) {
+         formatInput.value = option?.dataset.format || '';
       }
 
-      if (inputs.identifier) {
-         inputs.identifier.value = option?.dataset.identifier || '';
-      }
+      updateIdentifier();
    }
 
    /**
@@ -45,6 +85,11 @@ export function initMaterialReceiptModule() {
 
       fillMaterialData(option);
    });
+
+   /**
+    * Ввод формата — идентификатор пересчитывается на лету.
+    */
+   formatInput?.addEventListener('input', updateIdentifier);
 
    /**
     * Восстановление состояния формы после
@@ -79,6 +124,10 @@ export function initMaterialReceiptModule() {
             input.value = '';
          }
       });
+
+      if (formatInput) {
+         formatInput.value = '';
+      }
 
       const rollsList = form.querySelector('[data-receipt-rolls]');
 

@@ -7,7 +7,7 @@
 	@include('partials.message')
 
 
-	<form class="issue-order" method="POST" action="{{ route('material-issues.store') }}" novalidate>
+	<form class="issue-order" method="POST" action="{{ route('material-issues.store') }}" data-issue-order novalidate>
 		<div class="issue-order__header">
 			<h1 class="main-content__title">Расходный ордер</h1>
 		</div>
@@ -51,10 +51,25 @@
 
 								@foreach ($materials ?? [] as $material)
 
+									@php
+										/*
+										 * Отдельный пункт на каждый формат;
+										 * без рулонов — один пункт без формата.
+										 */
+										$formatGroups = $material->rolls
+											->groupBy(fn ($roll) => $roll->format ?? '')
+											->sortBy(fn ($group, $format) => (int) $format);
+									@endphp
+
+								@foreach ($formatGroups->isEmpty() ? collect([null]) : $formatGroups as $group)
+									@php
+										$groupFormatsLabel = $group?->pluck('format')->filter()->unique()->values()->implode(', ');
+									@endphp
+
 									<button class="material-select__select-option select__item" type="button" role="option"
 											data-value="{{ $material->id }}" data-name="{{ $material->name }}"
-											data-identifier="{{ $material->identifier }}" data-search="{{ strtolower
-											($material->name . ' ' . $material->identifier . ' ' . $material->format . ' ' . $material->thickness . ' ' . $material->grammage) }}"
+											data-search="{{ strtolower
+											($material->name . ' ' . $material->thickness . ' ' . $material->grammage . ' ' . ($groupFormatsLabel ?? '')) }}"
 											aria-selected="{{ old('material_id') == $material->id ? 'true' : 'false' }}">
 
 										<span>
@@ -68,9 +83,13 @@
 												| {{ $material->grammage }} гр
 											@endif
 
-										  | {{ $material->format }}
+											@if ($groupFormatsLabel)
+												| {{ $groupFormatsLabel }}
+											@endif
 										</span>
 									</button>
+
+									@endforeach
 
 								@endforeach
 

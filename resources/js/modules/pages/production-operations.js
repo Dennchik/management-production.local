@@ -11,7 +11,7 @@ export function initProductionOperations() {
       createButton.addEventListener('click', () => {
          window.operationModal?.load(
             '/production/operations/create',
-            'Не удалось загрузить форму создания производственной операции.'
+            'Не удалось загрузить форму создания технологической линии.'
          );
       });
    }
@@ -32,7 +32,7 @@ export function initProductionOperations() {
 
          window.operationModal?.load(
             `/production/operations/${operationId}/delete`,
-            'Не удалось загрузить окно удаления производственной операции.'
+            'Не удалось загрузить окно удаления технологической линии.'
          );
 
          return;

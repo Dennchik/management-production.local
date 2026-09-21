@@ -20,96 +20,10 @@
 		</div>
 	@endif
 
-	<div class="operation-view__section">
-		<div class="operation-view__label">Входные компоненты</div>
-
-		@php
-			$inputs = $operation->components->where('direction', 'input');
-		@endphp
-
-		@if ($inputs->isEmpty())
-			<div class="operation-view__empty">
-				Входные компоненты не заданы.
-			</div>
-		@else
-			<div class="operation-view__components">
-				@foreach ($inputs as $component)
-					<div class="operation-view__component">
-						<div class="operation-view__component-main">
-                     <span class="operation-view__component-name">
-                        {{ $component->material->name }}
-                     </span>
-
-							@if ($component->quantity !== null)
-								<span class="operation-view__component-quantity">
-                           {{ rtrim(rtrim(number_format($component->quantity, 3, '.', ''), '0'), '.') }}
-									{{ $component->unit }}
-                        </span>
-							@endif
-						</div>
-
-						<div class="operation-view__component-meta">
-							{{ $component->is_required ? 'Обязательный' : 'Необязательный' }}
-						</div>
-
-						@if ($component->comment)
-							<div class="operation-view__component-comment">
-								{{ $component->comment }}
-							</div>
-						@endif
-					</div>
-				@endforeach
-			</div>
-		@endif
-	</div>
-
-	<div class="operation-view__section">
-		<div class="operation-view__label">Выходные компоненты</div>
-
-		@php
-			$outputs = $operation->components->where('direction', 'output');
-		@endphp
-
-		@if ($outputs->isEmpty())
-			<div class="operation-view__empty">
-				Выходные компоненты не заданы.
-			</div>
-		@else
-			<div class="operation-view__components">
-				@foreach ($outputs as $component)
-					<div class="operation-view__component">
-						<div class="operation-view__component-main">
-                     <span class="operation-view__component-name">
-                        {{ $component->material->name }}
-                     </span>
-
-							@if ($component->quantity !== null)
-								<span class="operation-view__component-quantity">
-                           {{ rtrim(rtrim(number_format($component->quantity, 3, '.', ''), '0'), '.') }}
-									{{ $component->unit }}
-                        </span>
-							@endif
-						</div>
-
-						<div class="operation-view__component-meta">
-							{{ $component->is_required ? 'Обязательный' : 'Необязательный' }}
-						</div>
-
-						@if ($component->comment)
-							<div class="operation-view__component-comment">
-								{{ $component->comment }}
-							</div>
-						@endif
-					</div>
-				@endforeach
-			</div>
-		@endif
-	</div>
-
 	<div class="operation-view__actions">
-		<button class="button" type="button" data-production-operation-edit="{{ $operation->id }}">
+		<a class="button" href="{{ route('production.operations.edit', $operation) }}">
 			Редактировать
-		</button>
+		</a>
 
 		<button class="button" type="button" data-production-operation-delete="{{ $operation->id }}">
 			Удалить

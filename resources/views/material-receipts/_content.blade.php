@@ -32,14 +32,15 @@
 
 				@foreach ($receipt->items as $item)
 
-					<div class="material-receipt__roll">
+						<div class="material-receipt__roll">
 
-						<div><strong>{{ $item->material->name }}</strong></div>
-						<div>Идентификатор: {{ $item->material->identifier }}</div>
-						<div>Номер рулона: {{ $item->roll->roll_number }}</div>
-						<div>Вес: {{ number_format($item->weight, 3, '.', '') }} кг </div>
+							<div><strong>{{ $item->material->name }}</strong></div>
+							<div>Идентификатор: {{ $item->roll->identifier ?? '—' }}</div>
+							<div>Формат: {{ $item->roll->format ?? '—' }}</div>
+							<div>Номер рулона: {{ $item->roll->roll_number }}</div>
+							<div>Вес: {{ number_format($item->weight, 3, '.', '') }} кг </div>
 
-					</div>
+						</div>
 
 				@endforeach
 

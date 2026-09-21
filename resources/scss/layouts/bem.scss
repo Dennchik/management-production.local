@@ -1,5 +1,11 @@
 @use '../core/variables';
 
+.materials-action {
+	display: flex;
+	justify-content: space-between;
+	margin: 2rem 0;
+}
+
 textarea {
 	cursor: pointer;
 	resize: vertical;
@@ -24,6 +30,7 @@ textarea {
 	gap: 1rem;
 	align-items: center;
 	justify-content: center;
+	white-space: nowrap;
 
 	height: 36px;
 	padding: var(--spacing);
@@ -41,14 +48,18 @@ textarea {
 		white-space: nowrap;
 	}
 
+	&.button--danger {
+		align-self: flex-end;
+	}
+
 	&:hover {
 		background-color: var(--color-hover);
 	}
 }
 
 table {
-	overflow: hidden;
-	//	table-layout: fixed;
+	//overflow: hidden;
+	table-layout: auto;
 	border-collapse: collapse;
 
 	width: 100%;

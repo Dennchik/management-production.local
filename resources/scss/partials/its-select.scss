@@ -44,6 +44,11 @@
 
 		transition: background 0.4s ease-in-out;
 
+		// Скрытие вариантов фильтром (например, шаблоны другой линии)
+		&[hidden] {
+			display: none;
+		}
+
 		&._selected {
 			background: var(--focus-color);
 		}

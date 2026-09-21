@@ -17,11 +17,12 @@
 		</div>
 
 		<div class="material">
-			<div class="material__rows">
+			<div class="material__rows material__rows--rolls">
 				<div class="material__head">
 					<div class="material__label">№ рулона</div>
 					<div class="material__label">Материал</div>
 					<div class="material__label">Идентификатор</div>
+					<div class="material__label">Формат</div>
 					<div class="material__label">Остаток</div>
 
 				</div>
@@ -29,7 +30,8 @@
 					<a class="material__row" href="{{ route('material-rolls.show', $roll) }}">
 						<div class="material__value">{{ $roll->roll_number }}</div>
 						<div class="material__value">{{ $roll->material->name }}</div>
-						<div class="material__value">{{ $roll->material->identifier }}</div>
+						<div class="material__value">{{ $roll->identifier ?? '—' }}</div>
+						<div class="material__value">{{ $roll->format ?? '—' }}</div>
 						<div class="material__value">{{ number_format($roll->weight, 3, '.', '') }} кг</div>
 					</a>
 				@empty

@@ -32,7 +32,12 @@
 
 							<div class="material__row">
 								<div class="material__label">Идентификатор</div>
-								<div class="material__value">{{ $roll->material->identifier }}</div>
+								<div class="material__value">{{ $roll->identifier ?? '—' }}</div>
+							</div>
+
+							<div class="material__row">
+								<div class="material__label">Формат</div>
+								<div class="material__value">{{ $roll->format ?? '—' }}</div>
 							</div>
 
 							<div class="material__row">

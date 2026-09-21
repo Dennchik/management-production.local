@@ -4,6 +4,8 @@
 
 	use Illuminate\Database\Eloquent\Attributes\Fillable;
 	use Illuminate\Database\Eloquent\Model;
+	use Illuminate\Database\Eloquent\Relations\BelongsTo;
+	use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 	use Illuminate\Database\Eloquent\Relations\HasMany;
 
 	#[Fillable([
@@ -11,27 +13,81 @@
 			'code',
 			'grammage',
 			'thickness',
-			'format',
-			'identifier',
+			'catalog_id',
+			'material_type',
 			'is_active',
-			'lamination_allowed',
-			'priming_allowed',
-			'cutting_allowed',
-			'printing_allowed',
 	])]
 	class Material extends Model
 	{
+		public const TYPES = [
+				'raw' => 'Расходник',
+				'product' => 'Продукция',
+		];
+
 		protected function casts(): array
 		{
 			return [
 					'grammage' => 'decimal:2',
 					'thickness' => 'decimal:2',
 					'is_active' => 'boolean',
-					'lamination_allowed' => 'boolean',
-					'priming_allowed' => 'boolean',
-					'cutting_allowed' => 'boolean',
-					'printing_allowed' => 'boolean',
+				'material_type' => 'string',
 			];
+		}
+
+		/**
+		 * Форматы этого материала по его рулонам, через запятую.
+		 */
+		public function getRollFormatsAttribute(): string
+		{
+			return $this->rolls
+				->pluck('format')
+				->filter()
+				->unique()
+				->sort()
+				->map(static fn ($format) => (string) $format)
+				->implode(', ');
+		}
+
+		/**
+		 * Идентификаторы этого материала по его рулонам, через запятую.
+		 */
+		public function getRollIdentifiersAttribute(): string
+		{
+			return $this->rolls
+				->pluck('identifier')
+				->filter()
+				->unique()
+				->sort(SORT_STRING)
+				->implode(', ');
+		}
+
+		/**
+		 * Идентификатор рулонов заданного формата этого материала.
+		 */
+		public function identifierForFormat($format): ?string
+		{
+			return $this->rolls
+				->first(static fn ($roll) => (string) $roll->format === (string) $format)
+				?->identifier;
+		}
+
+		/**
+		 * Каталог, к которому отнесён материал.
+		 */
+		public function catalog(): BelongsTo
+		{
+			return $this->belongsTo(Catalog::class);
+		}
+
+		/**
+		 * Разрешённые технологические линии материала.
+		 */
+		public function allowedOperations(): BelongsToMany
+		{
+			return $this->belongsToMany(
+					ProductionOperation::class,
+					'material_production_operation'
+			)->orderBy('id');
 		}
 
 		/**

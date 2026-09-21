@@ -3,6 +3,7 @@
 	namespace App\Http\Controllers;
 
 	use App\Models\Material;
+	use App\Models\MaterialRoll;
 	use Illuminate\Http\Request;
 	use Illuminate\View\View;
 
@@ -24,25 +25,31 @@
 			}
 			$codes = array_values(array_filter($codes));
 
-			$materialsQuery = Material::query()
-					->withCount([
-							'rolls as rolls_count' => function ($query) {
-								$query->where('weight', '>', 0);
-							},
-					])
-					->withSum('rolls as total_weight', 'weight');
+		$materialsQuery = Material::query()
+				->with([
+						'rolls' => function ($query) use ($format) {
+							$query
+								->select('id', 'material_id', 'format', 'identifier', 'weight')
+								->where('weight', '>', 0)
+								->when($format, fn ($query) => $query->where('format', $format));
+						},
+				]);
 
-			if ($search) {
-				$materialsQuery->where(function ($query) use ($search) {
-					$query
-							->where('name', 'ilike', "%{$search}%")
-							->orWhere('identifier', 'ilike', "%{$search}%");
-				});
-			}
+		if ($search) {
+			$materialsQuery->where(function ($query) use ($search) {
+				$query
+					->where('name', 'ilike', "%{$search}%")
+					->orWhereHas('rolls', function ($query) use ($search) {
+						$query->where('identifier', 'ilike', "%{$search}%");
+					});
+			});
+		}
 
-			if ($format) {
-				$materialsQuery->where('format', $format);
-			}
+		if ($format) {
+			$materialsQuery->whereHas('rolls', function ($query) use ($format) {
+				$query->where('format', $format);
+			});
+		}
 
 			if ($code) {
 				$materialsQuery->where('code', $code);
@@ -80,11 +87,12 @@
 					->orderBy('name')
 					->get();
 
-			$formats = Material::query()
-					->select('format')
-					->distinct()
-					->orderBy('format')
-					->pluck('format');
+			$formats = MaterialRoll::query()
+				->select('format')
+				->distinct()
+				->whereNotNull('format')
+				->orderBy('format')
+				->pluck('format');
 
 			$materialTypes = Material::query()
 					->select('code')

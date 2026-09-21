@@ -5,6 +5,18 @@ export function initProductionOperationModule() {
 
    if (!form) return;
 
+   initProductionOperationForm(form);
+}
+
+/**
+ * Инициализирует форму производственной операции (создание или редактирование).
+ * Используется как на отдельной странице, так и в модальном окне.
+ */
+export function initProductionOperationForm(form) {
+   if (!form || form.dataset.operationFormInitialized) return;
+
+   form.dataset.operationFormInitialized = 'true';
+
    /**
     * Инициализирует CustomSelect на всех элементах внутри указанного контейнера.
     */
@@ -38,6 +50,12 @@ export function initProductionOperationModule() {
       const newIndex = items.length;
 
       newRow.setAttribute('data-component-index', newIndex);
+
+      // Новая строка не связана с существующим компонентом.
+      newRow.removeAttribute('data-component-id');
+      newRow
+         .querySelectorAll(`input[name^="${type}["][name$="[id]"]`)
+         .forEach((input) => input.remove());
 
       newRow.querySelectorAll('input, select, textarea').forEach((input) => {
          if (input.type === 'checkbox') {
@@ -194,8 +212,9 @@ export function initProductionOperationModule() {
       }
 
       try {
+         // PUT передаётся через скрытое поле _method, поэтому метод запроса — POST.
          const response = await fetch(operationForm.action, {
-            method: operationForm.method || 'POST',
+            method: 'POST',
             headers: {
                'X-Requested-With': 'XMLHttpRequest',
                Accept: 'application/json',
@@ -291,9 +310,13 @@ export function initProductionOperationModule() {
    /**
     * Перехватываем стандартную отправку формы.
     */
-   const operationForm = form.querySelector(
-      '[data-production-operation-create-form]'
-   );
+   const formSelector =
+      '[data-production-operation-create-form], [data-production-operation-update-form]';
+
+   // Корнем модуля может быть сам элемент формы (форма редактирования).
+   const operationForm = form.matches(formSelector)
+      ? form
+      : form.querySelector(formSelector);
 
    if (operationForm) {
       operationForm.addEventListener('submit', submitOperation);
