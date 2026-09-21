@@ -30,6 +30,7 @@ textarea {
 	gap: 1rem;
 	align-items: center;
 	justify-content: center;
+	white-space: nowrap;
 
 	height: 36px;
 	padding: var(--spacing);

@@ -70,20 +70,20 @@
 	$sectionsHidden = $inputRows->isEmpty() && $outputRows->isEmpty();
 @endphp
 
-<div class="issue-order__body">
+<div class="production-task__body">
 
 	@if ($isPending)
 		{{-- Номер / Линия / Шаблон / Оператор / Количество --}}
-		<div class="issue-order__line">
-			<fieldset class="issue-order__field">
-				<label class="issue-order__label" for="task-number">Номер</label>
+		<div class="production-task__line">
+			<fieldset class="production-task__field">
+				<label class="production-task__label" for="task-number">Номер</label>
 
-				<input class="issue-order__input" id="task-number" name="number" type="number"
+				<input class="production-task__input" id="task-number" name="number" type="number"
 						min="1" step="1" value="{{ old('number', $task->number ?? $nextNumber ?? '') }}" required>
 			</fieldset>
 
-			<fieldset class="issue-order__field">
-				<label class="issue-order__label" for="task-operation">Линия</label>
+			<fieldset class="production-task__field">
+				<label class="production-task__label" for="task-operation">Линия</label>
 
 				<div class="select material-select" data-task-operation-select>
 					<input class="select__value" type="hidden" value="{{ $selectedOperationId ?? '' }}">
@@ -108,8 +108,8 @@
 				</div>
 			</fieldset>
 
-			<fieldset class="issue-order__field">
-				<label class="issue-order__label" for="task-template">Шаблон производства</label>
+			<fieldset class="production-task__field">
+				<label class="production-task__label" for="task-template">Шаблон производства</label>
 
 				<div class="select material-select" data-task-template-select>
 					<input class="select__value" id="task-template" name="production_line_id" type="hidden"
@@ -140,8 +140,8 @@
 				</div>
 			</fieldset>
 
-			<fieldset class="issue-order__field">
-				<label class="issue-order__label" for="task-operator">Оператор</label>
+			<fieldset class="production-task__field">
+				<label class="production-task__label" for="task-operator">Оператор</label>
 
 				<div class="select material-select">
 					<input class="select__value" id="task-operator" name="operator_id" type="hidden"
@@ -167,24 +167,24 @@
 				</div>
 			</fieldset>
 
-			<fieldset class="issue-order__field">
-				<label class="issue-order__label" for="quantity">Количество выходного материала, кг</label>
+			<fieldset class="production-task__field">
+				<label class="production-task__label" for="quantity">Кол-во вых. материала, кг</label>
 
-				<input class="issue-order__input" id="quantity" name="quantity" type="number"
+				<input class="production-task__input" id="quantity" name="quantity" type="number"
 						step="0.001" min="0.001"
 						value="{{ old('quantity', $task ? rtrim(rtrim((string) $task->quantity, '0'), '.') : null) }}" required>
 			</fieldset>
 		</div>
 	@else
 		{{-- У начатой задачи состав материалов зафиксирован --}}
-		<div class="issue-order__line">
-			<fieldset class="issue-order__field">
-				<label class="issue-order__label">Материал (продукция)</label>
-				<input class="issue-order__input" type="text" disabled value="{{ $task->material?->name }}">
+		<div class="production-task__line">
+			<fieldset class="production-task__field">
+				<label class="production-task__label">Материал (продукция)</label>
+				<input class="production-task__input" type="text" disabled value="{{ $task->material?->name }}">
 			</fieldset>
 
-			<fieldset class="issue-order__field">
-				<label class="issue-order__label" for="task-operator">Оператор</label>
+			<fieldset class="production-task__field">
+				<label class="production-task__label" for="task-operator">Оператор</label>
 
 				<div class="select material-select">
 					<input class="select__value" id="task-operator" name="operator_id" type="hidden"
@@ -210,10 +210,10 @@
 				</div>
 			</fieldset>
 
-			<fieldset class="issue-order__field">
-				<label class="issue-order__label" for="quantity">Количество, кг</label>
+			<fieldset class="production-task__field">
+				<label class="production-task__label" for="quantity">Количество, кг</label>
 
-				<input class="issue-order__input" id="quantity" name="quantity" type="number"
+				<input class="production-task__input" id="quantity" name="quantity" type="number"
 						step="0.001" min="0.001"
 						value="{{ old('quantity', rtrim(rtrim((string) $task->quantity, '0'), '.')) }}" required>
 			</fieldset>
@@ -221,19 +221,19 @@
 	@endif
 
 	{{-- Комментарий --}}
-	<div class="issue-order__line">
-		<fieldset class="issue-order__field">
-			<label class="issue-order__label" for="comment"> Комментарий </label>
+	<div class="production-task__line">
+		<fieldset class="production-task__field">
+			<label class="production-task__label" for="comment"> Комментарий </label>
 
-			<textarea class="issue-order__input issue-order__textarea" id="comment"
+			<textarea class="production-task__input production-task__textarea" id="comment"
 					name="comment">{{ old('comment', $task?->comment) }}</textarea>
 		</fieldset>
 	</div>
 
 	@if ($isPending)
 		{{-- Разблокировка состава материалов задачи --}}
-		<div class="issue-order__actions">
-			<button class="issue-order__button button" type="button" data-task-unlock-materials>
+		<div class="production-task__actions">
+			<button class="production-task__button button" type="button" data-task-unlock-materials>
 				<span>Изменить материалы вручную</span>
 			</button>
 		</div>
@@ -267,12 +267,12 @@
 	@endif
 
 	{{-- Действия --}}
-	<div class="issue-order__actions">
-		<button class="issue-order__button main-content__button button" type="submit">
+	<div class="production-task__actions">
+		<button class="production-task__button main-content__button button" type="submit">
 			<span>{{ $submitLabel }}</span>
 		</button>
 
-		<a class="issue-order__button issue-order__button--reset button" href="{{ $cancelUrl }}">
+		<a class="production-task__button production-task__button--reset button" href="{{ $cancelUrl }}">
 			<span>Отмена</span>
 		</a>
 	</div>

@@ -8,6 +8,16 @@
 }
 
 .main-content {
+
+	// .main-content__actions
+	&__actions {
+		margin: 2rem 0;
+
+		p {
+			padding: 1rem;
+		}
+	}
+
 	// .main-content__body
 	&__body {
 		display: flex;
@@ -26,7 +36,6 @@
 
 		&:first-child {
 			flex: 0 0 320px;
-			width: fit-content;
 			width: 320px;
 		}
 

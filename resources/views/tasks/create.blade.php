@@ -4,11 +4,12 @@
 
 @section('content')
 	<div class="main-content__content" data-production-lines-page>
-		<form class="issue-order" method="POST" action="{{ route('tasks.store') }}"
+		<div class="main-content__header">
+			<h1 class="main-content__title">Новая производственная задача</h1>
+		</div>
+
+		<form class="production-task" method="POST" action="{{ route('tasks.store') }}"
 				data-tasks-form data-production-lines-form>
-			<div class="issue-order__header">
-				<h1 class="main-content__title">Новая производственная задача</h1>
-			</div>
 			@csrf
 
 			@include('partials.message')

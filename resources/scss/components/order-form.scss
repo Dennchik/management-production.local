@@ -7,7 +7,32 @@
 		display: grid;
 		grid-template-columns:  1.5fr repeat(2, 0.5fr);
 		gap: 2rem;
-		align-items: center;
+		align-items: center;align-items: end
+	}
+}
+
+.production-task {
+	// .production-task__line
+	&__line {
+		&:nth-child(1) {
+			display: grid;
+			grid-template-columns:  80px repeat(3, 0.5fr);
+			gap: 2rem;
+			align-items: center;
+		}
+	}
+
+	// .production-task__field
+	&__field {
+		&:nth-child(5) {
+//			grid-column: span 2;
+		}
+	}
+
+	&--edit {
+		.production-task__line {
+			grid-template-columns:  1fr repeat(2, 0.5fr);
+		}
 	}
 }
 
@@ -64,7 +89,7 @@
 	}
 }
 
-.receipt-order, .issue-order {
+.receipt-order, .issue-order, .production-task {
 	// receipt-order__body
 	&__body {
 		display: flex;
@@ -93,6 +118,7 @@
 
 	// .receipt-order__label
 	&__label {
+		padding-right: 1.6rem;
 		padding-left: 1.6rem;
 
 		font-size: 1.4rem;

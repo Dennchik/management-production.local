@@ -52,7 +52,9 @@
 					</tr>
 					<tr>
 						<th style="text-align: left;">Статус</th>
-						<td><span class="status-chip status-chip--{{ $task->statusClass() }}">{{ $task->statusLabel() }}</span></td>
+						<td>
+							<span class="status-chip status-chip--{{ $task->statusClass() }}">{{ $task->statusLabel() }}</span>
+						</td>
 					</tr>
 					@if ($task->started_at)
 						<tr>
@@ -110,14 +112,18 @@
 		@if ($isInProgress || $task->inputs->isNotEmpty())
 			@if ($isInProgress)
 				{{-- Завершение задачи — прямо на её странице; расход и продукция сохраняются через AJAX сразу --}}
-				<form method="POST" action="{{ route('tasks.complete', $task) }}" data-task-complete data-task-id="{{ $task->id }}"
+				<form method="POST"
+						action="{{ route('tasks.complete', $task) }}"
+						data-task-complete
+						data-task-id="{{ $task->id }}"
 						onsubmit="return confirm('Завершить задачу? Сырьё будет списано, продукция — оприходована.');">
 					@csrf
 
 					<div data-task-inputs-section id="task-inputs-section">
 						<div class="main-content__header" style="margin-top: 2rem;">
 							<h2 class="main-content__title" style="font-size: 1.3rem;">Взятое сырьё (рулоны)</h2>
-							<span data-task-save-status style="font-size: var(--font-size-small); color: var(--text-muted);"></span>
+							<span data-task-save-status
+									style="font-size: var(--font-size-small); color: var(--text-muted);"></span>
 						</div>
 
 						<p style="margin: 0 0 1rem; color: var(--text-muted);">
@@ -128,119 +134,133 @@
 
 						<div data-task-add-error hidden style="margin: 0 0 1rem; color: var(--alarm);"></div>
 
-					<div class="materials__content">
-						<div class="materials__table">
-							<table>
-								<thead>
-								<tr>
-									<th>Рулон</th>
-									<th>Вес рулона, кг</th>
-									<th>Расход, кг</th>
-									<th>Остаток, кг</th>
-								</tr>
-								</thead>
-								<tbody>
-								@foreach ($task->inputMaterials as $material)
-									@php
-										$materialInputs = $task->inputs->where('material_id', $material->id)->values();
-										$materialRolls = $availableRolls[$material->id] ?? collect();
-									@endphp
-
+						<div class="materials__content">
+							<div class="materials__table">
+								<table>
+									<thead>
 									<tr>
-										<th colspan="4" style="text-align: left;">
-											{{ $material->name }}@if ($material->pivot->format) — {{ $material->pivot->format }} @endif
-										</th>
+										<th>Рулон</th>
+										<th>Вес рулона, кг</th>
+										<th>Расход, кг</th>
+										<th>Остаток, кг</th>
 									</tr>
-
-									@foreach ($materialInputs as $input)
+									</thead>
+									<tbody>
+									@foreach ($task->inputMaterials as $material)
 										@php
-											$rollWeight = (string) ($input->roll?->weight ?? 0);
-											$savedUsed = (float) ($input->actual_weight ?? 0);
-											$index = $input->id;
+											$materialInputs = $task->inputs->where('material_id', $material->id)->values();
+											$materialRolls = $availableRolls[$material->id] ?? collect();
 										@endphp
 
-										<tr data-task-roll data-roll-weight="{{ $rollWeight }}">
-											<td>{{ $input->roll?->roll_number ?? '—' }}</td>
-											<td>{{ $input->roll ? rtrim(rtrim(number_format((float) $rollWeight, 3, '.', ''), '0'), '.') : '—' }}</td>
-											<td>
-												<input class="issue-order__input" type="number" step="0.001" min="0"
-														style="min-height: 36px; width: 100%;"
-														name="inputs[{{ $index }}][used]" data-roll-used
-														value="{{ old('inputs.' . $index . '.used', rtrim(rtrim(number_format($savedUsed, 3, '.', ''), '0'), '.')) }}">
-											</td>
-											<td>
-												<input class="issue-order__input" type="number" step="0.001"
-														style="min-height: 36px; width: 100%;"
-														name="inputs[{{ $index }}][remaining]" data-roll-remaining
-														value="{{ old('inputs.' . $index . '.remaining', rtrim(rtrim(number_format((float) $rollWeight - $savedUsed, 3, '.', ''), '0'), '.')) }}">
-												<input type="hidden" name="inputs[{{ $index }}][id]" value="{{ $input->id }}">
-											</td>
-										</tr>
-									@endforeach
-
-									@if ($materialRolls->isNotEmpty())
 										<tr>
-											<td colspan="4" style="padding: 6px 8px;">
-												<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-													<div class="select material-select" style="flex: 1 1 220px;" data-task-roll-select>
-														<input class="select__value" type="hidden" name="inputs[0][roll_id]"
-																value="" form="task-input-form-{{ $material->id }}">
+											<th colspan="4" style="text-align: left;">
+												{{ $material->name }}@if ($material->pivot->format)
+													— {{ $material->pivot->format }}
+												@endif
+											</th>
+										</tr>
 
-														<button class="material-select__select-button select__button select-button"
-																type="button" aria-haspopup="listbox" aria-expanded="false">
-															<span class="material-select__select-value select__button-text">— Рулон не выбран —</span>
-															<span class="material-select__select-arrow" aria-hidden="true"></span>
-														</button>
+										@foreach ($materialInputs as $input)
+											@php
+												$rollWeight = (string) ($input->roll?->weight ?? 0);
+												$savedUsed = (float) ($input->actual_weight ?? 0);
+												$index = $input->id;
+											@endphp
 
-														<div class="select__dropdown material-select__select-list _collapse" role="listbox">
-															@foreach ($materialRolls as $roll)
-																@php $takenBy = $roll->taken_by ?? null; @endphp
-																<button class="material-select__select-option select__item" type="button"
-																		role="option" data-value="{{ $takenBy ? '' : $roll->id }}"
-																		data-search="{{ strtolower($roll->roll_number) }}"
-																		@if ($takenBy) disabled @endif>
-																	<span>{{ $roll->roll_number }} ({{ rtrim(rtrim($roll->weight, '0'), '.') }} кг)</span>
-																	@if ($takenBy)
-																		<small style="display: block; font-size: 1.1rem; color: var(--text-muted);">
-																			взята в задачу №{{ $takenBy }}
-																		</small>
-																	@endif
-																</button>
-															@endforeach
-															<div class="material-select__select-empty select__empty" hidden>Ничего не найдено</div>
+											<tr data-task-roll data-roll-weight="{{ $rollWeight }}">
+												<td>{{ $input->roll?->roll_number ?? '—' }}</td>
+												<td>{{ $input->roll ? rtrim(rtrim(number_format((float) $rollWeight, 3, '.', ''), '0'), '.') : '—' }}</td>
+												<td>
+													<input class="issue-order__input" type="number" step="0.001" min="0"
+															style="min-height: 36px; width: 100%;"
+															name="inputs[{{ $index }}][used]" data-roll-used
+															value="{{ old('inputs.' . $index . '.used', rtrim(rtrim(number_format($savedUsed, 3, '.', ''), '0'), '.')) }}">
+												</td>
+												<td>
+													<input class="issue-order__input" type="number" step="0.001"
+															style="min-height: 36px; width: 100%;"
+															name="inputs[{{ $index }}][remaining]" data-roll-remaining
+															value="{{ old('inputs.' . $index . '.remaining', rtrim(rtrim(number_format((float) $rollWeight - $savedUsed, 3, '.', ''), '0'), '.')) }}">
+													<input type="hidden" name="inputs[{{ $index }}][id]" value="{{ $input->id }}">
+												</td>
+											</tr>
+										@endforeach
+
+										@if ($materialRolls->isNotEmpty())
+											<tr>
+												<td colspan="4" style="padding: 6px 8px;">
+													<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+														<div class="select material-select"
+																style="flex: 1 1 220px;"
+																data-task-roll-select>
+															<input class="select__value" type="hidden" name="inputs[0][roll_id]"
+																	value="" form="task-input-form-{{ $material->id }}">
+
+															<button class="material-select__select-button select__button select-button"
+																	type="button" aria-haspopup="listbox" aria-expanded="false">
+																<span class="material-select__select-value select__button-text">— Рулон не выбран —</span>
+																<span class="material-select__select-arrow" aria-hidden="true"></span>
+															</button>
+
+															<div class="select__dropdown material-select__select-list _collapse"
+																	role="listbox">
+																@foreach ($materialRolls as $roll)
+																	@php $takenBy = $roll->taken_by ?? null; @endphp
+																	<button class="material-select__select-option select__item"
+																			type="button"
+																			role="option"
+																			data-value="{{ $takenBy ? '' : $roll->id }}"
+																			data-search="{{ strtolower($roll->roll_number) }}"
+																			@if ($takenBy) disabled @endif>
+																		<span>{{ $roll->roll_number }} ({{ rtrim(rtrim($roll->weight, '0'), '.') }} кг)</span>
+																		@if ($takenBy)
+																			<small style="display: block; font-size: 1.1rem; color: var(--text-muted);">
+																				взята в задачу №{{ $takenBy }}
+																			</small>
+																		@endif
+																	</button>
+																@endforeach
+																<div class="material-select__select-empty select__empty" hidden>Ничего
+																	не найдено
+																</div>
+															</div>
 														</div>
-													</div>
 
-													<button class="button" type="submit" form="task-input-form-{{ $material->id }}">
-														<span>Взять рулон</span>
-													</button>
-												</div>
-											</td>
-										</tr>
-									@else
-										<tr>
-											<td colspan="4" style="padding: 6px 8px; color: var(--text-muted);">
-												Свободных рулонов этого формата нет.
-											</td>
-										</tr>
-									@endif
+														<button class="button"
+																type="submit"
+																form="task-input-form-{{ $material->id }}">
+															<span>Взять рулон</span>
+														</button>
+													</div>
+												</td>
+											</tr>
+										@else
+											<tr>
+												<td colspan="4" style="padding: 6px 8px; color: var(--text-muted);">
+													Свободных рулонов этого формата нет.
+												</td>
+											</tr>
+										@endif
 									@endforeach
 									</tbody>
 								</table>
 							</div>
 						</div>
+
+						<div class="main-content__header" style="margin-top: 2rem;">
+							<h2 class="main-content__title" style="font-size: 1.3rem;">Произведённые рулоны</h2>
+							<span data-output-save-status
+									style="font-size: var(--font-size-small); color: var(--text-muted);"></span>
+						</div>
+
 					</div>
 
-					<div class="main-content__header" style="margin-top: 2rem;">
-						<h2 class="main-content__title" style="font-size: 1.3rem;">Произведённые рулоны</h2>
-						<span data-output-save-status style="font-size: var(--font-size-small); color: var(--text-muted);"></span>
-					</div>
 
 					<p style="margin: 0 0 1rem; color: var(--text-muted);">
 						Каждый рулон сохраняется сразу — правки не теряются при обновлении страницы.
 					</p>
 
-					<div data-task-outputs-section id="task-outputs-section">
+					<div class="task-outputs-section" data-task-outputs-section id="task-outputs-section">
 						<div class="issue-order__body">
 							<div data-output-rolls data-task-number="{{ $task->number }}">
 								@foreach ($task->outputs as $output)
@@ -273,7 +293,7 @@
 						</div>
 					</div>
 
-					<div class="issue-order__actions">
+					<div class="main-content__actions">
 						<button class="issue-order__button main-content__button button" type="submit">
 							<span>Завершить задачу</span>
 						</button>
@@ -316,7 +336,9 @@
 							@foreach ($task->inputMaterials as $material)
 								<tr>
 									<th colspan="3" style="text-align: left;">
-										{{ $material->name }}@if ($material->pivot->format) — {{ $material->pivot->format }} @endif
+										{{ $material->name }}@if ($material->pivot->format)
+											— {{ $material->pivot->format }}
+										@endif
 									</th>
 								</tr>
 
