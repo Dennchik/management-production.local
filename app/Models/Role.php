@@ -21,12 +21,14 @@
 				'users' => 'Пользователи и роли',
 		];
 
-		public const ACTIONS = [
-				'view' => 'Смотреть',
-				'create' => 'Создавать',
-				'edit' => 'Редактировать',
-				'delete' => 'Удалять',
-		];
+	public const ACTIONS = [
+			'view' => 'Смотреть',
+			'create' => 'Создавать',
+			'edit' => 'Редактировать',
+			'delete' => 'Удалять',
+			'cancel' => 'Отменять',
+			'execute' => 'Выполнять',
+	];
 
 		protected function casts(): array
 		{

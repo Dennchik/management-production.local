@@ -17,13 +17,13 @@
 		public function login(Request $request)
 		{
 			$credentials = $request->validate([
-					'name' => ['required', 'string'],
+					'login' => ['required', 'string'],
 					'password' => ['required', 'string'],
 			]);
 
 			if (!Auth::attempt($credentials, true)) {
 				throw ValidationException::withMessages([
-						'name' => 'Неверное имя пользователя или пароль.',
+						'login' => 'Неверный логин или пароль.',
 				]);
 			}
 

@@ -70,21 +70,39 @@
 	// Старт задачи — сразу переводит её «В работу»;
 	// рулоны берутся на самой странице задачи.
 	Route::post('/tasks/{task}/start', [ProductionTaskController::class, 'start'])
-			->middleware('can.do:tasks,edit')
+			->middleware('can.do:tasks,execute')
 			->name('tasks.start');
 
 	// Дозабор рулона прямо со страницы задачи
 	Route::post('/tasks/{task}/inputs', [ProductionTaskController::class, 'addInput'])
-			->middleware('can.do:tasks,edit')
+			->middleware('can.do:tasks,execute')
 			->name('tasks.inputs.store');
 
 	// Текущий расход по взятому рулону сохраняется сразу, без завершения задачи
 	Route::put('/tasks/{task}/inputs/{input}', [ProductionTaskController::class, 'saveInput'])
-			->middleware('can.do:tasks,edit')
+			->middleware('can.do:tasks,execute')
 			->name('tasks.inputs.update');
 
+	// Произведённые рулоны тоже сохраняются сразу: строка создаётся, правится и убирается по AJAX
+	Route::post('/tasks/{task}/outputs', [ProductionTaskController::class, 'storeOutput'])
+			->middleware('can.do:tasks,execute')
+			->name('tasks.outputs.store');
+
+	Route::put('/tasks/{task}/outputs/{output}', [ProductionTaskController::class, 'updateOutput'])
+			->middleware('can.do:tasks,execute')
+			->name('tasks.outputs.update');
+
+	Route::delete('/tasks/{task}/outputs/{output}', [ProductionTaskController::class, 'destroyOutput'])
+			->middleware('can.do:tasks,execute')
+			->name('tasks.outputs.destroy');
+
+	// Отменить можно только задачу в статусе «Ожидает»
+	Route::post('/tasks/{task}/cancel', [ProductionTaskController::class, 'cancel'])
+			->middleware('can.do:tasks,cancel')
+			->name('tasks.cancel');
+
 	Route::post('/tasks/{task}/complete', [ProductionTaskController::class, 'complete'])
-			->middleware('can.do:tasks,edit')
+			->middleware('can.do:tasks,execute')
 			->name('tasks.complete');
 
 		Route::get('/tasks/{task}', [ProductionTaskController::class, 'show'])
@@ -337,6 +355,18 @@
 		Route::delete('/catalogs/{catalog}', [CatalogController::class, 'destroy'])
 				->middleware('can.do:materials,delete')
 				->name('catalogs.destroy');
+
+		/*
+		|--------------------------------------------------------------------------
+		| Мой профиль (карточка и смена своего пароля)
+		|--------------------------------------------------------------------------
+		*/
+
+		Route::get('/profile', [UserController::class, 'profile'])
+				->name('profile.show');
+
+		Route::post('/profile/password', [UserController::class, 'updatePassword'])
+				->name('profile.password');
 
 		/*
 		|--------------------------------------------------------------------------

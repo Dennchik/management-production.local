@@ -41,13 +41,14 @@
 								$left = rtrim(rtrim(number_format($task->quantity - (float) ($task->produced_weight ?? 0), 3, '.', ''), '0'), '.');
 							@endphp
 
-							<tr style="cursor: pointer;" onclick="window.location='{{ route('tasks.show', $task) }}'">
-								<td>{{ $task->number }}</td>
-								<td>{{ $task->material?->name }}</td>
-								<td>{{ $made }} из {{ $plan }} <span style="color: var(--text-muted);">осталось {{ $left }}</span></td>
-								<td>{{ $task->operator?->name ?? '—' }}</td>
-								<td><span class="status-chip status-chip--{{ $task->statusClass() }}">{{ $task->statusLabel() }}</span></td>
-							</tr>
+								<tr style="cursor: pointer;" onclick="window.location='{{ route('tasks.show', $task) }}'">
+									<td>{{ $task->number }}</td>
+									<td>{{ $task->material?->name }}</td>
+									<td>{{ $made }} из {{ $plan }} <span class="{{ $task->isShort() ? 'text-red-soft' : '' }}"
+											style="{{ $task->isShort() ? '' : 'color: var(--text-muted);' }}">осталось {{ $left }}</span></td>
+									<td>{{ $task->operator?->name ?? '—' }}</td>
+									<td><span class="status-chip status-chip--{{ $task->statusClass() }}">{{ $task->statusLabel() }}</span></td>
+								</tr>
 						@endforeach
 					@endif
 					</tbody>

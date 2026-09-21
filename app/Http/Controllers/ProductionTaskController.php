@@ -132,6 +132,18 @@
 				$takenRollIds = $task->inputs()->pluck('roll_id')->filter()->values();
 
 				$availableRolls = $this->rollsForMaterials($task->inputMaterials, $takenRollIds);
+
+				// Задачи, запущенные до автосохранения продукции: добавляем
+				// первую строку, чтобы рулоны было куда вносить.
+				if ($task->outputs->isEmpty()) {
+					ProductionTaskOutput::create([
+							'task_id' => $task->id,
+							'material_id' => $task->material_id,
+							'roll_number' => $task->number . '/1',
+					]);
+
+					$task->load('outputs');
+				}
 			}
 
 			return view('tasks.show', [
@@ -150,11 +162,21 @@
 	{
 		abort_if($task->status !== 'pending', 422, 'Задача уже начата или закрыта.');
 
-		$task->update([
-				'status' => 'in_progress',
-				'started_at' => now(),
-				'operator_id' => $task->operator_id ?? auth()->id(),
-		]);
+		DB::transaction(function () use ($task) {
+			$task->update([
+					'status' => 'in_progress',
+					'started_at' => now(),
+					'operator_id' => $task->operator_id ?? auth()->id(),
+			]);
+
+			// Первая строка продукции создаётся сразу: произведённые рулоны
+			// ведутся на странице задачи с автосохранением, как и расход.
+			ProductionTaskOutput::create([
+					'task_id' => $task->id,
+					'material_id' => $task->material_id,
+					'roll_number' => $task->number . '/1',
+			]);
+		});
 
 		return redirect()
 			->route('tasks.show', $task)
@@ -189,8 +211,24 @@
 							'nullable', 'integer', 'exists:material_rolls,id',
 					// Рулон нельзя взять повторно
 					static function ($attribute, $value, $fail) use ($task) {
-						if (!empty($value) && $task->inputs()->where('roll_id', (int) $value)->exists()) {
+						if (empty($value)) {
+							return;
+						}
+
+						if ($task->inputs()->where('roll_id', (int) $value)->exists()) {
 							$fail('Этот рулон уже взят задачей.');
+
+							return;
+						}
+
+						// Рулон, взятый другой задачей в работе, недоступен
+						$busy = ProductionTaskInput::query()
+							->where('roll_id', (int) $value)
+							->whereHas('task', static fn ($query) => $query->where('status', 'in_progress'))
+							->exists();
+
+						if ($busy) {
+							$fail('Этот рулон уже взят другой задачей.');
 						}
 					},
 				],
@@ -272,44 +310,99 @@
 	}
 
 	/**
-	 * Завершение задачи прямо со страницы задачи: по каждому взятому рулону —
-	 * остаток или расход, по продукции — произведённые рулоны с номерами.
+	 * Новая строка произведённого рулона: создаётся сразу по AJAX,
+	 * номер по умолчанию — «номерЗадачи/порядковый».
+	 */
+	public function storeOutput(Request $request, ProductionTask $task)
+	{
+		abort_unless($task->status === 'in_progress', 422, 'Продукция добавляется только у задачи в работе.');
+
+		$output = ProductionTaskOutput::create([
+				'task_id' => $task->id,
+				'material_id' => $task->material_id,
+				'roll_number' => $task->number . '/' . ($task->outputs()->count() + 1),
+		]);
+
+		if ($request->wantsJson()) {
+			return response()->json(['success' => true, 'id' => $output->id]);
+		}
+
+		return redirect()->route('tasks.show', $task);
+	}
+
+	/**
+	 * Произведённый рулон сохраняется сразу, чтобы правки не терялись
+	 * при обновлении страницы или отказе завершения.
+	 */
+	public function updateOutput(Request $request, ProductionTask $task, ProductionTaskOutput $output)
+	{
+		abort_unless($task->status === 'in_progress', 422, 'Продукция сохраняется только у задачи в работе.');
+		abort_unless($output->task_id === $task->id, 404);
+
+		$validated = $request->validate([
+				'roll_number' => ['required', 'string', 'max:50'],
+				// Пустой вес — строка ещё не заполнена, в прогресс не входит
+				'actual_weight' => ['nullable', 'numeric', 'min:0'],
+		]);
+
+		$output->update([
+				'roll_number' => $validated['roll_number'],
+				'actual_weight' => $validated['actual_weight'] === null
+						? null
+						: round((float) $validated['actual_weight'], 3),
+		]);
+
+		$made = round((float) $task->outputs()->whereNotNull('actual_weight')->sum('actual_weight'), 3);
+		$left = max(0.0, round((float) $task->quantity - $made, 3));
+
+		return response()->json([
+				'success' => true,
+				'made' => $made,
+				'left' => $left,
+		]);
+	}
+
+	public function destroyOutput(Request $request, ProductionTask $task, ProductionTaskOutput $output)
+	{
+		abort_unless($task->status === 'in_progress', 422, 'Продукция убирается только у задачи в работе.');
+		abort_unless($output->task_id === $task->id, 404);
+
+		if ($task->outputs()->count() <= 1) {
+			return response()->json([
+					'message' => 'У задачи должна остаться хотя бы одна строка продукции.',
+			], 422);
+		}
+
+		$output->delete();
+
+		return response()->json(['success' => true]);
+	}
+
+	/**
+	 * Завершение задачи прямо со страницы задачи: расход и произведённые
+	 * рулоны уже сохранены по AJAX — списываем сырьё и оприходуем продукцию.
 	 */
 	public function complete(Request $request, ProductionTask $task)
 	{
 		abort_if($task->status !== 'in_progress', 422, 'Задача не в работе.');
 
-		$validated = $request->validate([
-				'inputs' => ['nullable', 'array'],
-				'inputs.*.id' => ['required_with:inputs', 'integer', 'exists:production_task_inputs,id'],
-				// Достаточно любого из двух полей: второе пересчитывается
-				// на клиенте и дублируется сюда. Остаток может уходить в минус —
-				// расход бывает больше текущего веса рулона.
-				'inputs.*.remaining' => ['nullable', 'numeric'],
-				'inputs.*.used' => ['nullable', 'numeric', 'min:0'],
-				'outputs' => ['required', 'array', 'min:1'],
-				'outputs.*.roll_number' => ['required', 'string', 'max:50'],
-				'outputs.*.actual_weight' => ['required', 'numeric', 'min:0.001'],
-		]);
+		$task->load(['outputs', 'inputs.roll']);
 
-		// Не выполнена по объёму — завершить нельзя: задача остаётся в работе,
-		// продукцию можно добрать (перевыполнение плана разрешено).
-		$produced = round(array_sum(array_map(
-				static fn (array $output) => (float) $output['actual_weight'],
-				$validated['outputs']
-		)), 3);
+		// Строки продукции без веса ещё не заполнены и в завершение не входят.
+		$outputs = $task->outputs->filter(static fn ($output) => (float) ($output->actual_weight ?? 0) > 0);
 
-		if ($produced < (float) $task->quantity) {
-			$missing = round((float) $task->quantity - $produced, 3);
-
+		if ($outputs->isEmpty()) {
 			throw ValidationException::withMessages([
-					'outputs' => 'Задача не выполнена по объёму: произведено '
-							. rtrim(rtrim(number_format($produced, 3, '.', ''), '0'), '.')
-							. ' из ' . rtrim(rtrim(number_format((float) $task->quantity, 3, '.', ''), '0'), '.')
-							. ' кг — доберите ещё '
-							. rtrim(rtrim(number_format($missing, 3, '.', ''), '0'), '.')
-							. ' кг. Задача остаётся в работе.',
+					'outputs' => 'Укажите хотя бы один произведённый рулон с весом.',
 			]);
+		}
+
+		$produced = round((float) $outputs->sum('actual_weight'), 3);
+
+		// Недобор — завершение вне плана: разрешено тому, кто правит задачи
+		// (менеджер/админ). Оператор завершает только добранную задачу.
+		if ($produced < (float) $task->quantity && !$request->user()->may('tasks', 'edit')) {
+			abort(403, 'Задача не добрана до плана: завершить с недобором может только менеджер.');
 		}
 
 		$comment = 'Задача №' . $task->number
@@ -325,15 +418,10 @@
 				$outputFormat
 		);
 
-		DB::transaction(function () use ($validated, $task, $comment, $outputFormat, $outputIdentifier) {
-			// Списание входного сырья по остаткам рулонов
-			foreach ($validated['inputs'] ?? [] as $inputData) {
-				/** @var ProductionTaskInput $input */
-				$input = ProductionTaskInput::query()
-					->where('task_id', $task->id)
-					->find($inputData['id'] ?? null);
-
-				if ($input === null || $input->roll_id === null) {
+		DB::transaction(function () use ($outputs, $task, $comment, $outputFormat, $outputIdentifier) {
+			// Списание входного сырья по сохранённому расходу рулонов
+			foreach ($task->inputs as $input) {
+				if ($input->roll_id === null) {
 					continue;
 				}
 
@@ -342,12 +430,8 @@
 					->lockForUpdate()
 					->firstOrFail();
 
-				// Остаток указан прямо, иначе — «вес рулона − расход».
-				$remaining = ($inputData['remaining'] ?? null) !== null
-					? (float) $inputData['remaining']
-					: round((float) $roll->weight - (float) ($inputData['used'] ?? 0), 3);
-
-				$used = round((float) $roll->weight - $remaining, 3);
+				$used = round((float) ($input->actual_weight ?? 0), 3);
+				$remaining = round((float) $roll->weight - $used, 3);
 
 				if ($used > 0) {
 					MaterialIssue::create([
@@ -360,22 +444,22 @@
 				}
 
 				$roll->update(['weight' => $remaining]);
-
-				$input->update(['actual_weight' => $used]);
 			}
 
 			// Оприходование выходной продукции новыми рулонами;
-			// номер задаётся на странице задачи, по умолчанию «номерЗадачи/порядковый».
+			// номера введены на странице задачи, по умолчанию «номерЗадачи/порядковый».
 			$receipt = MaterialReceipt::create([
 					'comment' => $comment,
 					'user_id' => auth()->id(),
 			]);
 
-			foreach ($validated['outputs'] as $outputData) {
+			foreach ($outputs as $output) {
 				$roll = MaterialRoll::create([
 						'material_id' => $task->material_id,
-						'roll_number' => $outputData['roll_number'],
-						'weight' => $outputData['actual_weight'],
+						'roll_number' => $output->roll_number !== ''
+								? $output->roll_number
+								: $task->number . '/' . $output->id,
+						'weight' => $output->actual_weight,
 						'format' => $outputFormat,
 						'identifier' => $outputIdentifier,
 				]);
@@ -384,16 +468,10 @@
 						'material_receipt_id' => $receipt->id,
 						'material_id' => $task->material_id,
 						'roll_id' => $roll->id,
-						'weight' => $outputData['actual_weight'],
+						'weight' => $output->actual_weight,
 				]);
 
-				ProductionTaskOutput::create([
-						'task_id' => $task->id,
-						'material_id' => $task->material_id,
-						'roll_number' => $outputData['roll_number'],
-						'actual_weight' => $outputData['actual_weight'],
-						'roll_id' => $roll->id,
-				]);
+				$output->update(['roll_id' => $roll->id]);
 			}
 
 			$task->update([
@@ -402,9 +480,27 @@
 			]);
 		});
 
+		$message = $produced < (float) $task->quantity
+				? 'Задача завершена с недобором: сырьё списано, продукция оприходована.'
+				: 'Задача завершена: сырьё списано, продукция оприходована.';
+
 		return redirect()
 				->route('tasks.show', $task)
-				->with('success', 'Задача завершена: сырьё списано, продукция оприходована.');
+				->with('success', $message);
+	}
+
+	/**
+	 * Отмена задачи: разрешена только пока задача ждёт старта.
+	 */
+	public function cancel(Request $request, ProductionTask $task)
+	{
+		abort_if($task->status !== 'pending', 422, 'Отменить можно только задачу в статусе «Ожидает».');
+
+		$task->update(['status' => 'cancelled']);
+
+		return redirect()
+				->route('tasks.show', $task)
+				->with('success', 'Задача отменена.');
 	}
 
 		/**
@@ -471,7 +567,9 @@
 						->with('rolls:id,material_id,format,identifier')
 						->orderBy('name')
 						->get(),
-					'operators' => User::query()->orderBy('name')->get(['id', 'name']),
+					'operators' => User::query()
+						->orderBy('login')
+						->get(['id', 'login', 'full_name', 'display_name']),
 		];
 		}
 
@@ -591,26 +689,49 @@
 
 		/**
 		 * Рулон берётся того же формата, что и материал задачи.
+		 * Рулоны, взятые другими задачами в работе, не исключаются:
+		 * они идут вниз списка отключёнными с номером задачи.
 		 *
 		 * @param \Illuminate\Support\Collection $materials Материалы задачи (с pivot->format).
-		 * @param \Illuminate\Support\Collection|null $excludeRollIds Рулон, уже взятые задачей.
+		 * @param \Illuminate\Support\Collection|null $excludeRollIds Рулон, уже взятые этой задачей.
 		 */
 		private function rollsForMaterials(
 				\Illuminate\Support\Collection $materials,
 				?\Illuminate\Support\Collection $excludeRollIds = null
 		): array {
+			$busyByRoll = ProductionTaskInput::query()
+				->whereHas('task', static fn ($query) => $query->where('status', 'in_progress'))
+				->when($excludeRollIds !== null && $excludeRollIds->isNotEmpty(), static fn ($query) => $query->whereNotIn('roll_id', $excludeRollIds))
+				->with('task:id,number,status')
+				->get(['roll_id', 'task_id'])
+				->groupBy('roll_id');
+
 			$result = [];
 
 			foreach ($materials as $material) {
 				$format = $material->pivot->format ?? null;
 
-				$result[$material->id] = MaterialRoll::query()
+				$rolls = MaterialRoll::query()
 					->where('material_id', $material->id)
 					->when($format !== null, static fn ($query) => $query->where('format', $format))
 					->when($excludeRollIds !== null && $excludeRollIds->isNotEmpty(), static fn ($query) => $query->whereNotIn('id', $excludeRollIds))
 					->where('weight', '>', 0)
 					->orderBy('roll_number')
 					->get(['id', 'roll_number', 'weight', 'format']);
+
+				// partition: [свободные, занятые другими задачами]
+				[$free, $busy] = $rolls->partition(static fn ($roll) => !$busyByRoll->has($roll->id));
+
+				$result[$material->id] = $free
+					->map(static fn ($roll) => tap($roll, fn ($r) => $r->taken_by = null))
+					->concat($busy->map(static fn ($roll) => tap($roll, function ($r) use ($busyByRoll) {
+						$r->taken_by = $busyByRoll->get($r->id)
+							->map(static fn ($input) => $input->task?->number)
+							->filter()
+							->unique()
+							->implode(', ');
+					})))
+					->values();
 			}
 
 			return $result;

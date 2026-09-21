@@ -39,7 +39,12 @@
 					</tr>
 					<tr>
 						<th style="text-align: left;">Количество, кг</th>
-						<td>{{ $made }} из {{ $plan }} <span style="color: var(--text-muted);">осталось {{ $left }}</span></td>
+						<td data-task-progress>
+							<span data-task-progress-made>{{ $made }}</span> из {{ $plan }}
+							<span class="{{ $task->isShort() ? 'text-red-soft' : '' }}"
+									style="{{ $task->isShort() ? '' : 'color: var(--text-muted);' }}"
+									data-task-progress-left>осталось {{ $left }}</span>
+						</td>
 					</tr>
 					<tr>
 						<th style="text-align: left;">Оператор</th>
@@ -71,7 +76,7 @@
 				</table>
 			</div>
 			<div class="materials-action">
-				@if ($task->status === 'pending')
+				@if ($task->status === 'pending' && auth()->user()?->may('tasks', 'execute'))
 					<form method="POST" action="{{ route('tasks.start', $task) }}" style="display: inline;">
 						@csrf
 						<button class="button button--primary" type="submit">
@@ -89,13 +94,24 @@
 						<span>Редактировать</span>
 					</a>
 				@endif
+
+				@if ($task->status === 'pending' && auth()->user()?->may('tasks', 'cancel'))
+					<form method="POST" action="{{ route('tasks.cancel', $task) }}" style="display: inline;"
+							onsubmit="return confirm('Отменить задачу №{{ $task->number }}?');">
+						@csrf
+						<button class="button button--secondary" type="submit">
+							<span>Отменить задачу</span>
+						</button>
+					</form>
+				@endif
 			</div>
 		</div>
 
 		@if ($isInProgress || $task->inputs->isNotEmpty())
 			@if ($isInProgress)
-				{{-- Завершение задачи — прямо на её странице; правки сохраняются через AJAX сразу --}}
-				<form method="POST" action="{{ route('tasks.complete', $task) }}" data-task-complete data-task-id="{{ $task->id }}">
+				{{-- Завершение задачи — прямо на её странице; расход и продукция сохраняются через AJAX сразу --}}
+				<form method="POST" action="{{ route('tasks.complete', $task) }}" data-task-complete data-task-id="{{ $task->id }}"
+						onsubmit="return confirm('Завершить задачу? Сырьё будет списано, продукция — оприходована.');">
 					@csrf
 
 					<div data-task-inputs-section id="task-inputs-section">
@@ -107,6 +123,7 @@
 						<p style="margin: 0 0 1rem; color: var(--text-muted);">
 							Укажите расход или остаток по каждому рулону — второе поле пересчитается само и сразу сохранится.
 							Если расход больше веса рулона, остаток уходит в минус.
+							Рулон, взятый другой задачей, показан внизу списка и недоступен.
 						</p>
 
 						<div data-task-add-error hidden style="margin: 0 0 1rem; color: var(--alarm);"></div>
@@ -177,10 +194,17 @@
 
 														<div class="select__dropdown material-select__select-list _collapse" role="listbox">
 															@foreach ($materialRolls as $roll)
+																@php $takenBy = $roll->taken_by ?? null; @endphp
 																<button class="material-select__select-option select__item" type="button"
-																		role="option" data-value="{{ $roll->id }}"
-																		data-search="{{ strtolower($roll->roll_number) }}">
-																	{{ $roll->roll_number }} ({{ rtrim(rtrim($roll->weight, '0'), '.') }} кг)
+																		role="option" data-value="{{ $takenBy ? '' : $roll->id }}"
+																		data-search="{{ strtolower($roll->roll_number) }}"
+																		@if ($takenBy) disabled @endif>
+																	<span>{{ $roll->roll_number }} ({{ rtrim(rtrim($roll->weight, '0'), '.') }} кг)</span>
+																	@if ($takenBy)
+																		<small style="display: block; font-size: 1.1rem; color: var(--text-muted);">
+																			взята в задачу №{{ $takenBy }}
+																		</small>
+																	@endif
 																</button>
 															@endforeach
 															<div class="material-select__select-empty select__empty" hidden>Ничего не найдено</div>
@@ -209,63 +233,56 @@
 
 					<div class="main-content__header" style="margin-top: 2rem;">
 						<h2 class="main-content__title" style="font-size: 1.3rem;">Произведённые рулоны</h2>
+						<span data-output-save-status style="font-size: var(--font-size-small); color: var(--text-muted);"></span>
 					</div>
 
-					@php
-						/*
-						 * Строки продукции: после отказа «не выполнена по объёму»
-						 * введённые рулоны восстанавливаются из old().
-						 */
-						$oldOutputs = old('outputs');
-						$outputRows = [];
+					<p style="margin: 0 0 1rem; color: var(--text-muted);">
+						Каждый рулон сохраняется сразу — правки не теряются при обновлении страницы.
+					</p>
 
-						if (is_array($oldOutputs) && $oldOutputs !== []) {
-							foreach ($oldOutputs as $i => $row) {
-								$outputRows[] = [
-										'number' => $row['roll_number'] ?? ($task->number . '/' . ($i + 1)),
-										'weight' => $row['actual_weight'] ?? '',
-								];
-							}
-						} else {
-							$outputRows[] = ['number' => $task->number . '/1', 'weight' => $plan];
-						}
-					@endphp
+					<div data-task-outputs-section id="task-outputs-section">
+						<div class="issue-order__body">
+							<div data-output-rolls data-task-number="{{ $task->number }}">
+								@foreach ($task->outputs as $output)
+									<div class="issue-order__line" data-output-roll data-output-id="{{ $output->id }}">
+										<fieldset class="issue-order__field">
+											<label class="issue-order__label">Номер рулона</label>
+											<input class="issue-order__input" type="text" data-output-number
+													value="{{ $output->roll_number }}">
+										</fieldset>
 
-					<div class="issue-order__body">
-						<div data-output-rolls data-task-number="{{ $task->number }}">
-							@foreach ($outputRows as $row)
-								<div class="issue-order__line" data-output-roll>
-									<fieldset class="issue-order__field">
-										<label class="issue-order__label">Номер рулона</label>
-										<input class="issue-order__input" type="text" name="outputs[{{ $loop->index }}][roll_number]"
-												value="{{ $row['number'] }}">
-									</fieldset>
+										<fieldset class="issue-order__field">
+											<label class="issue-order__label">Вес, кг</label>
+											<input class="issue-order__input" type="number" step="0.001" min="0"
+													data-output-weight
+													value="{{ $output->actual_weight !== null ? rtrim(rtrim(number_format((float) $output->actual_weight, 3, '.', ''), '0'), '.') : '' }}">
+										</fieldset>
 
-									<fieldset class="issue-order__field">
-										<label class="issue-order__label">Вес, кг</label>
-										<input class="issue-order__input" type="number" step="0.001" min="0.001"
-												name="outputs[{{ $loop->index }}][actual_weight]"
-												value="{{ $row['weight'] }}">
-									</fieldset>
+										<fieldset class="issue-order__field">
+											<button class="button" type="button" data-output-roll-remove>
+												<span>Убрать</span>
+											</button>
+										</fieldset>
+									</div>
+								@endforeach
+							</div>
 
-									<fieldset class="issue-order__field">
-										<button class="button" type="button" data-output-roll-remove>
-											<span>Убрать</span>
-										</button>
-									</fieldset>
-								</div>
-							@endforeach
+							<button class="button button--secondary" type="button" data-output-roll-add>
+								+ Ещё рулон
+							</button>
 						</div>
-
-						<button class="button button--secondary" type="button" data-output-roll-add>
-							+ Ещё рулон
-						</button>
 					</div>
 
 					<div class="issue-order__actions">
 						<button class="issue-order__button main-content__button button" type="submit">
 							<span>Завершить задачу</span>
 						</button>
+
+						@if (auth()->user()?->may('tasks', 'edit'))
+							<p style="margin: 0; color: var(--text-muted);">
+								Задачу можно завершить с недобором — тогда статус будет помечен светло-красным.
+							</p>
+						@endif
 					</div>
 				</form>
 
@@ -318,7 +335,7 @@
 			@endif
 		@endif
 
-		@if ($task->outputs->isNotEmpty())
+		@if ($task->outputs->isNotEmpty() && !$isInProgress)
 			<div class="main-content__header" style="margin-top: 2rem;">
 				<h2 class="main-content__title" style="font-size: 1.3rem;">Произведённые рулоны</h2>
 			</div>

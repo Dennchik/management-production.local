@@ -114,20 +114,36 @@
 
 	public function statusLabel(): string
 	{
+		// Выполнена с недобором — «Завершена», чтобы отличать от полноценного выполнения
+		if ($this->status === 'done' && $this->isShort()) {
+			return 'Завершена';
+		}
+
 		return static::STATUSES[$this->status] ?? $this->status;
 	}
 
 	/**
 	 * Модификатор чипа статуса: серый / жёлтый / зелёный / красный.
+	 * Выполненная с недобором — светло-красная, чтобы отличать от отменённой.
 	 */
 	public function statusClass(): string
 	{
 		return match ($this->status) {
 			'in_progress' => 'yellow',
-			'done' => 'green',
+			'done' => $this->isShort() ? 'red-soft' : 'green',
 			'cancelled' => 'red',
 			default => 'gray',
 		};
+	}
+
+	/**
+	 * Задача завершена с недобором планового веса.
+	 * В списках используется алиас produced_weight (withSum), чтобы не грузить выходы.
+	 */
+	public function isShort(): bool
+	{
+		return $this->status === 'done'
+				&& (float) ($this->produced_weight ?? $this->producedWeight()) < (float) $this->quantity;
 	}
 
 	/**

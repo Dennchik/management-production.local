@@ -23,6 +23,8 @@ Middleware-алиасы в `bootstrap/app.php`:
 | guest | `GET/POST /login` | AuthController | — |
 | auth | `POST /logout` | — | auth.session |
 | Задачи | `/tasks` CRUD + `start`/`complete` | ProductionTaskController | `can.do:tasks[,create\|edit]` |
+| Задачи: выполнение | `start`, `inputs*`, `outputs*`, `complete` | ProductionTaskController | `can.do:tasks,execute` |
+| Задачи: отмена | `POST /tasks/{task}/cancel` (только из «Ожидает») | ProductionTaskController | `can.do:tasks,cancel` |
 | Операции | `/production/operations` CRUD | ProductionOperationController | — |
 | Линии | `/production/lines/{operation}...` | вложенные в operations | — |
 | Движения | `/material-movements` | MaterialMovementController | `can.do:warehouse` |
@@ -32,6 +34,7 @@ Middleware-алиасы в `bootstrap/app.php`:
 | Рулоны | `/rolls`, `/rolls/{roll}` | MaterialRollController | `can.do:rolls` |
 | Материалы | `/materials` CRUD + `create-choice` | MaterialController | `can.do:materials` |
 | Каталоги | `/catalogs` CRUD + `hierarchy-toggle` | CatalogController | — |
+| Мой профиль | `GET /profile`, `POST /profile/password` | UserController | только auth.session |
 | Пользователи | `/users` | UserController | `can.do:users` |
 | Роли | `/roles`, `/roles/{role}/edit` | RoleController | `can.do:users` |
 | API | `GET /api/rolls` (по материалу) | MaterialRollController@getRollsByMaterial | без can.do |
@@ -48,15 +51,15 @@ Middleware-алиасы в `bootstrap/app.php`:
 - `MaterialRollController` — рулоны + AJAX-выдача рулонов по материалу.
 - `MaterialController` — справочник материалов + выбор типа при создании.
 - `CatalogController` — иерархические каталоги (AJAX store/update/destroy, toggleHierarchy).
-- `UserController`, `RoleController` — пользователи и права.
+- `UserController`, `RoleController` — пользователи и права; UserController ещё и «Мой профиль»: карточка текущего пользователя и смена своего пароля (с проверкой текущего). Пароль любому пользователю меняет админ в `/users/{user}/edit`.
 
 Паттерн: валидация в контроллере (`$request->validate`), Form Request-классов нет; store/update/destroy часто возвращают JsonResponse (AJAX UI), show/delete — View; удаление через GET-форму подтверждения (`/delete` → view → DELETE).
 
 ## 4. Модели (`app/Models/`)
 
 **Пользователи/права**
-- `User` — belongsTo Role, Machine; `may(object, action)` — проверка прав; fillable через PHP-атрибуты `#[Fillable]`/`#[Hidden]` (laravel/pao).
-- `Role` — hasMany RolePermission; `RolePermission` (пары object/action).
+- `User` — belongsTo Role, Machine; `may(object, action)` — проверка прав; fillable через PHP-атрибуты `#[Fillable]`/`#[Hidden]` (laravel/pao). `login` — вход в систему (уникальный); `full_name` — ФИО одной строкой; `display_name` — имя для отображения; аксессор `name` (display_name → ФИО → login) показывается во всех списках.
+- `Role` — hasMany RolePermission; `RolePermission` (пары object/action). Действия: view/create/edit/delete/cancel/execute. По задачам: create/edit/cancel — менеджер+, execute (старт, рулоны, расход, продукция, завершение) — оператор; недобор завершает только право edit.
 
 **Материалы/склад**
 - `Catalog` — дерево (parent/children), hasMany Material; хелперы `hierarchyEnabled()`, `selectableParents()`, `descendantIds()`, `pathMap()`.

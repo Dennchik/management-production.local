@@ -14,7 +14,7 @@
 
 			$operatorRole = Role::firstOrCreate(['name' => 'Оператор']);
 			$operatorRole->syncPermissions([
-					'tasks' => ['view', 'edit'],
+					'tasks' => ['view', 'execute'],
 					'warehouse' => ['view'],
 					'rolls' => ['view'],
 			]);
@@ -23,7 +23,7 @@
 			$managerRole->syncPermissions([
 					'materials' => ['view', 'create', 'edit', 'delete'],
 					'orders' => ['view', 'create', 'edit'],
-					'tasks' => ['view', 'create', 'edit'],
+					'tasks' => ['view', 'create', 'edit', 'cancel', 'execute'],
 					'warehouse' => ['view'],
 					'rolls' => ['view'],
 					'operations' => ['view', 'create', 'edit', 'delete'],
@@ -31,18 +31,33 @@
 			]);
 
 		User::query()->updateOrCreate(
-				['name' => 'admin'],
-				['password' => 'admin', 'role_id' => $adminRole->id]
+				['login' => 'admin'],
+				[
+						'password' => 'admin',
+						'role_id' => $adminRole->id,
+						'full_name' => 'Админов Админ Админович',
+						'display_name' => 'Администратор',
+				]
 		);
 
 		User::query()->updateOrCreate(
-				['name' => 'operator'],
-				['password' => 'operator', 'role_id' => $operatorRole->id]
+				['login' => 'operator'],
+				[
+						'password' => 'operator',
+						'role_id' => $operatorRole->id,
+						'full_name' => 'Операторов Оператор Операторович',
+						'display_name' => 'Оператор линии',
+				]
 		);
 
 			User::query()->updateOrCreate(
-					['name' => 'manager'],
-					['password' => 'manager', 'role_id' => $managerRole->id]
+					['login' => 'manager'],
+					[
+							'password' => 'manager',
+							'role_id' => $managerRole->id,
+							'full_name' => 'Менеджеров Менеджер Менеджерович',
+							'display_name' => 'Менеджер продаж',
+					]
 			);
 		}
 	}

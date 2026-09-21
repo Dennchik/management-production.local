@@ -9,8 +9,8 @@
  *   обновление страницы;
  * - дозабор рулона без перезагрузки страницы (секция сырья
  *   подменяется свежей разметкой);
- * - произведённые рулоны: «+ Ещё рулон», «Убрать», редактируемые номера
- *   (новой строке подставляется «номерЗадачи/порядковый»).
+ * - произведённые рулоны: каждая строка сохраняется сразу по AJAX,
+ *   «+ Ещё рулон» и «Убрать» тоже уходят на сервер без перезагрузки.
  */
 import { initSelects } from '../../assets/select.js';
 
@@ -36,13 +36,14 @@ function csrfToken() {
 }
 
 /**
- * Статус сохранения в заголовке секции сырья.
+ * Индикатор сохранения в заголовке секции.
  *
  * @param {string} text
  * @param {boolean} isError
+ * @param {string} selector
  */
-function setStatus(text, isError = false) {
-   const status = document.querySelector('[data-task-save-status]');
+function setStatus(text, isError = false, selector = '[data-task-save-status]') {
+   const status = document.querySelector(selector);
 
    if (!status || !text) {
       return;
@@ -77,6 +78,59 @@ function firstError(data) {
 }
 
 /**
+ * Обновляет строку прогресса «сделано из плана, осталось N».
+ *
+ * @param {number} made
+ * @param {number} left
+ */
+function updateProgress(made, left) {
+   const block = document.querySelector('[data-task-progress]');
+
+   if (!block) {
+      return;
+   }
+
+   const trim = (value) => String(Math.round(value * 1000) / 1000);
+
+   block.querySelector('[data-task-progress-made]').textContent = trim(made);
+
+   const leftSpan = block.querySelector('[data-task-progress-left]');
+   leftSpan.textContent = `осталось ${trim(left)}`;
+   leftSpan.classList.remove('text-red-soft');
+   leftSpan.style.color = 'var(--text-muted)';
+}
+
+/**
+ * AJAX-запрос с JSON-телом и CSRF-токеном.
+ *
+ * @param {string} url
+ * @param {string} method
+ * @param {Object|null} body
+ */
+function jsonRequest(url, method, body = null) {
+   return fetch(url, {
+      method,
+      keepalive: true,
+      headers: {
+         'Content-Type': 'application/json',
+         Accept: 'application/json',
+         'X-Requested-With': 'XMLHttpRequest',
+         'X-CSRF-TOKEN': csrfToken(),
+      },
+      body: body === null ? null : JSON.stringify(body),
+   }).then(async (response) => {
+      if (response.ok) {
+         return response.json().catch(() => ({}));
+      }
+
+      throw new Error(
+         firstError(await response.json().catch(() => ({}))) ||
+            'Не удалось сохранить.'
+      );
+   });
+}
+
+/**
  * Связка расход ↔ остаток + автосохранение расхода.
  * Слушатели делегированы форме — работают после подмены секции сырья.
  *
@@ -106,28 +160,8 @@ function initRollWeights(form) {
 
       setStatus('Сохранение…');
 
-      fetch(`/tasks/${taskId}/inputs/${inputId}`, {
-         method: 'PUT',
-         keepalive: true,
-         headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': csrfToken(),
-         },
-         body: JSON.stringify({ used }),
-      })
-         .then(async (response) => {
-            if (response.ok) {
-               setStatus('Сохранено');
-               return;
-            }
-
-            throw new Error(
-               firstError(await response.json().catch(() => ({}))) ||
-                  'Не удалось сохранить.'
-            );
-         })
+      jsonRequest(`/tasks/${taskId}/inputs/${inputId}`, 'PUT', { used })
+         .then(() => setStatus('Сохранено'))
          .catch((error) => setStatus(error.message, true));
    };
 
@@ -185,80 +219,133 @@ function initRollWeights(form) {
 }
 
 /**
- * Произведённые рулоны: добавление и удаление строк.
- *
- * Номера редактируются вручную — клонируется только новая строка,
- * введённые номера при удалении не перенумеровываются.
+ * Произведённые рулоны: каждая строка автосохраняется по AJAX
+ * (PUT tasks.outputs.update), «+ Ещё рулон» и «Убрать» тоже уходят
+ * на сервер; после них секция подменяется свежей разметкой.
  *
  * @param {HTMLElement} form
  */
 function initOutputRolls(form) {
-   const wrap = form.querySelector('[data-output-rolls]');
-   const addButton = form.querySelector('[data-output-roll-add]');
+   let timer = null;
+   let lastTarget = null;
 
-   if (!wrap || !addButton) {
-      return;
-   }
+   const taskId = form.dataset.taskId;
 
-   const rows = () => Array.from(wrap.querySelectorAll('[data-output-roll]'));
+   const rows = () =>
+      Array.from(document.querySelectorAll('[data-output-roll]'));
 
    /**
-    * Переписывает имена полей по порядку строк.
+    * Сохраняет строку продукции.
+    *
+    * @param {HTMLInputElement} target
     */
-   const reindex = () => {
-      rows().forEach((row, index) => {
-         row.querySelectorAll('input[name]').forEach((input) => {
-            input.name = input.name.replace(/outputs\[\d+\]/, `outputs[${index}]`);
-         });
-      });
+   const save = (target) => {
+      const row = target.closest('[data-output-roll]');
+      const outputId = row?.dataset.outputId;
+
+      if (!row || !outputId || !taskId) {
+         return;
+      }
+
+      const number = row.querySelector('[data-output-number]')?.value ?? '';
+      const weight = row.querySelector('[data-output-weight]')?.value ?? '';
+
+      setStatus('Сохранение…', false, '[data-output-save-status]');
+
+      jsonRequest(`/tasks/${taskId}/outputs/${outputId}`, 'PUT', {
+         roll_number: number,
+         actual_weight: weight === '' ? null : weight,
+      })
+         .then((data) => {
+            setStatus('Сохранено', false, '[data-output-save-status]');
+
+            if (typeof data.made === 'number') {
+               updateProgress(data.made, data.left ?? 0);
+            }
+         })
+         .catch((error) =>
+            setStatus(error.message, true, '[data-output-save-status]')
+         );
    };
 
-   addButton.addEventListener('click', () => {
-      const template = rows()[0];
+   form.addEventListener('input', (event) => {
+      const target = event.target;
 
-      if (!template) {
+      if (!target.matches?.('[data-output-number], [data-output-weight]')) {
          return;
       }
 
-      const row = template.cloneNode(true);
-
-      // Новой строке — следующий номер, вес заполняет оператор.
-      const numberInput = row.querySelector('input[name$="[roll_number]"]');
-      const weightInput = row.querySelector('input[name$="[actual_weight]"]');
-
-      if (numberInput) {
-         numberInput.value = `${wrap.dataset.taskNumber || ''}/${rows().length + 1}`;
-      }
-
-      if (weightInput) {
-         weightInput.value = '';
-      }
-
-      wrap.appendChild(row);
-
-      numberInput?.focus();
-
-      reindex();
+      lastTarget = target;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+         lastTarget = null;
+         save(target);
+      }, 700);
    });
 
-   wrap.addEventListener('click', (event) => {
-      const removeButton = event.target.closest('[data-output-roll-remove]');
+   // Уход из поля сохраняет сразу, без ожидания паузы.
+   form.addEventListener('change', (event) => {
+      const target = event.target;
 
-      if (!removeButton) {
+      if (!target.matches?.('[data-output-number], [data-output-weight]')) {
          return;
       }
 
-      // Хотя бы одна строка остаётся — завершение без продукции невозможно.
-      if (rows().length <= 1) {
-         return;
-      }
-
-      removeButton.closest('[data-output-roll]')?.remove();
-
-      reindex();
+      clearTimeout(timer);
+      lastTarget = null;
+      save(target);
    });
 
-   reindex();
+   // Закрытие страницы с несохранённой правкой — отправляем сразу.
+   window.addEventListener('beforeunload', () => {
+      if (lastTarget) {
+         clearTimeout(timer);
+         save(lastTarget);
+         lastTarget = null;
+      }
+   });
+
+   // «+ Ещё рулон»: строка создаётся на сервере, секция обновляется.
+   document.addEventListener('click', (event) => {
+      if (event.target.closest?.('[data-output-roll-add]')) {
+         event.preventDefault();
+
+         setStatus('Сохранение…', false, '[data-output-save-status]');
+
+         jsonRequest(`/tasks/${taskId}/outputs`, 'POST')
+            .then(() => refreshSection('[data-task-outputs-section]'))
+            .then(() =>
+               setStatus('Рулон добавлен', false, '[data-output-save-status]')
+            )
+            .catch((error) =>
+               setStatus(error.message, true, '[data-output-save-status]')
+            );
+      }
+
+      const removeButton = event.target.closest?.('[data-output-roll-remove]');
+
+      if (removeButton) {
+         event.preventDefault();
+
+         const row = removeButton.closest('[data-output-roll]');
+
+         // Хотя бы одна строка остаётся — завершение без продукции невозможно.
+         if (!row || rows().length <= 1) {
+            return;
+         }
+
+         setStatus('Сохранение…', false, '[data-output-save-status]');
+
+         jsonRequest(`/tasks/${taskId}/outputs/${row.dataset.outputId}`, 'DELETE')
+            .then(() => refreshSection('[data-task-outputs-section]'))
+            .then(() =>
+               setStatus('Рулон убран', false, '[data-output-save-status]')
+            )
+            .catch((error) =>
+               setStatus(error.message, true, '[data-output-save-status]')
+            );
+      }
+   });
 }
 
 /**
@@ -305,7 +392,7 @@ function initInputForms(form) {
                );
             }
 
-            return refreshInputsSection();
+            return refreshSection('[data-task-inputs-section]');
          })
          .then(() => setStatus('Рулон добавлен'))
          .catch((error) => {
@@ -325,9 +412,11 @@ function initInputForms(form) {
 }
 
 /**
- * Подменяет секцию сырья свежей разметкой текущей страницы.
+ * Подменяет секцию свежей разметкой текущей страницы.
+ *
+ * @param {string} selector
  */
-async function refreshInputsSection() {
+async function refreshSection(selector) {
    const response = await fetch(window.location.href, {
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
    });
@@ -339,8 +428,8 @@ async function refreshInputsSection() {
    const html = await response.text();
    const fresh = new DOMParser()
       .parseFromString(html, 'text/html')
-      .querySelector('[data-task-inputs-section]');
-   const current = document.querySelector('[data-task-inputs-section]');
+      .querySelector(selector);
+   const current = document.querySelector(selector);
 
    if (fresh && current) {
       current.replaceWith(fresh);

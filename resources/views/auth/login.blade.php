@@ -14,11 +14,11 @@
 			<div class="issue-order__body">
 				<div class="issue-order__line">
 					<fieldset class="issue-order__field" style="width: 100%;">
-						<label class="issue-order__label" for="name">Имя пользователя</label>
-						<input class="issue-order__input" id="name" name="name" type="text"
-								value="{{ old('name') }}" required autofocus>
+						<label class="issue-order__label" for="login">Логин</label>
+						<input class="issue-order__input" id="login" name="login" type="text"
+								value="{{ old('login') }}" required autofocus>
 
-						@error('name')
+						@error('login')
 							<p style="color: #b00; margin: 0.25rem 0 0;">{{ $message }}</p>
 						@enderror
 					</fieldset>
