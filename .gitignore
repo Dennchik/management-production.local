@@ -11,6 +11,7 @@
 /.nova
 /.phpunit.cache
 /.vscode
+/.zcode
 /.zed
 /auth.json
 /node_modules

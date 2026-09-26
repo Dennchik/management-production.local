@@ -7,6 +7,7 @@ import './modules/ui/sidebar.js';
 import { initFiltersModule } from './modules/forms/filters.js';
 import { initMaterialReceiptModule } from './modules/forms/material-receipt.js';
 import { initMaterialIssueModule } from './modules/forms/material-issue.js';
+import { initMaterialAdjustmentModule } from './modules/forms/material-adjustment.js';
 import { initReceiptRolls } from './modules/ui/receipt-rolls.js';
 import { initProductionOperationModule } from './modules/forms/material-operation.js';
 import { initTasksFormModule } from './modules/forms/tasks-form.js';
@@ -26,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
    initMaterialRollsModule();
    initMaterialReceiptModule();
    initMaterialIssueModule();
+   initMaterialAdjustmentModule();
    initReceiptRolls();
    initMaterialsModule();
    initCatalogsModule();

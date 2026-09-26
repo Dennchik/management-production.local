@@ -46,10 +46,10 @@
 					$query->where(function ($query) use ($search) {
 						$query
 							->whereHas('material', function ($query) use ($search) {
-								$query->where('name', 'ilike', '%' . $search . '%');
+								$query->whereIlike('name', '%' . $search . '%');
 							})
 							->orWhereHas('roll', function ($query) use ($search) {
-								$query->where('identifier', 'ilike', '%' . $search . '%');
+								$query->whereIlike('identifier', '%' . $search . '%');
 							});
 					});
 				})
@@ -88,10 +88,10 @@
 					$query->where(function ($query) use ($search) {
 						$query
 							->whereHas('material', function ($query) use ($search) {
-								$query->where('name', 'ilike', '%' . $search . '%');
+								$query->whereIlike('name', '%' . $search . '%');
 							})
 							->orWhereHas('roll', function ($query) use ($search) {
-								$query->where('identifier', 'ilike', '%' . $search . '%');
+								$query->whereIlike('identifier', '%' . $search . '%');
 							});
 					});
 				})

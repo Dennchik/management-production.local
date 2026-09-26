@@ -23,7 +23,7 @@
 			$managerRole->syncPermissions([
 					'materials' => ['view', 'create', 'edit', 'delete'],
 					'orders' => ['view', 'create', 'edit'],
-					'tasks' => ['view', 'create', 'edit', 'cancel', 'execute'],
+					'tasks' => ['view', 'create', 'edit', 'cancel', 'execute', 'status'],
 					'warehouse' => ['view'],
 					'rolls' => ['view'],
 					'operations' => ['view', 'create', 'edit', 'delete'],

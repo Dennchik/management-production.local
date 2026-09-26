@@ -39,13 +39,42 @@
 		 */
 		public function getRollFormatsAttribute(): string
 		{
-			return $this->rolls
+			return $this->formatValues()
+				->map(static fn ($format) => (string) $format)
+				->implode(', ');
+		}
+
+		/**
+		 * Форматы, закреплённые за материалом: из таблицы форматов
+		 * плюс форматы живых рулонов (на случай рассинхрона).
+		 */
+		public function formatValues()
+		{
+			return $this->formats
 				->pluck('format')
+				->merge($this->rolls->pluck('format'))
 				->filter()
 				->unique()
 				->sort()
-				->map(static fn ($format) => (string) $format)
-				->implode(', ');
+				->values();
+		}
+
+		/**
+		 * Форматы материала, не зависящие от наличия рулонов.
+		 */
+		public function formats(): HasMany
+		{
+			return $this->hasMany(MaterialFormat::class);
+		}
+
+		/**
+		 * Привязывает формат к материалу, если он ещё не привязан.
+		 */
+		public function attachFormat($format): MaterialFormat
+		{
+			return $this->formats()->firstOrCreate([
+				'format' => (int) $format,
+			]);
 		}
 
 		/**

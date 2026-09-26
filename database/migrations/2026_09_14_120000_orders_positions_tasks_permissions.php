@@ -181,7 +181,8 @@ return new class extends Migration
 		Schema::dropIfExists('production_tasks');
 
 		Schema::table('users', function (Blueprint $table) {
-			$table->dropConstrainedForeignId('machine_id');
+			// machine_id создан без внешнего ключа — удаляется как обычная колонка
+			$table->dropColumn('machine_id');
 			$table->dropConstrainedForeignId('role_id');
 		});
 

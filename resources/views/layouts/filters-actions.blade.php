@@ -94,7 +94,7 @@
 					</div>
 
 					{{-- Приход / Расход --}}
-				@elseif (in_array($filterType, ['receipts', 'issues'], true))
+				@elseif (in_array($filterType, ['receipts', 'issues', 'adjustments'], true))
 
 					{{-- Дата от --}}
 					<div class="filters-actions__filter">

@@ -4,18 +4,17 @@
 
 	use App\Models\Catalog;
 	use App\Models\Material;
-	use App\Models\MaterialRoll;
 	use Illuminate\Database\Seeder;
 
 	class MaterialSeeder extends Seeder
 	{
 		/**
-		 * Заполняет справочник каталогами и материалами,
-		 * а также создаёт тестовые рулоны по остаткам склада.
+		 * Заполняет справочник каталогами и материалами.
 		 *
-		 * Остатки делятся на рулоны по 300 кг (последний рулон — остаток).
-		 * Формат и идентификатор хранятся на рулоне: идентификатор
-		 * вычисляется как код + граммаж/толщина + формат.
+		 * Рулоны не создаются: склад наполняется приходными ордерами.
+		 * Форматы из остатков закрепляются за материалом в
+		 * material_formats, чтобы список форматов работал
+		 * и без рулонов.
 		 */
 		public function run(): void
 		{
@@ -53,54 +52,17 @@
 					]
 				);
 
-				if (!empty($material['stock'])) {
-					$this->seedRolls($model, $material['stock']);
+				// Ключи остатков — форматы материала; закрепляем их за материалом
+				foreach (array_keys($material['stock'] ?? []) as $format) {
+					// Ключ null (без формата) PHP превращает в пустую строку.
+					if ($format !== '') {
+						$model->attachFormat($format);
+					}
 				}
 			}
 
 			foreach ($node['children'] ?? [] as $child) {
 				$this->seedCatalogNode($child, $catalog->id, $materialType);
-			}
-		}
-
-		/**
-		 * Делит остаток на рулоны по 300 кг и создаёт их.
-		 *
-		 * @param Material $material Материал, к которому относятся рулоны.
-		 * @param array $stock Остаток: формат (мм) => вес (кг). Формат null — без формата.
-		 */
-		private function seedRolls(Material $material, array $stock): void
-		{
-			$number = 1;
-
-			foreach ($stock as $format => $weight) {
-				// Ключ null (без формата) PHP превращает в пустую строку.
-				$format = $format === '' ? null : $format;
-
-				$identifier = MaterialRoll::composeIdentifier(
-					$material->code,
-					$material->grammage,
-					$material->thickness,
-					$format
-				);
-
-				$weight = (float) $weight;
-
-				while ($weight > 0) {
-					$rollWeight = min(300.0, $weight);
-					$weight = round($weight - $rollWeight, 3);
-
-					MaterialRoll::updateOrCreate(
-						['material_id' => $material->id, 'roll_number' => sprintf('%04d', $number)],
-						[
-							'weight' => $rollWeight,
-							'format' => $format,
-							'identifier' => $identifier,
-						]
-					);
-
-					$number++;
-				}
 			}
 		}
 

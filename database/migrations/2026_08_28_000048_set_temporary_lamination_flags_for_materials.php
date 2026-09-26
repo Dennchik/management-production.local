@@ -18,42 +18,42 @@
 
 			// Бумага.
 			DB::table('materials')
-					->where('name', 'ilike', '%Бумага%')
+					->whereIlike('name', '%Бумага%')
 					->update([
 							'lamination_allowed' => true,
 					]);
 
 			// Алюминиевая фольга.
 			DB::table('materials')
-					->where('name', 'ilike', '%Фольга алюминиевая%')
+					->whereIlike('name', '%Фольга алюминиевая%')
 					->update([
 							'lamination_allowed' => true,
 					]);
 
 			// Пленка FPO.
 			DB::table('materials')
-					->where('name', 'ilike', '%FPO%')
+					->whereIlike('name', '%FPO%')
 					->update([
 							'lamination_allowed' => true,
 					]);
 
 			// Пленка БОПП.
 			DB::table('materials')
-					->where('name', 'ilike', '%БОПП%')
+					->whereIlike('name', '%БОПП%')
 					->update([
 							'lamination_allowed' => true,
 					]);
 
 			// Барьерная пленка EVOH.
 			DB::table('materials')
-					->where('name', 'ilike', '%EVOH%')
+					->whereIlike('name', '%EVOH%')
 					->update([
 							'lamination_allowed' => true,
 					]);
 
 			// Пленка ПЭ.
 			DB::table('materials')
-					->where('name', 'ilike', '%ПЭ%')
+					->whereIlike('name', '%ПЭ%')
 					->update([
 							'lamination_allowed' => true,
 					]);
@@ -62,10 +62,10 @@
 			DB::table('materials')
 					->where(function ($query) {
 						$query
-								->where('name', 'ilike', '%МК 3%')
-								->orWhere('name', 'ilike', '%МК3%')
-								->orWhere('name', 'ilike', '%МК 4%')
-								->orWhere('name', 'ilike', '%МК4%');
+								->whereIlike('name', '%МК 3%')
+								->orWhereIlike('name', '%МК3%')
+								->orWhereIlike('name', '%МК 4%')
+								->orWhereIlike('name', '%МК4%');
 					})
 					->update([
 							'lamination_allowed' => false,

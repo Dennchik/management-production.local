@@ -38,7 +38,8 @@
 							@php
 								$made = rtrim(rtrim(number_format((float) ($task->produced_weight ?? 0), 3, '.', ''), '0'), '.');
 								$plan = rtrim(rtrim($task->quantity, '0'), '.');
-								$left = rtrim(rtrim(number_format($task->quantity - (float) ($task->produced_weight ?? 0), 3, '.', ''), '0'), '.');
+								// Перевыполнение не уводит «осталось» в минус
+								$left = rtrim(rtrim(number_format(max(0, (float) $task->quantity - (float) ($task->produced_weight ?? 0)), 3, '.', ''), '0'), '.');
 							@endphp
 
 								<tr style="cursor: pointer;" onclick="window.location='{{ route('tasks.show', $task) }}'">

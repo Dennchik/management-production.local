@@ -4,6 +4,7 @@
 	use App\Http\Controllers\CatalogController;
 	use App\Http\Controllers\DashboardController;
 	use App\Http\Controllers\MaterialController;
+	use App\Http\Controllers\MaterialAdjustmentController;
 	use App\Http\Controllers\MaterialIssueController;
 	use App\Http\Controllers\MaterialMovementController;
 	use App\Http\Controllers\MaterialReceiptController;
@@ -104,6 +105,11 @@
 	Route::post('/tasks/{task}/complete', [ProductionTaskController::class, 'complete'])
 			->middleware('can.do:tasks,execute')
 			->name('tasks.complete');
+
+	// Смена статуса: право tasks,status, оператору — только
+	// «Продолжить» завершённой с недобором задачи
+	Route::post('/tasks/{task}/status', [ProductionTaskController::class, 'updateStatus'])
+			->name('tasks.status');
 
 		Route::get('/tasks/{task}', [ProductionTaskController::class, 'show'])
 				->middleware('can.do:tasks')
@@ -263,6 +269,28 @@
 		Route::get('/issues/{issue}', [MaterialIssueController::class, 'show'])
 				->middleware('can.do:warehouse')
 				->name('material-issues.show');
+
+		/*
+		|--------------------------------------------------------------------------
+		| Ордера корректировки
+		|--------------------------------------------------------------------------
+		*/
+
+		Route::get('/adjustments', [MaterialAdjustmentController::class, 'index'])
+				->middleware('can.do:warehouse')
+				->name('material-adjustments.index');
+
+		Route::get('/adjustments/create', [MaterialAdjustmentController::class, 'create'])
+				->middleware('can.do:warehouse,create')
+				->name('material-adjustments.create');
+
+		Route::post('/adjustments', [MaterialAdjustmentController::class, 'store'])
+				->middleware('can.do:warehouse,create')
+				->name('material-adjustments.store');
+
+		Route::get('/adjustments/{adjustment}', [MaterialAdjustmentController::class, 'show'])
+				->middleware('can.do:warehouse')
+				->name('material-adjustments.show');
 
 		/*
 		|--------------------------------------------------------------------------

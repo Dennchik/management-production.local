@@ -14,7 +14,7 @@ export function initReceiptRolls() {
    }
 
    // =========================================================
-   // Получить все рулоны
+   // Получить все строки рулонов
    // =========================================================
 
    const getRolls = () => {
@@ -22,43 +22,41 @@ export function initReceiptRolls() {
    };
 
    // =========================================================
-   // Создать новый рулон
+   // Обновить кнопки удаления: у первой строки кнопки нет
+   // =========================================================
+
+   const syncRemoveButtons = () => {
+      getRolls().forEach((roll, index) => {
+         const removeButton = roll.querySelector('[data-receipt-roll-remove]');
+
+         if (removeButton) {
+            removeButton.hidden = index === 0;
+         }
+      });
+   };
+
+   // =========================================================
+   // Создать новую строку рулона
    // =========================================================
 
    const createRoll = (index) => {
-      const roll = document.createElement('div');
+      const roll = document.createElement('tr');
 
-      roll.className = 'receipt-order__roll';
       roll.dataset.receiptRoll = '';
 
       roll.innerHTML = `
-         <fieldset class="receipt-order__field">
-            <label class="receipt-order__label" for="roll_number_${index}" data-receipt-roll-number-label>
-               Номер рулона
-            </label>
-
+         <td data-receipt-roll-number-field>
             <input
                class="receipt-order__input"
                id="roll_number_${index}"
                name="rolls[${index}][roll_number]"
                data-receipt-roll-number
-               type="text" 
-               value="">
+               type="text"
+               value=""
+               aria-label="Номер рулона">
+         </td>
 
-         </fieldset>
-
-
-         <fieldset class="receipt-order__field">
-
-            <label
-               class="receipt-order__label"
-               for="weight_${index}"
-               data-receipt-roll-weight-label>
-
-               Вес, кг
-
-            </label>
-
+         <td>
             <input
                class="receipt-order__input"
                id="weight_${index}"
@@ -67,22 +65,22 @@ export function initReceiptRolls() {
                type="number"
                step="0.001"
                min="0"
-               value="">
+               value=""
+               aria-label="Вес, кг">
+         </td>
 
-         </fieldset>
+         <td>
+            <button
+               class="receipt-order__roll-remove button"
+               type="button"
+               data-receipt-roll-remove
+               aria-label="Удалить рулон">
 
-
-         <button
-            class="receipt-order__roll-remove button"
-            type="button"
-            data-receipt-roll-remove
-            aria-label="Удалить рулон">
-
-            <span>
-               Удалить рулон
-            </span>
-
-         </button>
+               <span>
+                  Удалить
+               </span>
+            </button>
+         </td>
       `;
 
       return roll;
@@ -93,12 +91,13 @@ export function initReceiptRolls() {
    // =========================================================
 
    const addRoll = () => {
-      const rolls = getRolls();
-      const index = rolls.length;
+      const index = getRolls().length;
 
       const roll = createRoll(index);
 
       rollsList.appendChild(roll);
+
+      syncRemoveButtons();
 
       const numberInput = roll.querySelector('[data-receipt-roll-number]');
 
@@ -114,18 +113,17 @@ export function initReceiptRolls() {
          return;
       }
 
-      const rolls = getRolls();
-
       /*
        * Первый рулон удалить нельзя.
        */
-      if (rolls.indexOf(roll) === 0) {
+      if (getRolls().indexOf(roll) === 0) {
          return;
       }
 
       roll.remove();
 
       reindexRolls();
+      syncRemoveButtons();
    };
 
    // =========================================================
@@ -133,20 +131,10 @@ export function initReceiptRolls() {
    // =========================================================
 
    const reindexRolls = () => {
-      const rolls = getRolls();
-
-      rolls.forEach((roll, index) => {
+      getRolls().forEach((roll, index) => {
          const numberInput = roll.querySelector('[data-receipt-roll-number]');
 
-         const numberLabel = roll.querySelector(
-            '[data-receipt-roll-number-label]'
-         );
-
          const weightInput = roll.querySelector('[data-receipt-roll-weight]');
-
-         const weightLabel = roll.querySelector(
-            '[data-receipt-roll-weight-label]'
-         );
 
          if (numberInput) {
             numberInput.id = `roll_number_${index}`;
@@ -154,33 +142,21 @@ export function initReceiptRolls() {
             numberInput.name = `rolls[${index}][roll_number]`;
          }
 
-         if (numberLabel) {
-            numberLabel.htmlFor = `roll_number_${index}`;
-         }
-
          if (weightInput) {
             weightInput.id = `weight_${index}`;
 
             weightInput.name = `rolls[${index}][weight]`;
          }
-
-         if (weightLabel) {
-            weightLabel.htmlFor = `weight_${index}`;
-         }
       });
    };
 
    // =========================================================
-   // Добавление
+   // Добавление и удаление
    // =========================================================
 
    addButton.addEventListener('click', () => {
       addRoll();
    });
-
-   // =========================================================
-   // Удаление
-   // =========================================================
 
    rollsList.addEventListener('click', (event) => {
       const removeButton = event.target.closest('[data-receipt-roll-remove]');
@@ -199,4 +175,5 @@ export function initReceiptRolls() {
    // =========================================================
 
    reindexRolls();
+   syncRemoveButtons();
 }

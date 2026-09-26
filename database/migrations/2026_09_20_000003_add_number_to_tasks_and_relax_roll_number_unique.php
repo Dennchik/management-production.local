@@ -21,7 +21,10 @@
 			// Номера рулонов продукции назначает система («номерЗадачи/порядковый»),
 			// поэтому жёсткая уникальность (материал, номер) больше не нужна:
 			// номера задач повторяются каждый год.
+			// Индекс material_id создаётся до удаления уникального: в MySQL
+			// внешний ключ не может остаться без индекса (ошибка 1553).
 			Schema::table('material_rolls', function (Blueprint $table) {
+				$table->index('material_id');
 				$table->dropUnique(['material_id', 'roll_number']);
 			});
 		}
@@ -30,6 +33,7 @@
 		{
 			Schema::table('material_rolls', function (Blueprint $table) {
 				$table->unique(['material_id', 'roll_number']);
+				$table->dropIndex('material_rolls_material_id_index');
 			});
 
 			Schema::table('production_tasks', function (Blueprint $table) {

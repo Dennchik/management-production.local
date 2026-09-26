@@ -103,6 +103,16 @@ document.addEventListener('DOMContentLoaded', () => {
          return;
       }
 
+      const adjustment = event.target.closest('[data-adjustment-modal-open]');
+
+      if (adjustment) {
+         event.preventDefault();
+
+         load(`/adjustments/${adjustment.dataset.adjustmentId}`);
+
+         return;
+      }
+
       const closeButton = event.target.closest('[data-operation-modal-close]');
 
       if (closeButton) {

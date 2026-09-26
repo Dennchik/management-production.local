@@ -20,7 +20,7 @@
 
 			$rolls = MaterialRoll::with('material')
 					->when($search, function ($query) use ($search) {
-						$query->where('roll_number', 'ilike', "%{$search}%");
+						$query->whereIlike('roll_number', "%{$search}%");
 					})
 					->when($materialId, function ($query) use ($materialId) {
 						$query->where('material_id', $materialId);

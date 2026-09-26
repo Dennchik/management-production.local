@@ -7,25 +7,23 @@
 	use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 	#[Fillable([
-			'task_id',
-			'material_id',
-			'roll_id',
-			'actual_weight',
-			'issued_at',
+		'material_id',
+		'roll_id',
+		'weight_before',
+		'adjustment',
+		'weight_after',
+		'comment',
+		'user_id',
 	])]
-	class ProductionTaskInput extends Model
+	class MaterialAdjustment extends Model
 	{
 		protected function casts(): array
 		{
 			return [
-					'actual_weight' => 'decimal:3',
-					'issued_at' => 'datetime',
+				'weight_before' => 'decimal:3',
+				'adjustment' => 'decimal:3',
+				'weight_after' => 'decimal:3',
 			];
-		}
-
-		public function task(): BelongsTo
-		{
-			return $this->belongsTo(ProductionTask::class, 'task_id');
 		}
 
 		public function material(): BelongsTo
@@ -35,6 +33,11 @@
 
 		public function roll(): BelongsTo
 		{
-			return $this->belongsTo(MaterialRoll::class, 'roll_id');
+			return $this->belongsTo(MaterialRoll::class);
+		}
+
+		public function user(): BelongsTo
+		{
+			return $this->belongsTo(User::class);
 		}
 	}

@@ -15,10 +15,14 @@
 			});
 
 			// Переносим значения существующим рулонам из их материалов.
-			DB::statement(
-				'UPDATE material_rolls SET format = m.format, identifier = m.identifier
-				FROM materials m WHERE m.id = material_rolls.material_id'
-			);
+			// Query Builder компилирует UPDATE ... JOIN одинаково корректно
+			// для PostgreSQL и MySQL, без сырого диалектного SQL.
+			DB::table('material_rolls as r')
+				->join('materials as m', 'm.id', '=', 'r.material_id')
+				->update([
+						'r.format' => DB::raw('m.format'),
+						'r.identifier' => DB::raw('m.identifier'),
+				]);
 
 			Schema::table('materials', function (Blueprint $table) {
 				$table->dropColumn(['format', 'identifier']);
@@ -32,12 +36,25 @@
 				$table->string('identifier', 20)->nullable()->comment('Идентификатор материала');
 			});
 
-			// Возвращаем данные из первого рулона материала.
-			DB::statement(
-				'UPDATE materials m SET format = r.format, identifier = r.identifier
-				FROM material_rolls r
-				WHERE r.id = (SELECT id FROM material_rolls WHERE material_id = m.id ORDER BY id LIMIT 1)'
-			);
+			// Возвращаем данные из первого рулона материала: построчно,
+			// без диалектного UPDATE ... FROM и подзапроса с LIMIT.
+			$firstRolls = DB::table('material_rolls as r')
+				->select('r.material_id', 'r.format', 'r.identifier')
+				->whereIn('r.id', function ($query) {
+						$query->selectRaw('MIN(id)')
+							->from('material_rolls')
+							->groupBy('material_id');
+				})
+				->get();
+
+			foreach ($firstRolls as $roll) {
+				DB::table('materials')
+					->where('id', $roll->material_id)
+					->update([
+							'format' => $roll->format,
+							'identifier' => $roll->identifier,
+					]);
+			}
 
 			Schema::table('material_rolls', function (Blueprint $table) {
 				$table->dropColumn(['format', 'identifier']);

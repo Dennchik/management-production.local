@@ -33,11 +33,12 @@
 
 				$table->timestamps();
 
+				// Имя короткое явно: MySQL ограничивает идентификаторы 64 символами
 				$table->unique([
 						'production_job_id',
 						'route_step_id',
 						'execution_number',
-				]);
+				], 'poe_job_step_number_unique');
 			});
 		}
 

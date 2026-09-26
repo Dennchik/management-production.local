@@ -15,6 +15,11 @@
 	class MaterialReceiptController extends Controller
 	{
 		/**
+		 * Номер рулона, накапливающего приход без учёта рулонами.
+		 */
+		public const TOTAL_WEIGHT_ROLL_NUMBER = 'Общий вес';
+
+		/**
 		 * Список приходных ордеров.
 		 */
 		public function index(Request $request): View
@@ -83,6 +88,10 @@
 		 */
 		public function store(Request $request): RedirectResponse
 		{
+			$mode = $request->input('mode') === 'total_weight'
+					? 'total_weight'
+					: 'rolls';
+
 			$validated = $request->validate(
 					[
 							'material_id' => [
@@ -92,7 +101,9 @@
 							],
 
 							'format' => [
-									'nullable',
+									// В режиме общего веса формат обязателен: он делит
+									// рулоны «Общий вес» между форматами материала
+									$mode === 'total_weight' ? 'required' : 'nullable',
 									'integer',
 									'min:0',
 									'max:65535',
@@ -105,13 +116,20 @@
 							],
 
 						'rolls.*.roll_number' => [
-								'required',
+								// В режиме общего веса номер не вводится —
+								// приход уходит в рулон «Общий вес»
+								$mode === 'total_weight' ? 'nullable' : 'required',
 								'string',
 								'max:50',
-								// Жёсткий индекс снят (номера «задача/порядковый» повторяются
-								// каждый год), поэтому уникальность вручную введённых номеров
-								// проверяется здесь.
-								static function ($attribute, $value, $fail) use ($request) {
+								// В режиме общего веса номер фиксированный, повтор разрешён.
+								// Для обычных номеров жёсткий индекс снят (номера
+								// «задача/порядковый» повторяются каждый год), поэтому
+								// уникальность проверяется здесь.
+								static function ($attribute, $value, $fail) use ($request, $mode) {
+										if ($mode === 'total_weight') {
+												return;
+										}
+
 										$materialId = (int) $request->input('material_id');
 
 										$exists = MaterialRoll::query()
@@ -141,6 +159,7 @@
 							'material_id.integer' => 'Некорректный материал.',
 							'material_id.exists' => 'Выбранный материал не существует.',
 
+							'format.required' => 'Укажите формат.',
 							'format.integer' => 'Формат должен быть целым числом.',
 							'format.min' => 'Формат должен быть не меньше 0.',
 							'format.max' => 'Формат не должен превышать 65535.',
@@ -164,7 +183,7 @@
 			$material = Material::findOrFail($validated['material_id']);
 
 			/*
-			 * Формат вводится при оприходовании и сохраняется
+			 * Формат выбирается отдельным селектом и сохраняется
 			 * на каждом рулоне вместе с вычисленным идентификатором.
 			 */
 			$format = $validated['format'] ?? null;
@@ -177,11 +196,56 @@
 			);
 
 			try {
-				DB::transaction(function () use ($validated, $material, $format, $identifier) {
+				DB::transaction(function () use ($validated, $material, $format, $identifier, $mode) {
+					// Формат закрепляется за материалом: остаётся доступным,
+					// когда рулоны этого формата закончатся
+					if ($format !== null) {
+						$material->attachFormat($format);
+					}
+
 					$receipt = MaterialReceipt::create([
 							'comment' => $validated['comment'] ?? null,
 							'user_id' => auth()->id(), // Временно, пока нет авторизации
 					]);
+
+					// Режим общего веса: весь вес уходит в один рулон
+					// «Общий вес» этого материала и формата, вес суммируется.
+					if ($mode === 'total_weight') {
+						$totalWeight = round(
+								collect($validated['rolls'])->sum(static fn (array $roll) => (float) $roll['weight']),
+								3
+						);
+
+						$roll = MaterialRoll::query()
+							->where('material_id', $material->id)
+							->where('roll_number', self::TOTAL_WEIGHT_ROLL_NUMBER)
+							->where('format', $format)
+							->lockForUpdate()
+							->first();
+
+						if ($roll === null) {
+							$roll = MaterialRoll::create([
+									'material_id' => $material->id,
+									'roll_number' => self::TOTAL_WEIGHT_ROLL_NUMBER,
+									'weight' => $totalWeight,
+									'format' => $format,
+									'identifier' => $identifier,
+							]);
+						} else {
+							$roll->update([
+									'weight' => round((float) $roll->weight + $totalWeight, 3),
+							]);
+						}
+
+						MaterialReceiptItem::create([
+								'material_receipt_id' => $receipt->id,
+								'material_id' => $material->id,
+								'roll_id' => $roll->id,
+								'weight' => $totalWeight,
+						]);
+
+						return;
+					}
 
 					foreach ($validated['rolls'] as $rollData) {
 						$roll = MaterialRoll::create([

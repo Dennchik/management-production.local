@@ -22,7 +22,8 @@
 						->constrained()
 						->cascadeOnDelete();
 
-				$table->unique(['material_id', 'production_operation_id']);
+				// Имя короткое явно: MySQL ограничивает идентификаторы 64 символами
+				$table->unique(['material_id', 'production_operation_id'], 'mpo_material_operation_unique');
 			});
 		}
 

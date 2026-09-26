@@ -6,7 +6,8 @@
 	@php
 		$made = rtrim(rtrim(number_format($task->producedWeight(), 3, '.', ''), '0'), '.');
 		$plan = rtrim(rtrim($task->quantity, '0'), '.');
-		$left = rtrim(rtrim(number_format($task->quantity - $task->producedWeight(), 3, '.', ''), '0'), '.');
+		// Перевыполнение не уводит «осталось» в минус
+		$left = rtrim(rtrim(number_format(max(0, (float) $task->quantity - $task->producedWeight()), 3, '.', ''), '0'), '.');
 		$isInProgress = $task->status === 'in_progress';
 	@endphp
 
@@ -91,7 +92,30 @@
 					</p>
 				@endif
 
-				@if ($task->isEditable() && auth()->user()?->may('tasks', 'edit'))
+				@if ($task->status === 'done' && $task->isShort() && !auth()->user()?->may('tasks', 'status') && auth()->user()?->may('tasks', 'execute'))
+					{{-- Оператор: продолжить завершённую с недобором задачу, чтобы доделать вес --}}
+					<form method="POST" action="{{ route('tasks.status', $task) }}" style="display: inline;"
+							onsubmit="return confirm('Продолжить задачу №{{ $task->number }}? Она вернётся в работу для доделки.');">
+						@csrf
+						<input type="hidden" name="status" value="in_progress">
+						<button class="button button--primary" type="submit">
+							<span>Продолжить задачу</span>
+						</button>
+					</form>
+				@endif
+
+				@if (auth()->user()?->may('tasks', 'status'))
+					{{-- Право смены статуса: одна кнопка, выбор в модалке --}}
+					<button class="button button--primary" type="button"
+							data-task-status-open
+							data-task-id="{{ $task->id }}"
+							data-current="{{ $task->status }}"
+							data-statuses="{{ json_encode($statuses, JSON_UNESCAPED_UNICODE) }}">
+						<span>Изменить статус</span>
+					</button>
+				@endif
+
+				@if ($task->status !== 'cancelled' && auth()->user()?->may('tasks', 'edit'))
 					<a class="button button--primary" href="{{ route('tasks.edit', $task) }}">
 						<span>Редактировать</span>
 					</a>
@@ -128,8 +152,8 @@
 
 						<p style="margin: 0 0 1rem; color: var(--text-muted);">
 							Укажите расход или остаток по каждому рулону — второе поле пересчитается само и сразу сохранится.
-							Если расход больше веса рулона, остаток уходит в минус.
-							Рулон, взятый другой задачей, показан внизу списка и недоступен.
+							Вес, указанный при взятии рулона, попадает в расход и резервируется: остальной вес рулона доступен другим задачам.
+							Остаток после взятия пустой — заполните его вручную.
 						</p>
 
 						<div data-task-add-error hidden style="margin: 0 0 1rem; color: var(--alarm);"></div>
@@ -177,10 +201,11 @@
 															value="{{ old('inputs.' . $index . '.used', rtrim(rtrim(number_format($savedUsed, 3, '.', ''), '0'), '.')) }}">
 												</td>
 												<td>
+													{{-- Остаток вводится вручную: пустым после взятия рулона --}}
 													<input class="issue-order__input" type="number" step="0.001"
 															style="min-height: 36px; width: 100%;"
 															name="inputs[{{ $index }}][remaining]" data-roll-remaining
-															value="{{ old('inputs.' . $index . '.remaining', rtrim(rtrim(number_format((float) $rollWeight - $savedUsed, 3, '.', ''), '0'), '.')) }}">
+															value="{{ old('inputs.' . $index . '.remaining') }}">
 													<input type="hidden" name="inputs[{{ $index }}][id]" value="{{ $input->id }}">
 												</td>
 											</tr>
@@ -205,26 +230,44 @@
 															<div class="select__dropdown material-select__select-list _collapse"
 																	role="listbox">
 																@foreach ($materialRolls as $roll)
-																	@php $takenBy = $roll->taken_by ?? null; @endphp
-																	<button class="material-select__select-option select__item"
-																			type="button"
-																			role="option"
-																			data-value="{{ $takenBy ? '' : $roll->id }}"
-																			data-search="{{ strtolower($roll->roll_number) }}"
-																			@if ($takenBy) disabled @endif>
-																		<span>{{ $roll->roll_number }} ({{ rtrim(rtrim($roll->weight, '0'), '.') }} кг)</span>
-																		@if ($takenBy)
-																			<small style="display: block; font-size: 1.1rem; color: var(--text-muted);">
+																@php
+																	$takenBy = $roll->taken_by ?? null;
+																	$available = (float) ($roll->available ?? $roll->weight);
+																	$isExhausted = $available <= 0.0005;
+																@endphp
+																<button class="material-select__select-option select__item"
+																		type="button"
+																		role="option"
+																		data-value="{{ $isExhausted ? '' : $roll->id }}"
+																		data-search="{{ strtolower($roll->roll_number) }}"
+																		data-available="{{ $available }}"
+																		data-shared="{{ $roll->is_shared ? '1' : '' }}"
+																		@if ($isExhausted) disabled @endif>
+																	<span>{{ $roll->roll_number }} (доступно
+																		{{ rtrim(rtrim(number_format($available, 3, '.', ''), '0'), '.') }}
+																		из {{ rtrim(rtrim($roll->weight, '0'), '.') }} кг)</span>
+																	@if ($takenBy)
+																		<small style="display: block; font-size: 1.1rem; color: var(--text-muted);">
+																			@if ($isExhausted)
 																				взята в задачу №{{ $takenBy }}
-																			</small>
-																		@endif
-																	</button>
-																@endforeach
+																			@else
+																				частично в задаче №{{ $takenBy }}
+																			@endif
+																		</small>
+																	@endif
+																</button>
+															@endforeach
 																<div class="material-select__select-empty select__empty" hidden>Ничего
 																	не найдено
 																</div>
 															</div>
 														</div>
+
+														<input class="issue-order__input" type="number" step="0.001" min="0"
+																placeholder="Вес рулона, кг"
+																style="min-height: 36px; width: 140px;"
+																name="inputs[0][used]" data-roll-take-weight
+																form="task-input-form-{{ $material->id }}">
 
 														<button class="button"
 																type="submit"

@@ -37,6 +37,36 @@
 }
 
 .receipt-order {
+	// .receipt-order__modes
+	&__modes {
+		display: flex;
+		gap: var(--gap);
+	}
+
+	// .receipt-order__mode-button
+	&__mode-button:not(._active) {
+		color: var(--color-text);
+
+		background: var(--background-gray);
+	}
+
+	/*
+	 * Скрытие через [hidden]: у .button и .receipt-order__field
+	 * свои display, которые перебивают атрибут.
+	 */
+	.button[hidden],
+	&__field[hidden] {
+		display: none;
+	}
+
+	// .receipt-order__rolls-hint
+	&__rolls-hint {
+		margin: 0;
+
+		font-size: 1.4rem;
+		color: var(--text-muted);
+	}
+
 	// receipt-order__rolls
 	&__rolls {
 		display: flex;

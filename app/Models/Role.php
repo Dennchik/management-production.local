@@ -28,6 +28,7 @@
 			'delete' => 'Удалять',
 			'cancel' => 'Отменять',
 			'execute' => 'Выполнять',
+			'status' => 'Менять статус',
 	];
 
 		protected function casts(): array

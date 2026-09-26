@@ -14,6 +14,27 @@
 
 		<div class="receipt-order__body">
 
+			{{-- Режим учёта: рулонами или общим весом --}}
+			<div class="receipt-order__line receipt-order__line--modes">
+				<fieldset class="receipt-order__field">
+					<label class="receipt-order__label">Режим учёта</label>
+
+					<div class="receipt-order__modes" data-receipt-modes>
+						<button class="receipt-order__mode-button button" type="button"
+								data-receipt-mode-button data-mode="rolls">
+							<span>Учёт рулонами</span>
+						</button>
+
+						<button class="receipt-order__mode-button button" type="button"
+								data-receipt-mode-button data-mode="total_weight">
+							<span>Общий вес</span>
+						</button>
+					</div>
+
+					<input type="hidden" name="mode" data-receipt-mode-input value="{{ old('mode', 'rolls') }}">
+				</fieldset>
+			</div>
+
 			{{-- Материал --}}
 			<div class="receipt-order__line">
 				<fieldset class="receipt-order__field">
@@ -44,39 +65,29 @@
 								</div>
 
 								@foreach ($materials as $material)
-
 									@php
 										/*
-										 * Отдельный пункт на каждый формат;
-										 * без рулонов — один пункт без формата.
+										 * Один пункт на материал; форматы выбираются
+										 * отдельным селектом после выбора материала.
+										 * Форматы берутся из material_formats и не
+										 * зависят от наличия рулонов.
 										 */
-										$formatGroups = $material->rolls
-											->groupBy(fn ($roll) => $roll->format ?? '')
-											->sortBy(fn ($group, $format) => (int) $format);
-									@endphp
-
-								@foreach ($formatGroups->isEmpty() ? collect([null]) : $formatGroups as $group)
-									@php
-										$groupFormat = $group?->pluck('format')->filter()->unique()->first();
-										$groupFormatsLabel = $group?->pluck('format')->filter()->unique()->values()->implode(', ');
+										$materialFormats = $material->formatValues();
 									@endphp
 
 									<button class="material-select__select-option select__item"
 											type="button" role="option" data-value="{{ $material->id }}"
 											data-grammage="{{ $material->grammage }}" data-thickness="{{ $material->thickness }}"
-											data-code="{{ $material->code }}" data-format="{{ $groupFormat ?? '' }}"
+											data-code="{{ $material->code }}" data-type="{{ $material->material_type }}"
+											data-formats="{{ $materialFormats->toJson() }}"
 											aria-selected="{{ old('material_id') == $material->id ? 'true' : 'false' }}">
 
 										<span>{{ preg_replace('/\s*гр\.?\s*$/ui', '', $material->name) }}@if ($material->grammage)
 												| {{ rtrim(rtrim(number_format($material->grammage, 2, '.', ''), '0'), '.') }} гр
 											@endif @if ($material->thickness)
 												| {{ $material->thickness }} мкм
-											@endif @if ($groupFormatsLabel)
-												| {{ $groupFormatsLabel }}
 											@endif</span>
 									</button>
-
-									@endforeach
 
 								@endforeach
 
@@ -100,19 +111,65 @@
 					<input class="receipt-order__input" id="thickness" type="text" readonly>
 				</fieldset>
 
-				{{-- Формат --}}
-				<fieldset class="receipt-order__field">
-					<label class="receipt-order__label" for="format">Формат</label>
-					<input class="receipt-order__input" id="format" name="format" type="number"
-							min="0" step="1" inputmode="numeric" value="{{ old('format') }}">
-				</fieldset>
-
 				{{-- Идентификатор --}}
 				<fieldset class="receipt-order__field">
-
 					<label class="receipt-order__label" for="identifier">Идентификатор</label>
-
 					<input class="receipt-order__input" id="identifier" type="text" readonly>
+				</fieldset>
+			</div>
+
+			{{-- Формат --}}
+			<div class="receipt-order__line">
+				<fieldset class="receipt-order__field">
+					<label class="receipt-order__label" for="format_select">Формат</label>
+
+					<div data-select>
+						<div class="select material-select receipt-order" data-format-select>
+							<input class="select__value" id="format" name="format"
+									type="hidden" value="{{ old('format') }}">
+
+							<button class="material-select__select-button select__button select-button"
+									id="format_select" type="button" aria-haspopup="listbox" aria-expanded="false">
+								<span class="material-select__select-value select__button-text">Сначала выберите материал</span>
+
+								<span class="material-select__select-arrow" aria-hidden="true"></span>
+							</button>
+
+							<div class="select__dropdown material-select__select-list _collapse" role="listbox">
+								<div class="material-select__select-search">
+									<input class="material-select__select-search-input select__search"
+											id="format_search" type="search"
+											placeholder="Поиск формата..." autocomplete="off">
+
+									<button class="material-select__select-search-clear select__search-clear"
+											type="button" aria-label="Очистить поиск" hidden>
+										<i class="icon icon-close" aria-hidden="true"></i>
+									</button>
+								</div>
+
+								{{-- Пункты форматов рендерятся из JS по выбранному материалу --}}
+								<div data-format-options></div>
+
+								<button class="material-select__select-option select__item"
+										type="button" role="option" data-value="__new__" data-format-new-option
+										aria-selected="false">
+									<span>Новый формат…</span>
+								</button>
+
+								<div class="material-select__select-empty select__empty" hidden>
+									Сначала выберите материал
+								</div>
+							</div>
+						</div>
+					</div>
+				</fieldset>
+
+				{{-- Новый формат: свободный ввод --}}
+				<fieldset class="receipt-order__field" data-format-new-field hidden>
+					<label class="receipt-order__label" for="format_new">Новый формат, мм</label>
+					<input class="receipt-order__input" id="format_new" data-format-new-input
+							type="number" min="0" step="1" inputmode="numeric"
+							value="{{ old('format') }}">
 				</fieldset>
 			</div>
 
@@ -120,54 +177,65 @@
 			<div class="receipt-order__line">
 				<div class="receipt-order__rolls">
 					<div class="receipt-order__rolls-header">
-						<h2 class="receipt-order__rolls-title"> Рулоны </h2>
+						<h2 class="receipt-order__rolls-title" data-receipt-rolls-title> Рулоны </h2>
 
 						<button class="receipt-order__roll-add button" type="button" data-receipt-roll-add>
 							<span>Добавить рулон</span>
 						</button>
 					</div>
 
-					<div class="receipt-order__rolls-list" data-receipt-rolls>
+					<p class="receipt-order__rolls-hint" data-receipt-total-hint hidden>
+						Весь указанный вес будет приходован на рулон «Общий вес» выбранного материала и формата.
+					</p>
 
-						@php
-							$oldRolls = old('rolls', [
-								 [
-									  'roll_number' => '',
-									  'weight' => '',
-								 ],
-							]);
-						@endphp
+					<table class="receipt-order__rolls-table">
+						<thead>
+							<tr>
+								<th data-receipt-roll-number-column>Номер рулона</th>
+								<th>Вес, кг</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody data-receipt-rolls>
 
-						@foreach ($oldRolls as $index => $roll)
+							@php
+								$oldRolls = old('rolls', [
+									 [
+										  'roll_number' => '',
+										  'weight' => '',
+									 ],
+								]);
+							@endphp
 
-							<div class="receipt-order__roll" data-receipt-roll>
+							@foreach ($oldRolls as $index => $roll)
 
-								<fieldset class="receipt-order__field">
-									<label class="receipt-order__label" for="roll_number_{{ $index }}"
-											data-receipt-roll-number-label>
-										Номер рулона
-									</label>
+								<tr data-receipt-roll>
 
-									<input class="receipt-order__input" id="roll_number_{{ $index }}"
-											name="rolls[{{ $index }}][roll_number]" data-receipt-roll-number type="text"
-											value="{{ $roll['roll_number'] ?? '' }}">
+									<td data-receipt-roll-number-field>
+										<input class="receipt-order__input" id="roll_number_{{ $index }}"
+												name="rolls[{{ $index }}][roll_number]" data-receipt-roll-number type="text"
+												value="{{ $roll['roll_number'] ?? '' }}"
+												aria-label="Номер рулона">
+									</td>
 
-								</fieldset>
+									<td>
+										<input class="receipt-order__input" id="weight_{{ $index }}"
+												name="rolls[{{ $index }}][weight]" data-receipt-roll-weight
+												type="number" step="0.001" min="0" value="{{ $roll['weight'] ?? '' }}"
+												aria-label="Вес, кг">
+									</td>
 
-								<fieldset class="receipt-order__field">
-									<label class="receipt-order__label" for="weight_{{ $index }}" data-receipt-roll-weight-label>
-										Вес, кг
-									</label>
+									<td>
+										<button class="receipt-order__roll-remove button" type="button"
+												data-receipt-roll-remove aria-label="Удалить рулон" hidden>
+											<span>Удалить</span>
+										</button>
+									</td>
+								</tr>
 
-									<input class="receipt-order__input" id="weight_{{ $index }}"
-											name="rolls[{{ $index }}][weight]" data-receipt-roll-weight
-											type="number" step="0.001" min="0" value="{{ $roll['weight'] ?? '' }}">
-
-								</fieldset>
-							</div>
-
-						@endforeach
-					</div>
+							@endforeach
+						</tbody>
+					</table>
 				</div>
 			</div>
 

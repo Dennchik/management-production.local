@@ -38,9 +38,9 @@
 		if ($search) {
 			$materialsQuery->where(function ($query) use ($search) {
 				$query
-					->where('name', 'ilike', "%{$search}%")
+					->whereIlike('name', "%{$search}%")
 					->orWhereHas('rolls', function ($query) use ($search) {
-						$query->where('identifier', 'ilike', "%{$search}%");
+						$query->whereIlike('identifier', "%{$search}%");
 					});
 			});
 		}

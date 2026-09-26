@@ -12,6 +12,10 @@
 
 			// Станки не используются: за задачей закрепляется оператор.
 			Schema::table('production_tasks', function (Blueprint $table) {
+				// MariaDB/MySQL не дают удалить колонку с внешним ключом даже
+				// при выключенных проверках (ошибка 1828) — ключ снимается явно
+				$table->dropForeign(['machine_id']);
+
 				$table->dropColumn('machine_id');
 
 				$table->foreignId('operator_id')
@@ -22,6 +26,7 @@
 			});
 
 			Schema::table('users', function (Blueprint $table) {
+				// Без внешнего ключа: колонка создана без constrained()
 				$table->dropColumn('machine_id');
 			});
 

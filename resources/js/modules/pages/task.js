@@ -15,6 +15,10 @@
 import { initSelects } from '../../assets/select.js';
 
 export function initTaskPageModule() {
+   // Модалка смены статуса нужна на любой задаче —
+   // в том числе выполненной, где формы завершения нет
+   initStatusModal();
+
    const form = document.querySelector('[data-task-complete]');
 
    if (!form) {
@@ -26,6 +30,81 @@ export function initTaskPageModule() {
    initRollWeights(form);
    initOutputRolls(form);
    initInputForms(form);
+   initRollTakeWeight();
+}
+
+/**
+ * Кнопка «Изменить статус»: открывает модалку с выбором статуса.
+ * Доступна только пользователям с правом tasks,status — кнопка
+ * рендерится на сервере, здесь только модалка и отправка формы.
+ */
+function initStatusModal() {
+   document.addEventListener('click', (event) => {
+      const trigger = event.target.closest?.('[data-task-status-open]');
+
+      if (!trigger || !window.operationModal) {
+         return;
+      }
+
+      event.preventDefault();
+
+      let statuses = {};
+
+      try {
+         statuses = JSON.parse(trigger.dataset.statuses || '{}');
+      } catch {
+         statuses = {};
+      }
+
+      const current = trigger.dataset.current;
+      const taskId = trigger.dataset.taskId;
+      const csrfToken =
+         document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+      const options = Object.entries(statuses)
+         .filter(([value]) => value !== 'cancelled')
+         .map(
+            ([value, label]) => `
+               <label style="display: flex; gap: 0.8rem; align-items: center;
+                       padding: 0.6rem 0.8rem; border-radius: var(--border-radius);
+                       cursor: pointer; background: var(--background-gray);">
+                  <input type="radio" name="status" value="${value}"
+                        ${value === current ? 'checked' : ''}>
+                  <span>${label}</span>
+               </label>
+            `
+         )
+         .join('');
+
+      const html = `
+         <div class="material-receipt">
+            <div class="material-receipt__header">
+               <h2 class="main-content__title">Изменить статус задачи</h2>
+            </div>
+
+            <form method="POST" action="/tasks/${taskId}/status">
+               <input type="hidden" name="_token" value="${csrfToken}">
+
+               <div class="material-receipt__content"
+                       style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  ${options}
+               </div>
+
+               <div style="display: flex; gap: 1.5rem; margin-top: 1.5rem;">
+                  <button class="button button--primary" type="submit">
+                     <span>Сохранить</span>
+                  </button>
+
+                  <button class="button" type="button" data-operation-modal-close>
+                     <span>Отмена</span>
+                  </button>
+               </div>
+            </form>
+         </div>
+      `;
+
+      window.operationModal.open(html);
+   });
 }
 
 /**
@@ -345,6 +424,36 @@ function initOutputRolls(form) {
                setStatus(error.message, true, '[data-output-save-status]')
             );
       }
+   });
+}
+
+/**
+ * Поле «Вес рулона» при дозаборе: у обычного рулона
+ * подставляется доступный вес, у рулона «Общий вес» остаётся
+ * пустым — оператор указывает вес сам.
+ */
+function initRollTakeWeight() {
+   document.addEventListener('select:change', (event) => {
+      const selectEl = event.target.closest?.('[data-task-roll-select]');
+
+      if (!selectEl) {
+         return;
+      }
+
+      const weightInput = selectEl.parentElement?.querySelector(
+         '[data-roll-take-weight]'
+      );
+
+      if (!weightInput) {
+         return;
+      }
+
+      const option = event.detail?.option;
+
+      weightInput.value =
+         option && option.dataset.shared !== '1'
+            ? option.dataset.available || ''
+            : '';
    });
 }
 

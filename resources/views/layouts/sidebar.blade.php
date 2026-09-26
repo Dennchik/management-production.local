@@ -29,6 +29,12 @@
 								<i class="icon-indent-decrease icon"></i>
 								<span>Расходный ордер</span>
 							</a>
+
+							<a class="sidebar__link sidebar__link--submenu {{ request()->routeIs('material-adjustments.*') ? 'is-active' : '' }}"
+									href="{{ route('material-adjustments.index') }}">
+								<i class="icon-recycle-arrows icon"></i>
+								<span>Ордер корректировки</span>
+							</a>
 						@endif
 
 						<a class="sidebar__link sidebar__link--submenu {{ request()->routeIs('warehouse.*') ? 'is-active' : '' }}"
