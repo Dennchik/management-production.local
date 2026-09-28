@@ -15,14 +15,19 @@
 			});
 
 			// Переносим значения существующим рулонам из их материалов.
-			// Query Builder компилирует UPDATE ... JOIN одинаково корректно
-			// для PostgreSQL и MySQL, без сырого диалектного SQL.
-			DB::table('material_rolls as r')
-				->join('materials as m', 'm.id', '=', 'r.material_id')
-				->update([
-						'r.format' => DB::raw('m.format'),
-						'r.identifier' => DB::raw('m.identifier'),
-				]);
+			// Построчно, без UPDATE ... JOIN: Query Builder на pgsql
+			// не включает join в update, а UPDATE...FROM — диалектный SQL.
+			$materials = DB::table('materials')
+				->get(['id', 'format', 'identifier']);
+
+			foreach ($materials as $material) {
+				DB::table('material_rolls')
+					->where('material_id', $material->id)
+					->update([
+							'format' => $material->format,
+							'identifier' => $material->identifier,
+					]);
+			}
 
 			Schema::table('materials', function (Blueprint $table) {
 				$table->dropColumn(['format', 'identifier']);

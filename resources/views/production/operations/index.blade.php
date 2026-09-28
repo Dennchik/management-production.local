@@ -5,9 +5,9 @@
 		<div class="main-content__header">
 			<h1 class="main-content__title">Технологические линии</h1>
 
-			<a class="button" href="{{ route('production.operations.create') }}">
+			<button class="button" type="button" data-production-operation-create>
 				Добавить линию
-			</a>
+			</button>
 		</div>
 
 		<div class="operations">

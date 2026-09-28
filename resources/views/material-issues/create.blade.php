@@ -15,7 +15,7 @@
 
 		<div class="issue-order__body">
 			{{-- Материал --}}
-			<div class="issue-order__line">
+			<div class="issue-order__line issue-order__line--material">
 				<fieldset class="issue-order__field">
 					<label class="issue-order__label" for="material_select">
 						Материал
@@ -51,25 +51,13 @@
 
 								@foreach ($materials ?? [] as $material)
 
-									@php
-										/*
-										 * Отдельный пункт на каждый формат;
-										 * без рулонов — один пункт без формата.
-										 */
-										$formatGroups = $material->rolls
-											->groupBy(fn ($roll) => $roll->format ?? '')
-											->sortBy(fn ($group, $format) => (int) $format);
-									@endphp
-
-								@foreach ($formatGroups->isEmpty() ? collect([null]) : $formatGroups as $group)
-									@php
-										$groupFormatsLabel = $group?->pluck('format')->filter()->unique()->values()->implode(', ');
-									@endphp
-
+									{{-- Один пункт на материал: формат и идентификатор — его атрибуты --}}
 									<button class="material-select__select-option select__item" type="button" role="option"
 											data-value="{{ $material->id }}" data-name="{{ $material->name }}"
 											data-search="{{ strtolower
-											($material->name . ' ' . $material->thickness . ' ' . $material->grammage . ' ' . ($groupFormatsLabel ?? '')) }}"
+											($material->name . ' ' . $material->thickness . ' ' . $material->grammage . ' ' . ($material->identifier ?? '')) }}"
+											data-identifier="{{ $material->identifier }}"
+											data-format="{{ $material->format }}"
 											aria-selected="{{ old('material_id') == $material->id ? 'true' : 'false' }}">
 
 										<span>
@@ -82,14 +70,8 @@
 											@if ($material->grammage)
 												| {{ $material->grammage }} гр
 											@endif
-
-											@if ($groupFormatsLabel)
-												| {{ $groupFormatsLabel }}
-											@endif
 										</span>
 									</button>
-
-									@endforeach
 
 								@endforeach
 
@@ -113,6 +95,12 @@
 					<label class="issue-order__label" for="material_identifier">Идентификатор</label>
 					<input class="issue-order__input" id="material_identifier" name="material_identifier"
 							type="text" readonly>
+				</fieldset>
+
+				{{-- Формат --}}
+				<fieldset class="issue-order__field">
+					<label class="issue-order__label" for="material_format">Формат</label>
+					<input class="issue-order__input" id="material_format" type="text" readonly>
 				</fieldset>
 			</div>
 

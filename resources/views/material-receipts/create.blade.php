@@ -65,21 +65,13 @@
 								</div>
 
 								@foreach ($materials as $material)
-									@php
-										/*
-										 * Один пункт на материал; форматы выбираются
-										 * отдельным селектом после выбора материала.
-										 * Форматы берутся из material_formats и не
-										 * зависят от наличия рулонов.
-										 */
-										$materialFormats = $material->formatValues();
-									@endphp
-
+									{{-- Один пункт на материал: формат и идентификатор — атрибуты материала --}}
 									<button class="material-select__select-option select__item"
 											type="button" role="option" data-value="{{ $material->id }}"
 											data-grammage="{{ $material->grammage }}" data-thickness="{{ $material->thickness }}"
-											data-code="{{ $material->code }}" data-type="{{ $material->material_type }}"
-											data-formats="{{ $materialFormats->toJson() }}"
+											data-format="{{ $material->format }}"
+											data-code="{{ $material->code }}"
+											data-identifier="{{ $material->identifier }}"
 											aria-selected="{{ old('material_id') == $material->id ? 'true' : 'false' }}">
 
 										<span>{{ preg_replace('/\s*гр\.?\s*$/ui', '', $material->name) }}@if ($material->grammage)
@@ -111,65 +103,16 @@
 					<input class="receipt-order__input" id="thickness" type="text" readonly>
 				</fieldset>
 
+				{{-- Формат --}}
+				<fieldset class="receipt-order__field">
+					<label class="receipt-order__label" for="material-format">Формат</label>
+					<input class="receipt-order__input" id="material-format" type="text" readonly>
+				</fieldset>
+
 				{{-- Идентификатор --}}
 				<fieldset class="receipt-order__field">
 					<label class="receipt-order__label" for="identifier">Идентификатор</label>
 					<input class="receipt-order__input" id="identifier" type="text" readonly>
-				</fieldset>
-			</div>
-
-			{{-- Формат --}}
-			<div class="receipt-order__line">
-				<fieldset class="receipt-order__field">
-					<label class="receipt-order__label" for="format_select">Формат</label>
-
-					<div data-select>
-						<div class="select material-select receipt-order" data-format-select>
-							<input class="select__value" id="format" name="format"
-									type="hidden" value="{{ old('format') }}">
-
-							<button class="material-select__select-button select__button select-button"
-									id="format_select" type="button" aria-haspopup="listbox" aria-expanded="false">
-								<span class="material-select__select-value select__button-text">Сначала выберите материал</span>
-
-								<span class="material-select__select-arrow" aria-hidden="true"></span>
-							</button>
-
-							<div class="select__dropdown material-select__select-list _collapse" role="listbox">
-								<div class="material-select__select-search">
-									<input class="material-select__select-search-input select__search"
-											id="format_search" type="search"
-											placeholder="Поиск формата..." autocomplete="off">
-
-									<button class="material-select__select-search-clear select__search-clear"
-											type="button" aria-label="Очистить поиск" hidden>
-										<i class="icon icon-close" aria-hidden="true"></i>
-									</button>
-								</div>
-
-								{{-- Пункты форматов рендерятся из JS по выбранному материалу --}}
-								<div data-format-options></div>
-
-								<button class="material-select__select-option select__item"
-										type="button" role="option" data-value="__new__" data-format-new-option
-										aria-selected="false">
-									<span>Новый формат…</span>
-								</button>
-
-								<div class="material-select__select-empty select__empty" hidden>
-									Сначала выберите материал
-								</div>
-							</div>
-						</div>
-					</div>
-				</fieldset>
-
-				{{-- Новый формат: свободный ввод --}}
-				<fieldset class="receipt-order__field" data-format-new-field hidden>
-					<label class="receipt-order__label" for="format_new">Новый формат, мм</label>
-					<input class="receipt-order__input" id="format_new" data-format-new-input
-							type="number" min="0" step="1" inputmode="numeric"
-							value="{{ old('format') }}">
 				</fieldset>
 			</div>
 
@@ -185,7 +128,7 @@
 					</div>
 
 					<p class="receipt-order__rolls-hint" data-receipt-total-hint hidden>
-						Весь указанный вес будет приходован на рулон «Общий вес» выбранного материала и формата.
+						Весь указанный вес будет приходован на рулон «Общий вес» выбранного материала.
 					</p>
 
 					<table class="receipt-order__rolls-table">

@@ -12,6 +12,7 @@
  * модуль production-lines.js — форма подключается его атрибутами.
  */
 import { initSelects } from '../../assets/select.js';
+import { applyCuttingOutputFilter, setCuttingActive } from '../pages/production-lines.js';
 
 /**
  * Экземпляр CustomSelect контейнера (инициализируются в production-lines.js).
@@ -149,7 +150,7 @@ export function initTasksFormModule() {
     * Поиск CustomSelect управляет style.display и не снимает фильтр.
     */
    function filterInputOptions() {
-      const operationId = operationSelect?.value || '';
+      const operationId = selectValue(operationSelect);
       const allowedIds =
          operationId !== '' ? allowed[operationId] || [] : null;
 
@@ -162,6 +163,42 @@ export function initTasksFormModule() {
                allowedIds !== null &&
                !allowedIds.includes(String(option.dataset.value));
          });
+   }
+
+   /**
+    * Метка поля количества: у резки план задачи — вес на входе.
+    *
+    * @param {boolean} cutting
+    */
+   function setQuantityLabel(cutting) {
+      const label = form.querySelector('[data-task-quantity-label]');
+
+      if (label) {
+         label.textContent = cutting
+            ? 'Резать, кг (вход)'
+            : 'Кол-во вых. материала, кг';
+      }
+   }
+
+   /**
+    * Включает режим резки, если выбранная линия работает в нём.
+    * Для резки шаблон обычно не создают — состав показывается сразу.
+    */
+   function applyOperationCuttingMode() {
+      const operationId = selectValue(operationSelect);
+      const option = operationId !== '' && operationSelect
+         ? operationSelect.querySelector(
+              `.select__item[data-value="${operationId}"]`
+           )
+         : null;
+      const cutting = option?.dataset.isCutting === '1';
+
+      setCuttingActive(form, cutting);
+      setQuantityLabel(cutting);
+
+      if (cutting) {
+         showSections();
+      }
    }
 
    /**
@@ -180,22 +217,16 @@ export function initTasksFormModule() {
     * Заполняет строку материала данными шаблона.
     *
     * @param {HTMLElement} row
-    * @param {Object|null} material Материал+формат шаблона или null для пустой строки.
+    * @param {Object|null} material Материал шаблона или null для пустой строки.
     */
    function applyRow(row, material) {
       const valueInput = row.querySelector('.select__value');
-      const formatInput = row.querySelector('.select__format-value');
       const buttonText = row.querySelector('.select__button-text');
       const identifierCell = row.querySelector('[data-cell-identifier]');
-      const formatCell = row.querySelector('[data-cell-format]');
 
       if (material) {
          if (valueInput) {
             valueInput.value = material.id;
-         }
-
-         if (formatInput) {
-            formatInput.value = material.format ?? '';
          }
 
          if (buttonText) {
@@ -206,18 +237,9 @@ export function initTasksFormModule() {
             identifierCell.textContent = material.identifier || '—';
          }
 
-         if (formatCell) {
-            formatCell.textContent = material.format || '—';
-         }
-
-         // Вариант выбирается по материалу И формату.
          const option = Array.from(
             row.querySelectorAll('.select__item[data-value]')
-         ).find(
-            (item) =>
-               item.dataset.value === String(material.id) &&
-               (item.dataset.format || '') === String(material.format ?? '')
-         );
+         ).find((item) => item.dataset.value === String(material.id));
 
          if (option) {
             row.querySelectorAll('.select__item').forEach((item) => {
@@ -233,20 +255,12 @@ export function initTasksFormModule() {
             valueInput.value = '';
          }
 
-         if (formatInput) {
-            formatInput.value = '';
-         }
-
          if (buttonText) {
             buttonText.textContent = 'Выберите материал';
          }
 
          if (identifierCell) {
             identifierCell.textContent = '';
-         }
-
-         if (formatCell) {
-            formatCell.textContent = '';
          }
       }
    }
@@ -266,7 +280,7 @@ export function initTasksFormModule() {
     * Заменяет строки таблицы материалов данными шаблона.
     *
     * @param {string} kind input|output.
-    * @param {Array} materials Материалы шаблона (материал+формат).
+    * @param {Array} materials Материалы шаблона.
     */
    function fillTable(kind, materials) {
       const list = rowsList(kind);
@@ -287,7 +301,7 @@ export function initTasksFormModule() {
 
          list.appendChild(row);
 
-         // Инициализация на пустой строке, затем — значение и формат.
+         // Инициализация на пустой строке, затем — значение.
          initSelects(row);
 
          if (material) {
@@ -305,6 +319,8 @@ export function initTasksFormModule() {
       const lineId = selectValue(templateSelect);
       const lineTemplate = templates[lineId];
 
+      setQuantityLabel(Boolean(lineTemplate?.isCutting));
+
       if (!lineId || !lineTemplate) {
          return;
       }
@@ -315,12 +331,14 @@ export function initTasksFormModule() {
       showSections();
       setLocked(true);
       filterInputOptions();
+      applyCuttingOutputFilter(form);
    }
 
    // Каскад «линия → шаблоны» на кастомных селектах.
    operationSelect?.addEventListener('select:change', () => {
       filterTemplateOptions();
       filterInputOptions();
+      applyOperationCuttingMode();
    });
 
    templateSelect?.addEventListener('select:change', onTemplateChange);
@@ -332,6 +350,7 @@ export function initTasksFormModule() {
 
    // Начальное состояние: шаблон выбран — состав показан заблокированным.
    filterTemplateOptions();
+   applyOperationCuttingMode();
 
    if (selectValue(templateSelect)) {
       showSections();

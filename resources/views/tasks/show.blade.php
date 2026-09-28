@@ -8,6 +8,10 @@
 		$plan = rtrim(rtrim($task->quantity, '0'), '.');
 		// Перевыполнение не уводит «осталось» в минус
 		$left = rtrim(rtrim(number_format(max(0, (float) $task->quantity - $task->producedWeight()), 3, '.', ''), '0'), '.');
+		// Прогресс резки — по входу: сколько списано из плана резки
+		$reserved = (float) $task->inputs->sum('actual_weight');
+		$reservedLeft = rtrim(rtrim(number_format(max(0, (float) $task->quantity - $reserved), 3, '.', ''), '0'), '.');
+		$reservedMade = rtrim(rtrim(number_format($reserved, 3, '.', ''), '0'), '.');
 		$isInProgress = $task->status === 'in_progress';
 	@endphp
 
@@ -39,12 +43,18 @@
 						<td>{{ $task->material?->name }}</td>
 					</tr>
 					<tr>
-						<th style="text-align: left;">Количество, кг</th>
+						<th style="text-align: left;">{{ $task->isCutting() ? 'Резать, кг (вход)' : 'Количество, кг' }}</th>
 						<td data-task-progress>
-							<span data-task-progress-made>{{ $made }}</span> из {{ $plan }}
-							<span class="{{ $task->isShort() ? 'text-red-soft' : '' }}"
-									style="{{ $task->isShort() ? '' : 'color: var(--text-muted);' }}"
-									data-task-progress-left>осталось {{ $left }}</span>
+							@if ($task->isCutting())
+								{{-- План — вход: сколько резать; прогресс по списанному входу --}}
+								<span data-task-consumed>{{ $reservedMade }}</span> из {{ $plan }}
+								<span style="color: var(--text-muted);" data-task-reserved-left>осталось резать {{ $reservedLeft }}</span>
+							@else
+								<span data-task-progress-made>{{ $made }}</span> из {{ $plan }}
+								<span class="{{ $task->isShort() ? 'text-red-soft' : '' }}"
+										style="{{ $task->isShort() ? '' : 'color: var(--text-muted);' }}"
+										data-task-progress-left>осталось {{ $left }}</span>
+							@endif
 						</td>
 					</tr>
 					<tr>
@@ -178,9 +188,7 @@
 
 										<tr>
 											<th colspan="4" style="text-align: left;">
-												{{ $material->name }}@if ($material->pivot->format)
-													— {{ $material->pivot->format }}
-												@endif
+												{{ $material->name }}
 											</th>
 										</tr>
 
@@ -376,14 +384,12 @@
 							</tr>
 							</thead>
 							<tbody>
-							@foreach ($task->inputMaterials as $material)
-								<tr>
-									<th colspan="3" style="text-align: left;">
-										{{ $material->name }}@if ($material->pivot->format)
-											— {{ $material->pivot->format }}
-										@endif
-									</th>
-								</tr>
+								@foreach ($task->inputMaterials as $material)
+									<tr>
+										<th colspan="3" style="text-align: left;">
+											{{ $material->name }}
+										</th>
+									</tr>
 
 								@foreach ($task->inputs->where('material_id', $material->id) as $input)
 									<tr>

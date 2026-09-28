@@ -9,6 +9,12 @@
 		gap: 2rem;
 		align-items: center;align-items: end
 	}
+
+	// .issue-order__line--material — строка характеристик материала:
+	// селект + имя + идентификатор + формат
+	&__line--material {
+		grid-template-columns: 1.5fr repeat(3, 0.5fr);
+	}
 }
 
 .production-task {
@@ -72,6 +78,78 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--gap);
+
+		// Строка рулонов — flex-элемент: растягиваем на всю ширину формы
+		flex: 1 1 auto;
+		width: 100%;
+	}
+
+	/*
+	 * Таблица рулонов внутри белой карточки формы: лёгкая шапка
+	 * вместо общей чёрной, без зебры и вертикальных границ.
+	 */
+	&__rolls-table {
+		background: var(--color-white);
+		box-shadow: none;
+		border: 1px solid var(--border-color);
+
+		thead {
+			background: var(--background-gray);
+
+			th {
+				color: var(--color-text);
+			}
+		}
+
+		th,
+		td {
+			border-right: 0;
+		}
+
+		tbody {
+			tr {
+				background: transparent;
+			}
+
+			tr:last-child td {
+				border-bottom: 0;
+			}
+		}
+
+		// Инпуты внутри ячеек — без собственных рамок
+		.receipt-order__input {
+			min-height: 4.6rem;
+			padding: 0 1.6rem;
+			border: 0;
+			border-radius: 0;
+
+			background: transparent;
+
+			&:read-only {
+				background: transparent;
+			}
+
+			&:focus {
+				background: var(--background-gray);
+			}
+		}
+
+		// Колонка «Удалить»
+		th:last-child,
+		td:last-child {
+			width: 9rem;
+		}
+
+		.receipt-order__roll-remove {
+			padding: 0.6rem 1rem;
+
+			font-size: 1.3rem;
+		}
+
+		// Колонка номера прячется целиком в режиме «Общий вес»
+		[hidden] {
+			display: none !important;
+		}
 	}
 
 	// .receipt-order__roll

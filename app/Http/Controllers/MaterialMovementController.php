@@ -48,7 +48,8 @@
 							->whereHas('material', function ($query) use ($search) {
 								$query->whereIlike('name', '%' . $search . '%');
 							})
-							->orWhereHas('roll', function ($query) use ($search) {
+							// Идентификатор — атрибут материала
+							->orWhereHas('material', function ($query) use ($search) {
 								$query->whereIlike('identifier', '%' . $search . '%');
 							});
 					});
@@ -90,7 +91,8 @@
 							->whereHas('material', function ($query) use ($search) {
 								$query->whereIlike('name', '%' . $search . '%');
 							})
-							->orWhereHas('roll', function ($query) use ($search) {
+							// Идентификатор — атрибут материала
+							->orWhereHas('material', function ($query) use ($search) {
 								$query->whereIlike('identifier', '%' . $search . '%');
 							});
 					});

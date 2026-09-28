@@ -20,11 +20,6 @@
 		</div>
 
 		<div class="material-show__row">
-			<span>Сортировка:</span>
-			<span>{{ $catalog->sort_order }}</span>
-		</div>
-
-		<div class="material-show__row">
 			<span>Статус:</span>
 			<span>{{ $catalog->is_active ? 'Активен' : 'Неактивен' }}</span>
 		</div>

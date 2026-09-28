@@ -14,76 +14,9 @@
 import { initSelects } from '../../assets/select.js';
 
 export function initMaterialsModule() {
-   const materialsPage = document.querySelector('[data-materials-page]');
-
-   if (!materialsPage) {
-      return;
-   }
-
-   const createButton = materialsPage.querySelector('[data-material-create]');
-   const tableBody = materialsPage.querySelector('[data-materials-body]');
-
-   if (!createButton || !tableBody) {
-      return;
-   }
-
-   createButton.addEventListener('click', () => {
-      void createEntry();
-   });
-
-   tableBody.addEventListener('click', (event) => {
-      const catalogViewButton = event.target.closest('[data-action="catalog-view"]');
-
-      if (catalogViewButton) {
-         const catalogId = catalogViewButton.dataset.catalogId;
-
-         if (catalogId) {
-            window.operationModal.load(
-               `/catalogs/${catalogId}`,
-               'Не удалось загрузить каталог.'
-            );
-         }
-
-         return;
-      }
-
-      const catalogEditButton = event.target.closest('[data-action="catalog-edit"]');
-
-      if (catalogEditButton) {
-         void editCatalog(catalogEditButton);
-         return;
-      }
-
-      const catalogDeleteButton = event.target.closest('[data-action="catalog-delete"]');
-
-      if (catalogDeleteButton) {
-         deleteCatalog(catalogDeleteButton);
-         return;
-      }
-
-      const actionButton = event.target.closest('[data-action]');
-
-      if (!actionButton) {
-         return;
-      }
-
-      const action = actionButton.dataset.action;
-
-      if (action === 'view') {
-         viewMaterial(actionButton);
-         return;
-      }
-
-      if (action === 'edit') {
-         void editMaterial(actionButton);
-         return;
-      }
-
-      if (action === 'delete') {
-         deleteMaterial(actionButton);
-      }
-   });
-
+   // Сохранение и подтверждение удаления материала работают из модалки
+   // на любой странице: модалка открывается и вне справочника
+   // (создание формата из формы шаблона линии резки).
    document.addEventListener('click', (event) => {
       const formActionButton = event.target.closest(
          '[data-material-form] [data-action]'
@@ -113,6 +46,67 @@ export function initMaterialsModule() {
 
       void confirmDeleteMaterial(confirmButton);
    });
+
+   const materialsPage = document.querySelector('[data-materials-page]');
+
+   if (!materialsPage) {
+      return;
+   }
+
+   const createButton = materialsPage.querySelector('[data-material-create]');
+
+   // Кнопки в строках работают и без кнопки «Создать»:
+   // право на создание у роли может отсутствовать.
+   createButton?.addEventListener('click', () => {
+      void createEntry();
+   });
+
+   // Делегирование на контейнере страницы: переживает
+   // обновление списка каталогов и материалов.
+   materialsPage.addEventListener('click', (event) => {
+      // Кнопки каталога не должны раскрывать/сворачивать ветку.
+      const catalogRowButton = event.target.closest('[data-catalog-row-button]');
+
+      if (catalogRowButton) {
+         handleCatalogRowAction(event, catalogRowButton);
+         return;
+      }
+
+      // Строка-каталог: раскрывает/сворачивает свою ветку.
+      const catalogToggle = event.target.closest('[data-catalog-toggle]');
+
+      if (catalogToggle) {
+         toggleCatalogBranch(catalogToggle);
+         return;
+      }
+
+      const actionButton = event.target.closest('[data-action]');
+
+      if (!actionButton) {
+         return;
+      }
+
+      const action = actionButton.dataset.action;
+
+      if (action === 'view') {
+         viewMaterial(actionButton);
+         return;
+      }
+
+      if (action === 'edit') {
+         void editMaterial(actionButton);
+         return;
+      }
+
+      if (action === 'delete') {
+         deleteMaterial(actionButton);
+      }
+   });
+
+   // Начальная видимость вложенных веток проставлена сервером
+   // через hidden на .table__branch — JS-пересчёт не нужен.
+   // Последняя видимая строка помечается для снятия бордера.
+   markLastWarehouseRow(materialsPage);
 }
 
 /**
@@ -125,6 +119,153 @@ function getCurrentCatalogId() {
       document.querySelector('[data-materials-page]')?.dataset.currentCatalog ||
       null
    );
+}
+
+/**
+ * Обрабатывает кнопки каталога в строках таблицы склада:
+ * просмотр, редактирование, удаление (как на странице каталогов).
+ *
+ * @param {Event} event Событие клика.
+ * @param {HTMLElement} button Кнопка каталога.
+ */
+function handleCatalogRowAction(event, button) {
+   event.stopPropagation();
+
+   const catalogId = button.dataset.catalogId;
+
+   if (!catalogId) {
+      return;
+   }
+
+   const action = button.dataset.action;
+
+   if (action === 'catalog-view') {
+      window.operationModal.load(
+         `/catalogs/${catalogId}`,
+         'Не удалось загрузить каталог.'
+      );
+      return;
+   }
+
+   if (action === 'catalog-edit') {
+      void editCatalogRow(catalogId);
+      return;
+   }
+
+   if (action === 'catalog-delete') {
+      window.operationModal.load(
+         `/catalogs/${catalogId}/delete`,
+         'Не удалось загрузить окно удаления каталога.'
+      );
+   }
+}
+
+/**
+ * Открывает форму редактирования каталога из строки склада.
+ *
+ * @param {string} catalogId Идентификатор каталога.
+ */
+async function editCatalogRow(catalogId) {
+   try {
+      const response = await fetch(`/catalogs/${catalogId}/edit`, {
+         headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'text/html',
+         },
+      });
+
+      if (!response.ok) {
+         return;
+      }
+
+      window.operationModal.open(await response.text());
+
+      const form = document.querySelector('[data-catalog-form]');
+
+      initSelects(form);
+
+      form?.querySelector('input[name="catalog-name"]')?.focus();
+   } catch (error) {
+      return;
+   }
+}
+
+/**
+ * Раскрывает или сворачивает ветку каталога в таблице склада.
+ * Вложенные ветки лежат внутри родительской, поэтому прячутся
+ * вместе с ней — пересчёт видимости не нужен.
+ *
+ * @param {HTMLElement} row Строка-заголовок каталога.
+ */
+function toggleCatalogBranch(row) {
+   const branch = row.parentElement.querySelector(
+      `[data-catalog-branch="${row.dataset.catalogId}"]`
+   );
+
+   if (!branch) {
+      return;
+   }
+
+   const expanded = row.getAttribute('aria-expanded') !== 'false';
+
+   row.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+   branch.hidden = expanded;
+
+   markLastWarehouseRow();
+}
+
+/**
+ * Показывает ошибку удаления внутри окна подтверждения.
+ *
+ * @param {string} message Текст ошибки.
+ */
+function showMaterialDeleteError(message) {
+   if (!message) {
+      return;
+   }
+
+   const modal = document.querySelector('.operation-confirm');
+
+   if (!modal) {
+      return;
+   }
+
+   let error = modal.querySelector('[data-material-delete-error]');
+
+   if (!error) {
+      error = document.createElement('div');
+      error.setAttribute('data-material-delete-error', '');
+      error.style.color = '#c0392b';
+      error.style.paddingTop = '8px';
+
+      const actions = modal.querySelector('.operation-confirm__actions');
+
+      if (actions) {
+         modal.insertBefore(error, actions);
+      } else {
+         modal.appendChild(error);
+      }
+   }
+
+   error.textContent = message;
+}
+
+/**
+ * Помечает последнюю видимую строку таблицы склада (_last):
+ * у компонента .table :last-child снимает нижний бордер внутри
+ * каждой ветки, из-за чего строки раскрытых каталогов посреди
+ * списка оставались без разделителя, а низ таблицы не отслеживался.
+ *
+ * @param {HTMLElement} [container] Контейнер страницы материалов.
+ */
+function markLastWarehouseRow(container = document) {
+   const rows = Array.from(
+      container.querySelectorAll('.table--warehouse .table__row-line')
+   ).filter((row) => row.getBoundingClientRect().height > 0);
+
+   rows.forEach((row) => row.classList.remove('_last'));
+
+   rows[rows.length - 1]?.classList.add('_last');
 }
 
 /**
@@ -213,58 +354,6 @@ async function createCatalog() {
 }
 
 /**
- * Открывает форму редактирования каталога.
- *
- * @param {HTMLElement} button Кнопка редактирования каталога.
- */
-async function editCatalog(button) {
-   const catalogId = button.dataset.catalogId;
-
-   if (!catalogId) {
-      return;
-   }
-
-   try {
-      const response = await fetch(`/catalogs/${catalogId}/edit`, {
-         headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            Accept: 'text/html',
-         },
-      });
-
-      if (!response.ok) {
-         return;
-      }
-
-      window.operationModal.open(await response.text());
-
-      const form = document.querySelector('[data-catalog-form]');
-
-      form?.querySelector('input[name="catalog-name"]')?.focus();
-   } catch (error) {
-      return;
-   }
-}
-
-/**
- * Открывает подтверждение удаления каталога.
- *
- * @param {HTMLElement} button Кнопка удаления каталога.
- */
-function deleteCatalog(button) {
-   const catalogId = button.dataset.catalogId;
-
-   if (!catalogId) {
-      return;
-   }
-
-   window.operationModal.load(
-      `/catalogs/${catalogId}/delete`,
-      'Не удалось загрузить окно удаления каталога.'
-   );
-}
-
-/**
  * Открывает форму создания материала.
  */
 async function createMaterial() {
@@ -293,6 +382,7 @@ async function createMaterial() {
 
       // Кастомные селекты внутри модалки инициализируются после вставки.
       initSelects(form);
+      initIdentifierMirror(form);
 
       form?.querySelector('input[name="material-name"]')?.focus();
    } catch (error) {
@@ -345,6 +435,12 @@ async function saveMaterial(button) {
          return;
       }
 
+      // Сторонние страницы (форма шаблона линии резки) подхватывают
+      // созданный материал по этому событию.
+      document.dispatchEvent(
+         new CustomEvent('material:saved', {detail: {material: result.material}})
+      );
+
       const refreshed = await refreshMaterialsTable();
 
       if (!refreshed) {
@@ -395,6 +491,7 @@ async function editMaterial(button) {
       const form = document.querySelector('[data-material-form]');
 
       initSelects(form);
+      initIdentifierMirror(form);
 
       form?.querySelector('input[name="material-name"]')?.focus();
    } catch (error) {
@@ -453,6 +550,10 @@ async function updateMaterial(button) {
          return;
       }
 
+      document.dispatchEvent(
+         new CustomEvent('material:updated', {detail: {material: result.material}})
+      );
+
       const refreshed = await refreshMaterialsTable();
 
       if (!refreshed) {
@@ -477,11 +578,13 @@ async function refreshMaterialsTable() {
    const tableBody = document.querySelector('[data-materials-body]');
 
    if (!tableBody) {
-      return false;
+      // Таблицы склада на текущей странице нет — обновлять нечего.
+      return true;
    }
 
-   const catalogId = getCurrentCatalogId();
-   const url = catalogId ? `/materials?catalog=${encodeURIComponent(catalogId)}` : '/materials';
+   // Объединённая страница материалов живёт на складе:
+   // перезагружаем текущий адрес со всеми активными фильтрами.
+   const url = window.location.pathname + window.location.search;
 
    try {
       const response = await fetch(url, {
@@ -508,10 +611,69 @@ async function refreshMaterialsTable() {
 
       tableBody.replaceChildren(...Array.from(newTableBody.childNodes));
 
+      markLastWarehouseRow();
+
       return true;
    } catch (error) {
       return false;
    }
+}
+
+/**
+ * Живой пересчёт идентификатора в форме материала:
+ * код + грамматура/толщина + цифры формата.
+ * Зеркалит Material::composeIdentifier() на стороне PHP.
+ *
+ * @param {HTMLElement} form Контейнер формы материала.
+ */
+export function initIdentifierMirror(form) {
+   const identifierInput = form?.querySelector('#identifier');
+
+   if (!identifierInput) {
+      return;
+   }
+
+   const updateIdentifier = () => {
+      identifierInput.value = composeMaterialIdentifier(form);
+   };
+
+   for (const field of ['code', 'grammage', 'thickness', 'format']) {
+      form
+         .querySelector(`input[name="${field}"]`)
+         ?.addEventListener('input', updateIdentifier);
+   }
+
+   updateIdentifier();
+}
+
+/**
+ * Вычисляет идентификатор из полей формы материала.
+ *
+ * @param {HTMLElement} form Контейнер формы материала.
+ * @returns {string} Идентификатор.
+ */
+function composeMaterialIdentifier(form) {
+   const code = form.querySelector('input[name="code"]')?.value.trim() || '';
+   const grammage = form.querySelector('input[name="grammage"]')?.value || '';
+   const thickness = form.querySelector('input[name="thickness"]')?.value || '';
+   const format = form.querySelector('input[name="format"]')?.value || '';
+
+   const value = grammage || thickness;
+   const formatPart = format.replace(/\D/g, '');
+
+   const parsed = parseFloat(value);
+   const valuePart = Number.isFinite(parsed)
+      ? String(parsed)
+           .replace('.', '')
+           .replace(/^0+/, '')
+           .padStart(2, '0')
+      : '';
+
+   if (!code || !valuePart || !formatPart) {
+      return '';
+   }
+
+   return code + valuePart + formatPart;
 }
 
 /**
@@ -531,10 +693,9 @@ function getMaterialData(form) {
 
       thickness: form.querySelector('input[name="thickness"]')?.value || null,
 
-      catalog_id: form.querySelector('[name="catalog_id"]')?.value || null,
+      format: form.querySelector('input[name="format"]')?.value.trim() || null,
 
-      material_type:
-         form.querySelector('[name="material_type"]')?.value || 'raw',
+      catalog_id: form.querySelector('[name="catalog_id"]')?.value || null,
 
       allowed_operations: Array.from(
          form.querySelectorAll('input[name="allowed_operations[]"]:checked')
@@ -683,6 +844,7 @@ async function confirmDeleteMaterial(button) {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
+         showMaterialDeleteError(result.message);
          button.disabled = false;
          return;
       }

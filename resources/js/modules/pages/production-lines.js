@@ -9,6 +9,7 @@
  * - настройку разрешённых операций шаблона по каталогам.
  */
 import { initSelects } from '../../assets/select.js';
+import { initIdentifierMirror } from './materials.js';
 
 // Подтверждаемое изменение статуса каталога.
 let pendingToggle = null;
@@ -102,20 +103,13 @@ export function initProductionLinesModule() {
 
 	const form = page.querySelector('[data-production-lines-form]');
 
-	// Невыбранные строки не отправляются на сервер
-	// (материал и формат отключаются парой, чтобы индексы совпали).
+	// Невыбранные строки не отправляются на сервер.
 	form?.addEventListener('submit', () => {
 		form.querySelectorAll('[data-production-line-material]').forEach((row) => {
 			const valueInput = row.querySelector('.select__value');
 
 			if (valueInput && valueInput.value === '') {
 				valueInput.disabled = true;
-
-				const formatInput = row.querySelector('.select__format-value');
-
-				if (formatInput) {
-					formatInput.disabled = true;
-				}
 			}
 		});
 	});
@@ -171,7 +165,295 @@ export function initProductionLinesModule() {
 		}
 	});
 
+	// Слушатели режима резки нужны на любой форме линий: в форме
+	// задачи режим включается выбором линии, а не атрибутом страницы.
+	if (form) {
+		initCuttingListeners(page, form);
+		setCuttingActive(form, page.hasAttribute('data-cutting-mode'));
+	}
+
 	initSelects(page);
+}
+
+/**
+ * Включает или выключает режим резки на форме состава материалов.
+ *
+ * Резка: на входе одна строка, на выходе — несколько форматов
+ * того же материала; кнопка «Добавить формат» открывает создание
+ * материала, заполненного данными входа.
+ *
+ * @param {HTMLElement} form Форма с составом материалов.
+ * @param {boolean} active Признак режима резки.
+ */
+export function setCuttingActive(form, active) {
+	if (active) {
+		form.dataset.cuttingActive = '1';
+	} else {
+		delete form.dataset.cuttingActive;
+	}
+
+	form.querySelectorAll('[data-production-line-add-material], [data-production-line-add-format]')
+		.forEach((button) => {
+			const section = button.closest('.operation-form__section');
+			const isOutput = !!section?.querySelector('.select__value[name^="output_materials"]');
+
+			button.hidden = isOutput ? !active : active;
+		});
+
+	if (active) {
+		limitCuttingInputRows(form);
+	}
+
+	applyCuttingOutputFilter(form);
+}
+
+/**
+ * Применяет фильтр форматов к выбору выхода — актуален в режиме резки.
+ *
+ * @param {HTMLElement} form Форма с составом материалов.
+ */
+export function applyCuttingOutputFilter(form) {
+	const input = form.dataset.cuttingActive === '1' ? cuttingInputOption(form) : null;
+
+	form.querySelectorAll('.select__value[name="output_materials[]"]').forEach((valueInput) => {
+		valueInput
+			.closest('.select')
+			?.querySelectorAll('.select__item[data-value]')
+			.forEach((option) => {
+				const selected = option.dataset.value === valueInput.value;
+				const visible = input === null
+					|| selected
+					|| (option.dataset.value !== input.dataset.value && isSameMaterialFamily(option, input));
+
+				option.hidden = !visible;
+			});
+	});
+}
+
+/**
+ * Оставляет на входе первую строку: в режиме резки материал один.
+ *
+ * @param {HTMLElement} form Форма с составом материалов.
+ */
+function limitCuttingInputRows(form) {
+	const rows = Array.from(form.querySelectorAll('[data-production-line-material]'))
+		.filter((row) => row.querySelector('.select__value[name="materials[]"]'));
+
+	if (rows.length <= 1) {
+		return;
+	}
+
+	const list = rows[0].closest('[data-production-line-materials]');
+
+	rows.slice(1).forEach((row) => row.remove());
+
+	if (list) {
+		updateIndexes(list);
+	}
+}
+
+/**
+ * Привязывает события режима резки к странице формы.
+ *
+ * Слушатель страницы — после существующих обработчиков:
+ * материал входа уже выбран или сброшен.
+ *
+ * @param {HTMLElement} page Контейнер страницы.
+ * @param {HTMLElement} form Форма производственной линии.
+ */
+function initCuttingListeners(page, form) {
+	page.addEventListener('click', (event) => {
+		const option = event.target.closest('.select__item[data-value]');
+		const row = option?.closest('[data-production-line-material]');
+
+		if (row && row.querySelector('.select__value')?.name === 'materials[]') {
+			applyCuttingOutputFilter(form);
+
+			return;
+		}
+
+		if (event.target.closest('[data-production-line-remove-material]')) {
+			applyCuttingOutputFilter(form);
+		}
+	});
+
+	page.querySelectorAll('[data-production-line-add-format]').forEach((button) => {
+		button.addEventListener('click', () => {
+			void openAddFormatModal(form);
+		});
+	});
+
+	document.addEventListener('material:saved', (event) => {
+		if (form.dataset.cuttingActive !== '1') {
+			return;
+		}
+
+		const material = event.detail?.material;
+
+		if (material) {
+			addOutputFormatOption(form, material);
+		}
+	});
+}
+
+/**
+ * Возвращает выбранную опцию материала входа.
+ *
+ * @param {HTMLElement} form Форма производственной линии.
+ * @returns {HTMLElement|null} Опция входа.
+ */
+function cuttingInputOption(form) {
+	const valueInput = form.querySelector('.select__value[name="materials[]"]');
+
+	if (!valueInput || valueInput.value === '') {
+		return null;
+	}
+
+	return valueInput
+		.closest('.select')
+		?.querySelector(`.select__item[data-value="${valueInput.value}"]`) ?? null;
+}
+
+/**
+ * Тот же материал: совпадают код, грамматура и толщина.
+ *
+ * @param {HTMLElement} option Проверяемая опция выхода.
+ * @param {HTMLElement} input Опция входа.
+ * @returns {boolean} Признак совпадения.
+ */
+function isSameMaterialFamily(option, input) {
+	const number = (value) => {
+		const parsed = parseFloat(value);
+
+		return Number.isFinite(parsed) ? String(parsed) : '';
+	};
+
+	return option.dataset.code === input.dataset.code
+		&& number(option.dataset.grammage) === number(input.dataset.grammage)
+		&& number(option.dataset.thickness) === number(input.dataset.thickness);
+}
+
+/**
+ * Открывает форму создания материала, заполненную данными материала
+ * входа: заполняется только формат.
+ *
+ * @param {HTMLElement} form Форма производственной линии.
+ */
+async function openAddFormatModal(form) {
+	const input = cuttingInputOption(form);
+
+	if (!input) {
+		return;
+	}
+
+	try {
+		const response = await fetch(
+			`/materials/create?prefill_from=${encodeURIComponent(input.dataset.value)}`,
+			{
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest',
+					Accept: 'text/html',
+				},
+			}
+		);
+
+		if (!response.ok) {
+			return;
+		}
+
+		window.operationModal.open(await response.text());
+
+		const materialForm = document.querySelector('[data-material-form]');
+
+		initSelects(materialForm);
+		initIdentifierMirror(materialForm);
+		materialForm?.querySelector('#material-format')?.focus();
+	} catch (error) {
+		return;
+	}
+}
+
+/**
+ * Добавляет созданный формат в выбор выхода и выбирает его:
+ * занимает пустую строку, а при отсутствии — добавляет новую.
+ *
+ * @param {HTMLElement} form Форма производственной линии.
+ * @param {Object} material Созданный материал.
+ */
+function addOutputFormatOption(form, material) {
+	const valueInputs = Array.from(form.querySelectorAll('.select__value[name="output_materials[]"]'));
+
+	if (valueInputs.length === 0) {
+		return;
+	}
+
+	// Строка без выбранного материала занимает новый формат.
+	let valueInput = valueInputs.find((input) => input.value === '');
+
+	if (!valueInput) {
+		const list = valueInputs[0].closest('[data-production-line-materials]');
+
+		addMaterialRow(list);
+
+		valueInput = Array.from(list.querySelectorAll('.select__value[name="output_materials[]"]'))
+			.find((input) => input.value === '');
+
+		if (!valueInput) {
+			return;
+		}
+	}
+
+	const select = valueInput.closest('.select');
+	const row = valueInput.closest('[data-production-line-material]');
+
+	if (!select || !row) {
+		return;
+	}
+
+	let option = select.querySelector(`.select__item[data-value="${material.id}"]`);
+
+	if (!option) {
+		option = document.createElement('button');
+		option.type = 'button';
+		option.className = 'material-select__select-option select__item';
+		option.setAttribute('role', 'option');
+		option.dataset.value = String(material.id);
+		option.dataset.name = material.name || '';
+		option.dataset.identifier = material.identifier || '';
+		option.dataset.code = material.code || '';
+		option.dataset.grammage = material.grammage ?? '';
+		option.dataset.thickness = material.thickness ?? '';
+		option.dataset.format = material.format ?? '';
+
+		const label = document.createElement('span');
+
+		label.textContent = [
+			material.name,
+			material.grammage ? `${material.grammage} гр` : '',
+			material.thickness ? `${material.thickness} мкм` : '',
+			material.format ? String(material.format) : '',
+		].filter(Boolean).join(' | ');
+		option.appendChild(label);
+
+		const dropdown = select.querySelector('.select__dropdown');
+
+		dropdown?.insertBefore(option, dropdown.querySelector('.select__empty') ?? null);
+	}
+
+	const instance = (window._activeSelects || []).find(
+		(selectInstance) => selectInstance.container === select
+	);
+
+	instance?.refresh();
+	instance?.selectOption(option, false);
+
+	fillMaterialCells(row, option);
+
+	if (select.closest('[data-autofill-line-name]')) {
+		autofillLineName(material.name || '');
+	}
+
+	applyCuttingOutputFilter(form);
 }
 
 /**
@@ -439,12 +721,6 @@ function resetRow(row) {
 		valueInput.value = '';
 	}
 
-	const formatInput = row.querySelector('.select__format-value');
-
-	if (formatInput) {
-		formatInput.value = '';
-	}
-
 	const buttonText = row.querySelector('.select__button-text');
 
 	if (buttonText) {
@@ -455,7 +731,6 @@ function resetRow(row) {
 	setCell(row, 'identifier', '');
 	setCell(row, 'grammage', '');
 	setCell(row, 'thickness', '');
-	setCell(row, 'format', '');
 }
 
 /**
@@ -465,12 +740,6 @@ function resetRow(row) {
  * @param {HTMLElement} option Выбранный вариант материала.
  */
 function fillMaterialCells(row, option) {
-	const formatInput = row.querySelector('.select__format-value');
-
-	if (formatInput) {
-		formatInput.value = option.dataset.format || '';
-	}
-
 	setCell(row, 'code', option.dataset.code || '—');
 	setCell(row, 'identifier', option.dataset.identifier || '—');
 	setCell(
@@ -483,7 +752,6 @@ function fillMaterialCells(row, option) {
 			'thickness',
 			option.dataset.thickness ? `${option.dataset.thickness} мкм` : '—'
 	);
-	setCell(row, 'format', option.dataset.format || '—');
 }
 
 /**

@@ -47,15 +47,15 @@
 	// .operation-modal__content
 	&__content {
 		position: relative;
-
+      scrollbar-width: none;
 		// Анимация появления содержимого
 		z-index: 1;
 		transform: translateY(20px) scale(0);
 
 		overflow-y: auto;
 
-		width: min(100%, 700px);
-		max-width: 500px;
+      max-width: 700px;
+		//max-width: 500px;
 		max-height: calc(100vh - 60px);
 		margin: auto;
 		padding: 4rem;

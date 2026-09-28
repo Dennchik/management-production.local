@@ -30,26 +30,22 @@
 	}
 
 	/*
-	 * Строки таблиц материалов: после ошибки валидации — из old()
-	 * (материал + формат парами), иначе материалы задачи.
+	 * Строки таблиц материалов: после ошибки валидации — из old(),
+	 * иначе материалы задачи.
 	 */
-	$rowsFromOld = function (array $ids, array $formats, $source) {
+	$rowsFromOld = function (array $ids, $source) {
 		$ids = array_values(array_filter($ids, static fn ($value) => $value !== null && $value !== ''));
-		$formats = array_values($formats ?? []);
 
-		return collect($ids)->map(static function ($id, $index) use ($source, $formats) {
+		return collect($ids)->map(static function ($id) use ($source) {
 			$material = $source->first(static fn ($item) => (int) $item->id === (int) $id);
 
 			if ($material === null) {
 				return null;
 			}
 
-			$format = $formats[$index] ?? null;
-
 			$clone = clone $material;
 			$clone->setRelation('pivot', new \Illuminate\Database\Eloquent\Relations\Pivot([
 				'direction' => 'input',
-				'format' => $format !== null && $format !== '' ? (int) $format : null,
 			]));
 
 			return $clone;
@@ -60,11 +56,11 @@
 	$oldOutputs = old('output_materials');
 
 	$inputRows = $oldInputs !== null
-		? $rowsFromOld($oldInputs, old('materials_formats', []), $allMaterials)
+		? $rowsFromOld($oldInputs, $allMaterials)
 		: ($task?->inputMaterials ?? collect());
 
 	$outputRows = $oldOutputs !== null
-		? $rowsFromOld($oldOutputs, old('output_materials_formats', []), $products)
+		? $rowsFromOld($oldOutputs, $products)
 		: ($task?->outputMaterials ?? collect());
 
 	$sectionsHidden = $inputRows->isEmpty() && $outputRows->isEmpty();
@@ -86,7 +82,7 @@
 				<label class="production-task__label" for="task-operation">Линия</label>
 
 				<div class="select material-select" data-task-operation-select>
-					<input class="select__value" type="hidden" value="{{ $selectedOperationId ?? '' }}">
+					<input class="select__value" type="hidden" name="operation_id" value="{{ $selectedOperationId ?? '' }}">
 
 					<button class="material-select__select-button select__button select-button" id="task-operation"
 							type="button" aria-haspopup="listbox" aria-expanded="false">
@@ -102,7 +98,7 @@
 
 						@foreach ($operations as $operation)
 							<button class="material-select__select-option select__item" type="button" role="option"
-									data-value="{{ $operation->id }}">{{ $operation->name }}</button>
+									data-value="{{ $operation->id }}" @if ($operation->is_cutting) data-is-cutting="1" @endif>{{ $operation->name }}</button>
 						@endforeach
 					</div>
 				</div>
@@ -168,7 +164,7 @@
 			</fieldset>
 
 			<fieldset class="production-task__field">
-				<label class="production-task__label" for="quantity">Кол-во вых. материала, кг</label>
+				<label class="production-task__label" for="quantity"><span data-task-quantity-label>Кол-во вых. материала, кг</span></label>
 
 				<input class="production-task__input" id="quantity" name="quantity" type="number"
 						step="0.001" min="0.001"
@@ -211,7 +207,7 @@
 			</fieldset>
 
 			<fieldset class="production-task__field">
-				<label class="production-task__label" for="quantity">Количество, кг</label>
+				<label class="production-task__label" for="quantity">{{ $task->isCutting() ? 'Резать, кг (вход)' : 'Количество, кг' }}</label>
 
 				<input class="production-task__input" id="quantity" name="quantity" type="number"
 						step="0.001" min="0.001"
@@ -254,11 +250,13 @@
 			<div data-task-material-table="output">
 				@include('production.operations._line-materials-table', [
 						'title' => 'Материалы (выход)',
-						'description' => 'Выходной материал задачи.',
+						'description' => 'Выходной материал задачи. Для линии в режиме резки — тот же материал в других форматах.',
 						'inputName' => 'output_materials',
 						'materials' => $products,
 						'rows' => $outputRows,
-						'allowAdd' => false,
+						'allowAdd' => true,
+						'allowAddFormat' => true,
+						'buttonsHidden' => true,
 				])
 			</div>
 		</div>

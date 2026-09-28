@@ -16,7 +16,7 @@
 
 		<div class="material-show__row">
 			<span>Идентификатор:</span>
-			<strong>{{ $material->roll_identifiers ?: '—' }}</strong>
+			<strong>{{ $material->identifier ?? '—' }}</strong>
 		</div>
 
 		<div class="material-show__row">
@@ -31,16 +31,11 @@
 
 		<div class="material-show__row">
 			<span>Формат:</span>
-			<strong>{{ $material->roll_formats ?: '—' }}</strong>
+			<strong>{{ $material->format ?? '—' }}</strong>
 		</div>
 
 		<div class="material-show__row">
-			<span>Тип материала:</span>
-			<strong>{{ \App\Models\Material::TYPES[$material->material_type] ?? $material->material_type }}</strong>
-		</div>
-
-		<div class="material-show__row">
-			<span>Разрешённые операции:</span>
+			<span>Назначение материала:</span>
 			<strong>
 				{{ $material->allowedOperations->pluck('name')->implode(', ') ?: '—' }}
 			</strong>

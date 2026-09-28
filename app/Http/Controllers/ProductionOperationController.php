@@ -35,6 +35,10 @@
 
 			return view('production.operations.create', [
 					'materials' => $materials,
+					'operationsList' => ProductionOperation::query()
+						->where('is_active', true)
+						->orderBy('id')
+						->get(),
 			]);
 		}
 
@@ -45,6 +49,9 @@
 					'code' => ['required', 'string', 'max:255', 'unique:production_operations,code'],
 					'description' => ['nullable', 'string'],
 					'is_active' => ['boolean'],
+					'is_cutting' => ['boolean'],
+					'output_operations' => ['nullable', 'array'],
+					'output_operations.*' => ['integer', 'exists:production_operations,id'],
 					'inputs' => ['nullable', 'array'],
 					'inputs.*.material_id' => ['required', 'integer', 'exists:materials,id'],
 					'inputs.*.quantity' => ['nullable', 'numeric', 'min:0'],
@@ -59,7 +66,7 @@
 					'outputs.*.is_required' => ['boolean'],
 					'outputs.*.sort_order' => ['nullable', 'integer', 'min:0'],
 					'outputs.*.comment' => ['nullable', 'string'],
-			]);
+			], self::operationMessages());
 
 			$operation = DB::transaction(function () use ($validated) {
 				$operation = ProductionOperation::create([
@@ -67,7 +74,10 @@
 						'code' => $validated['code'],
 						'description' => $validated['description'] ?? null,
 						'is_active' => $validated['is_active'] ?? true,
+						'is_cutting' => $validated['is_cutting'] ?? false,
 				]);
+
+				$operation->outputOperations()->sync($validated['output_operations'] ?? []);
 
 				$this->createComponents(
 						$operation,
@@ -93,14 +103,19 @@
 		public function show(ProductionOperation $productionOperation): View
 		{
 			return view('production.operations._show', [
-					'operation' => $productionOperation,
+					'operation' => $productionOperation->load('outputOperations'),
 			]);
 		}
 
 		public function edit(ProductionOperation $productionOperation): View
 		{
 			return view('production.operations.edit', [
-					'operation' => $productionOperation,
+					'operation' => $productionOperation->load('outputOperations'),
+					'operationsList' => ProductionOperation::query()
+						->where('is_active', true)
+						->whereKeyNot($productionOperation->id)
+						->orderBy('id')
+						->get(),
 			]);
 		}
 
@@ -116,6 +131,9 @@
 					],
 					'description' => ['nullable', 'string'],
 					'is_active' => ['boolean'],
+					'is_cutting' => ['boolean'],
+					'output_operations' => ['nullable', 'array'],
+					'output_operations.*' => ['integer', 'exists:production_operations,id'],
 					'inputs' => ['nullable', 'array'],
 					'inputs.*.id' => ['nullable', 'integer'],
 					'inputs.*.material_id' => ['required', 'integer', 'exists:materials,id'],
@@ -132,7 +150,7 @@
 					'outputs.*.is_required' => ['boolean'],
 					'outputs.*.sort_order' => ['nullable', 'integer', 'min:0'],
 					'outputs.*.comment' => ['nullable', 'string'],
-			]);
+			], self::operationMessages());
 
 			$operation = DB::transaction(function () use ($validated, $productionOperation) {
 				$productionOperation->update([
@@ -140,7 +158,15 @@
 						'code' => $validated['code'],
 						'description' => $validated['description'] ?? null,
 						'is_active' => $validated['is_active'] ?? true,
+						'is_cutting' => $validated['is_cutting'] ?? false,
 				]);
+
+				$productionOperation->outputOperations()->sync(
+					array_values(array_filter(
+						$validated['output_operations'] ?? [],
+						static fn ($operationId) => (int) $operationId !== $productionOperation->id
+					))
+				);
 
 				$this->syncComponents(
 						$productionOperation,
@@ -201,15 +227,10 @@
 			return view('production.operations.create-line', [
 					'operation' => $productionOperation,
 					'materials' => $productionOperation->materials()
-						->with('rolls:id,material_id,format,identifier')
 						->orderBy('id')
 						->get(),
-					'outputMaterials' => Material::query()
-						->where('material_type', 'product')
-						->where('is_active', true)
-						->with('rolls:id,material_id,format,identifier')
-						->orderBy('id')
-						->get(),
+					'outputMaterials' => $this->lineOutputMaterials($productionOperation),
+					'isCutting' => $productionOperation->is_cutting,
 			]);
 		}
 
@@ -222,13 +243,13 @@
 					'production_operation_id' => $productionOperation->id,
 			]);
 
-			$this->syncLineMaterials($productionLine, 'input', $validated['materials_pairs'] ?? []);
+			$this->syncLineMaterials($productionLine, 'input', $this->lineMaterialPairs($productionOperation, 'input', $validated));
 			$this->syncLineMaterials($productionLine, 'output', $validated['output_materials_pairs'] ?? []);
 
 			return redirect()
-					->route('production.lines.show', $productionOperation)
-					->with('success', 'Производственная линия добавлена.');
-	}
+				->route('production.lines.show', $productionOperation)
+				->with('success', 'Производственная линия добавлена.');
+		}
 
 		/**
 		 * Страница просмотра производственной линии.
@@ -238,8 +259,8 @@
 			return view('production.operations.show-line', [
 					'operation' => $productionOperation,
 					'productionLine' => $productionLine->load([
-						'inputMaterials.rolls:id,material_id,format,identifier',
-						'outputMaterials.rolls:id,material_id,format,identifier',
+						'inputMaterials',
+						'outputMaterials',
 					]),
 			]);
 		}
@@ -249,22 +270,24 @@
 		 */
 		public function editLine(ProductionOperation $productionOperation, ProductionLine $productionLine): View
 		{
+			$productionLine->load([
+				'inputMaterials',
+				'outputMaterials',
+			]);
+
 			return view('production.operations.edit-line', [
 					'operation' => $productionOperation,
-					'productionLine' => $productionLine->load([
-						'inputMaterials.rolls:id,material_id,format,identifier',
-						'outputMaterials.rolls:id,material_id,format,identifier',
-					]),
+					'productionLine' => $productionLine,
 					'materials' => $productionOperation->materials()
-						->with('rolls:id,material_id,format,identifier')
 						->orderBy('id')
 						->get(),
-					'outputMaterials' => Material::query()
-						->where('material_type', 'product')
-						->where('is_active', true)
-						->with('rolls:id,material_id,format,identifier')
-						->orderBy('id')
-						->get(),
+					// Сохранённый выход остаётся в списке, даже если
+					// перестал попадать в текущий отбор.
+					'outputMaterials' => $this->lineOutputMaterials($productionOperation)
+						->merge($productionLine->outputMaterials)
+						->unique('id')
+						->values(),
+					'isCutting' => $productionOperation->is_cutting,
 			]);
 		}
 
@@ -276,43 +299,85 @@
 					'name' => $validated['name'],
 			]);
 
-			$this->syncLineMaterials($productionLine, 'input', $validated['materials_pairs'] ?? []);
+			$this->syncLineMaterials($productionLine, 'input', $this->lineMaterialPairs($productionOperation, 'input', $validated));
 			$this->syncLineMaterials($productionLine, 'output', $validated['output_materials_pairs'] ?? []);
 
 			return redirect()
-					->route('production.lines.line.show', [$productionOperation, $productionLine])
-					->with('success', 'Производственная линия обновлена.');
-	}
+				->route('production.lines.line.show', [$productionOperation, $productionLine])
+				->with('success', 'Производственная линия обновлена.');
+		}
+
+		/**
+		 * Материалы секции «выход» формы шаблона.
+		 *
+		 * Режим резки: все активные материалы — список фильтруется в браузере
+		 * по материалу входа (тот же материал другого формата).
+		 * Иначе: назначенные материалы выбранных выходных линий,
+		 * а без выходных линий — все активные материалы.
+		 */
+		private function lineOutputMaterials(ProductionOperation $operation): \Illuminate\Support\Collection
+		{
+			$allActive = static fn () => Material::query()
+				->where('is_active', true)
+				->orderBy('id')
+				->get();
+
+			if ($operation->is_cutting) {
+				return $allActive();
+			}
+
+			$outputOperationIds = $operation->outputOperations->pluck('id');
+
+			if ($outputOperationIds->isEmpty()) {
+				return $allActive();
+			}
+
+			return Material::query()
+				->where('is_active', true)
+				->whereHas('allowedOperations', static function ($query) use ($outputOperationIds) {
+					$query->whereIn('production_operations.id', $outputOperationIds);
+				})
+				->orderBy('id')
+				->get();
+		}
+
+		/**
+		 * На входе линии в режиме резки — ровно один материал.
+		 */
+		private function lineMaterialPairs(ProductionOperation $operation, string $direction, array $validated): array
+		{
+			$pairs = $validated[$direction === 'input' ? 'materials_pairs' : 'output_materials_pairs'] ?? [];
+
+			if ($direction === 'input' && $operation->is_cutting) {
+				return array_slice($pairs, 0, 1);
+			}
+
+			return $pairs;
+		}
 
 		/**
 		 * Валидация данных производственной линии.
 		 */
 		private function validateLineData(Request $request): array
 		{
-			// Материал выбирается вместе с форматом:
-			// materials[] и materials_formats[] идут парами по индексу строки.
+			// Состав линии: materials[] по индексу строки.
 			$data = $request->all();
 
 			foreach (['materials', 'output_materials'] as $key) {
-				$ids = array_values($data[$key] ?? []);
-				$formats = array_values($data[$key . '_formats'] ?? []);
 				$pairs = [];
 
-				foreach ($ids as $index => $materialId) {
+				foreach (array_values($data[$key] ?? []) as $materialId) {
 					if ($materialId === null || $materialId === '') {
 						continue;
 					}
 
-					$format = $formats[$index] ?? null;
-
 					$pairs[] = [
 							'material_id' => (int) $materialId,
-							'format' => $format !== null && $format !== '' ? (int) $format : null,
 					];
 				}
 
 				$data[$key . '_pairs'] = $pairs;
-				unset($data[$key], $data[$key . '_formats']);
+				unset($data[$key]);
 			}
 
 			$request->replace($data);
@@ -321,26 +386,22 @@
 					'name' => ['required', 'string', 'max:255'],
 					'materials_pairs' => ['nullable', 'array'],
 					'materials_pairs.*.material_id' => ['integer', 'exists:materials,id'],
-					'materials_pairs.*.format' => ['nullable', 'integer', 'min:0', 'max:65535'],
 					'output_materials_pairs' => ['nullable', 'array'],
 					'output_materials_pairs.*.material_id' => ['integer', 'exists:materials,id'],
-					'output_materials_pairs.*.format' => ['nullable', 'integer', 'min:0', 'max:65535'],
 			]);
 		}
 
 		/**
 		 * Заменяет материалы линии одного направления (вход/выход).
-		 * Материал всегда входит с конкретным форматом.
 		 */
 		private function syncLineMaterials(ProductionLine $productionLine, string $direction, array $pairs): void
 		{
 			$rows = collect($pairs)
-				->unique(static fn (array $pair) => $pair['material_id'] . '|' . ($pair['format'] ?? ''))
+				->unique(static fn (array $pair) => $pair['material_id'])
 				->map(static fn (array $pair) => [
 						'production_line_id' => $productionLine->id,
 						'material_id' => $pair['material_id'],
 						'direction' => $direction,
-						'format' => $pair['format'] ?? null,
 				])
 				->values()
 				->all();
@@ -626,5 +687,21 @@
 					->where('direction', $direction)
 					->whereNotIn('id', $existingIds)
 					->delete();
+		}
+
+		/**
+		 * Русские сообщения валидации формы операции.
+		 */
+		private static function operationMessages(): array
+		{
+			return [
+					'name.required' => 'Укажите название линии.',
+					'code.required' => 'Укажите код линии.',
+					'code.unique' => 'Линия с таким кодом уже существует.',
+					'inputs.*.material_id.required' => 'Укажите материал во всех строках входа.',
+					'inputs.*.unit.required' => 'Укажите единицу измерения во всех строках входа.',
+					'outputs.*.material_id.required' => 'Укажите материал во всех строках выхода.',
+					'outputs.*.unit.required' => 'Укажите единицу измерения во всех строках выхода.',
+			];
 		}
 	}

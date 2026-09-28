@@ -2,7 +2,6 @@
  * Инициализация страницы каталогов.
  *
  * Отвечает за:
- * - переключение иерархии каталогов;
  * - открытие формы создания каталога;
  * - просмотр каталога;
  * - открытие формы редактирования;
@@ -53,16 +52,9 @@ export function initCatalogsModule() {
 
    const createButton = catalogsPage.querySelector('[data-catalog-create]');
    const tableBody = catalogsPage.querySelector('[data-catalogs-body]');
-   const hierarchyToggle = catalogsPage.querySelector(
-      'input[name="hierarchy_enabled"]'
-   );
 
    createButton?.addEventListener('click', () => {
       void createCatalog();
-   });
-
-   hierarchyToggle?.addEventListener('change', () => {
-      void toggleHierarchy(hierarchyToggle);
    });
 
    tableBody?.addEventListener('click', (event) => {
@@ -91,41 +83,39 @@ export function initCatalogsModule() {
 }
 
 /**
- * Переключает иерархию каталогов и перезагружает страницу.
+ * Показывает ошибку удаления внутри окна подтверждения.
  *
- * @param {HTMLInputElement} toggle Переключатель иерархии.
+ * @param {string} message Текст ошибки.
  */
-async function toggleHierarchy(toggle) {
-   const previousValue = !toggle.checked;
-
-   toggle.disabled = true;
-
-   try {
-      const csrfToken = document.querySelector(
-         'meta[name="csrf-token"]'
-      )?.content;
-
-      const response = await fetch('/catalogs/hierarchy-toggle', {
-         method: 'POST',
-         headers: {
-            Accept: 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-         },
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-         toggle.checked = previousValue;
-         toggle.disabled = false;
-         return;
-      }
-
-      window.location.reload();
-   } catch (error) {
-      toggle.checked = previousValue;
-      toggle.disabled = false;
+function showCatalogDeleteError(message) {
+   if (!message) {
+      return;
    }
+
+   const modal = document.querySelector('.operation-confirm');
+
+   if (!modal) {
+      return;
+   }
+
+   let error = modal.querySelector('[data-catalog-delete-error]');
+
+   if (!error) {
+      error = document.createElement('div');
+      error.setAttribute('data-catalog-delete-error', '');
+      error.style.color = '#c0392b';
+      error.style.paddingTop = '8px';
+
+      const actions = modal.querySelector('.operation-confirm__actions');
+
+      if (actions) {
+         modal.insertBefore(error, actions);
+      } else {
+         modal.appendChild(error);
+      }
+   }
+
+   error.textContent = message;
 }
 
 /**
@@ -493,6 +483,7 @@ async function confirmDeleteCatalog(button) {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
+         showCatalogDeleteError(result.message);
          button.disabled = false;
          return;
       }

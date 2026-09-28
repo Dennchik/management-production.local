@@ -43,6 +43,14 @@
 							<span>Материалы</span>
 						</a>
 
+						@if ($user->may('materials', 'delete') && \Illuminate\Support\Facades\Route::has('trash.index'))
+							<a class="sidebar__link sidebar__link--submenu {{ request()->routeIs('trash.*') ? 'is-active' : '' }}"
+									href="{{ route('trash.index') }}">
+								<i class="icon-trash icon"></i>
+								<span>Корзина</span>
+							</a>
+						@endif
+
 						<a class="sidebar__link sidebar__link--submenu {{ request()->routeIs('material-movements.*') ? 'is-active' : '' }}"
 								href="{{ route('material-movements.index') }}">
 							<i class="icon-recycle-arrows icon"></i>
@@ -106,14 +114,6 @@
 					</div>
 
 					<div class="sidebar__submenu">
-						@if ($user->may('materials'))
-							<a class="sidebar__link sidebar__link--submenu {{ request()->routeIs('materials.*') ? 'is-active' : '' }}"
-									href="{{ route('materials.index') }}">
-								<i class="icon-warehouse icon"></i>
-								<span>Материалы</span>
-							</a>
-						@endif
-
 						<a class="sidebar__link sidebar__link--submenu" href="#">
 							<i class="icon-recycle-arrows icon"></i>
 							<span>Технологические маршруты</span>

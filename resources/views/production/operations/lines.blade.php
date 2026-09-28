@@ -14,7 +14,7 @@
 
 				<a class="button button--secondary"
 						href="{{ route('production.operations.allowed-catalogs', $operation) }}">
-					Разрешённые материалы
+					Назначенные материалы
 				</a>
 			</div>
 		</div>
@@ -48,7 +48,7 @@
 
 							<div class="table__cell table__cell--stack">
 								@forelse ($productionLine->inputMaterials as $material)
-									<div>{{ $material->name }}@if ($material->pivot->format) — {{ $material->pivot->format }} @endif</div>
+									<div>{{ $material->name }}</div>
 								@empty
 									—
 								@endforelse
@@ -56,7 +56,7 @@
 
 							<div class="table__cell table__cell--stack">
 								@forelse ($productionLine->outputMaterials as $material)
-									<div>{{ $material->name }}@if ($material->pivot->format) — {{ $material->pivot->format }} @endif</div>
+									<div>{{ $material->name }}</div>
 								@empty
 									—
 								@endforelse

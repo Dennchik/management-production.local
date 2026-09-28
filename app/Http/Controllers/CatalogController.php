@@ -3,9 +3,12 @@
 	namespace App\Http\Controllers;
 
 	use App\Models\Catalog;
+	use App\Models\Material;
+	use App\Models\MaterialRoll;
 	use App\Models\Setting;
 	use Illuminate\Http\JsonResponse;
 	use Illuminate\Http\Request;
+	use Illuminate\Support\Facades\DB;
 	use Illuminate\View\View;
 
 	class CatalogController extends Controller
@@ -91,8 +94,22 @@
 
 		public function delete(Catalog $catalog): View
 		{
+			/*
+			 * Материалы каталога без остатков удалятся вместе
+			 * с каталогом (в корзину) — предупреждаем в окне.
+			 */
+			$materials = $catalog->materials()
+					->with('rolls')
+					->get();
+
+			$deletable = $materials->filter(
+					static fn (Material $material) => $material->rolls
+							->every(static fn (MaterialRoll $roll) => (float) $roll->weight <= 0)
+			);
+
 			return view('catalogs._delete', [
 					'catalog' => $catalog,
+					'deletableMaterials' => $deletable,
 			]);
 		}
 
@@ -105,18 +122,41 @@
 				], 422);
 			}
 
-			if ($catalog->materials()->exists()) {
+			$materials = $catalog->materials()
+					->with('rolls')
+					->get();
+
+			/*
+			 * Удаление запрещено, пока в материалах каталога
+			 * есть рулоны в наличии: сначала корректировочный ордер.
+			 */
+			$inStock = $materials->filter(
+					static fn (Material $material) => $material->rolls
+							->contains(static fn (MaterialRoll $roll) => (float) $roll->weight > 0)
+			);
+
+			if ($inStock->isNotEmpty()) {
 				return response()->json([
 						'success' => false,
-						'message' => 'В каталоге есть материалы. Сначала уберите их из каталога.',
+						'message' => 'В каталоге присутствуют материалы в наличии, требуется корректировочный ордер.',
 				], 422);
 			}
 
-			$catalog->delete();
+			DB::transaction(function () use ($materials, $catalog) {
+				// Материалы без остатков удаляются в корзину
+				// вместе со своими рулонами и каталогом.
+				$materials->each(static function (Material $material) {
+					$material->rolls()->delete();
+					$material->delete();
+				});
+
+				$catalog->delete();
+			});
 
 			return response()->json([
 					'success' => true,
-					'message' => 'Каталог успешно удалён.',
+					'message' => 'Каталог удалён в корзину.'
+							. ($materials->isNotEmpty() ? ' Вместе с ним удалено материалов: ' . $materials->count() . '.' : ''),
 			]);
 		}
 

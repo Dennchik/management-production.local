@@ -20,6 +20,26 @@
 		</div>
 	@endif
 
+	@if ($operation->is_cutting)
+		<div class="operation-view__section">
+			<div class="operation-view__label">Режим резки</div>
+			<div class="operation-view__description">
+				На входе один материал, на выходе — тот же материал другого формата.
+			</div>
+		</div>
+	@endif
+
+	<div class="operation-view__section">
+		<div class="operation-view__label">Выходные товары</div>
+		<div class="operation-view__description">
+			@if ($operation->outputOperations->isEmpty())
+				—
+			@else
+				{{ $operation->outputOperations->pluck('name')->implode(', ') }}
+			@endif
+		</div>
+	</div>
+
 	<div class="operation-view__actions">
 		<a class="button" href="{{ route('production.operations.edit', $operation) }}">
 			Редактировать

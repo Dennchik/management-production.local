@@ -80,8 +80,8 @@ export default defineConfig(({ command }) => {
 
          rollupOptions: {
             output: {
-               assetFileNames: 'assets/[name].[ext]',
-               chunkFileNames: 'assets/vendors/[name].js',
+               assetFileNames: 'assets/[name]-[hash].[ext]',
+               chunkFileNames: 'assets/vendors/[name]-[hash].js',
 
                manualChunks(id) {
                   if (id.includes('node_modules')) {

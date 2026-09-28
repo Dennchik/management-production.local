@@ -6,78 +6,33 @@
 	use App\Models\Material;
 	use App\Models\ProductionOperation;
 	use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
+	use Illuminate\Http\Request;
+	use Illuminate\Support\Facades\DB;
+	use Illuminate\Validation\ValidationException;
+	use Illuminate\View\View;
 
 	class MaterialController extends Controller
 	{
-		public function index(): View
-		{
-			$hierarchyEnabled = Catalog::hierarchyEnabled();
-			$currentCatalog = null;
-			$catalogs = collect();
-			$breadcrumbs = collect();
-
-			if ($hierarchyEnabled) {
-				$currentCatalog = Catalog::query()->find(request('catalog'));
-
-				$catalogQuery = Catalog::query()
-						->orderBy('sort_order')
-						->orderBy('name');
-
-				$catalogs = $currentCatalog === null
-						? $catalogQuery->whereNull('parent_id')->get()
-						: $catalogQuery->where('parent_id', $currentCatalog->id)->get();
-
-				if ($currentCatalog !== null) {
-					$breadcrumbs = $this->catalogAncestors($currentCatalog);
-				}
-			}
-
-			$materialsQuery = Material::query()
-				->with('rolls:id,material_id,format,identifier')
-				->orderBy('id');
-
-			if ($hierarchyEnabled) {
-				$materialsQuery->where('catalog_id', $currentCatalog?->id);
-			}
-
-			$materials = $materialsQuery->get();
-
-			return view('materials.index', [
-					'materials' => $materials,
-					'catalogs' => $catalogs,
-					'currentCatalog' => $currentCatalog,
-					'breadcrumbs' => $breadcrumbs,
-					'hierarchyEnabled' => $hierarchyEnabled,
-			]);
-		}
-
-		/**
-		 * Цепочка предков каталога от корня к текущему каталогу.
-		 */
-		private function catalogAncestors(Catalog $catalog): \Illuminate\Support\Collection
-		{
-			$chain = collect([$catalog]);
-			$parent = $catalog->parent;
-
-			while ($parent !== null) {
-				$chain->prepend($parent);
-				$parent = $parent->parent;
-			}
-
-			return $chain;
-		}
-
 		public function create(): View
 		{
 			$number = Material::query()->count() + 1;
 
+			// Предзаполнение данными существующего материала —
+			// так из линии резки создаётся новый формат того же материала.
+			$prefillFrom = request('prefill_from');
+			$prefill = $prefillFrom !== null && $prefillFrom !== ''
+				? Material::query()->findOrFail((int) $prefillFrom)
+				: null;
+
 			return view('materials._create', [
 					'number' => $number,
 					'catalogOptions' => $this->catalogOptions(),
-					'selectedCatalogId' => request('catalog'),
+					'selectedCatalogId' => $prefill?->catalog_id ?? request('catalog'),
 					'productionLines' => $this->productionLines(),
+					'prefill' => $prefill,
+					'selectedOperationIds' => $prefill?->allowedOperations()
+						->pluck('production_operations.id')
+						->all() ?? [],
 			]);
 		}
 
@@ -108,27 +63,32 @@ use Illuminate\View\View;
 
 		public function store(Request $request): JsonResponse
 		{
-		$validated = $request->validate([
-				'name' => ['required', 'string', 'max:255'],
-				'code' => ['required', 'string', 'max:10'],
-				'grammage' => ['nullable', 'numeric', 'min:0'],
-				'thickness' => ['nullable', 'numeric', 'min:0'],
-				'catalog_id' => ['nullable', 'integer', 'exists:catalogs,id'],
-				'material_type' => ['nullable', 'in:raw,product'],
-				'allowed_operations' => ['nullable', 'array'],
-				'allowed_operations.*' => ['integer', 'exists:production_operations,id'],
-				'is_active' => ['boolean'],
-		]);
+			$validated = $request->validate([
+					'name' => ['required', 'string', 'max:255'],
+					'code' => ['required', 'string', 'max:10'],
+					'grammage' => ['nullable', 'numeric', 'min:0'],
+					'thickness' => ['nullable', 'numeric', 'min:0'],
+					'format' => ['nullable', 'integer', 'min:0', 'max:65535'],
+					'catalog_id' => ['nullable', 'integer', 'exists:catalogs,id'],
+					'allowed_operations' => ['nullable', 'array'],
+					'allowed_operations.*' => ['integer', 'exists:production_operations,id'],
+					'is_active' => ['boolean'],
+			]);
 
-		$material = Material::create([
-				'name' => $validated['name'],
-				'code' => $validated['code'],
-				'grammage' => $validated['grammage'] ?? null,
-				'thickness' => $validated['thickness'] ?? null,
-				'catalog_id' => $validated['catalog_id'] ?? null,
-				'material_type' => $validated['material_type'] ?? 'raw',
-				'is_active' => $validated['is_active'] ?? false,
-		]);
+			$identifier = $this->materialIdentifier($validated);
+
+			$this->ensureIdentifierIsFree($identifier);
+
+			$material = Material::create([
+					'name' => $validated['name'],
+					'code' => $validated['code'],
+					'grammage' => $validated['grammage'] ?? null,
+					'thickness' => $validated['thickness'] ?? null,
+					'format' => $validated['format'] ?? null,
+					'identifier' => $identifier,
+					'catalog_id' => $validated['catalog_id'] ?? null,
+					'is_active' => $validated['is_active'] ?? false,
+			]);
 
 			$material->allowedOperations()->sync($validated['allowed_operations'] ?? []);
 
@@ -138,39 +98,46 @@ use Illuminate\View\View;
 			]);
 		}
 
-	public function show(Material $material): View
-	{
-		return view('materials._show', [
-			'material' => $material->load([
-				'allowedOperations',
-				'rolls:id,material_id,format,identifier',
-			]),
-		]);
-	}
+		public function show(Material $material): View
+		{
+			return view('materials._show', [
+				'material' => $material->load('allowedOperations'),
+			]);
+		}
 
 		public function update(Request $request, Material $material): JsonResponse
 		{
-		$validated = $request->validate([
-				'name' => ['required', 'string', 'max:255'],
-				'code' => ['required', 'string', 'max:10'],
-				'grammage' => ['nullable', 'numeric', 'min:0'],
-				'thickness' => ['nullable', 'numeric', 'min:0'],
-				'catalog_id' => ['nullable', 'integer', 'exists:catalogs,id'],
-				'material_type' => ['nullable', 'in:raw,product'],
-				'allowed_operations' => ['nullable', 'array'],
-				'allowed_operations.*' => ['integer', 'exists:production_operations,id'],
-				'is_active' => ['boolean'],
-		]);
+			$validated = $request->validate([
+					'name' => ['required', 'string', 'max:255'],
+					'code' => ['required', 'string', 'max:10'],
+					'grammage' => ['nullable', 'numeric', 'min:0'],
+					'thickness' => ['nullable', 'numeric', 'min:0'],
+					'format' => ['nullable', 'integer', 'min:0', 'max:65535'],
+					'catalog_id' => ['nullable', 'integer', 'exists:catalogs,id'],
+					'allowed_operations' => ['nullable', 'array'],
+					'allowed_operations.*' => ['integer', 'exists:production_operations,id'],
+					'is_active' => ['boolean'],
+			]);
 
-		$material->update([
-				'name' => $validated['name'],
-				'code' => $validated['code'],
-				'grammage' => $validated['grammage'] ?? null,
-				'thickness' => $validated['thickness'] ?? null,
-				'catalog_id' => $validated['catalog_id'] ?? null,
-				'material_type' => $validated['material_type'] ?? $material->material_type,
-				'is_active' => $validated['is_active'] ?? false,
-		]);
+			/*
+			 * Идентификатор пересчитывается при каждом сохранении;
+			 * если данных (код + грамматура/толщина + формат) недостаточно,
+			 * он остаётся пустым.
+			 */
+			$identifier = $this->materialIdentifier($validated);
+
+			$this->ensureIdentifierIsFree($identifier, $material->id);
+
+			$material->update([
+					'name' => $validated['name'],
+					'code' => $validated['code'],
+					'grammage' => $validated['grammage'] ?? null,
+					'thickness' => $validated['thickness'] ?? null,
+					'format' => $validated['format'] ?? null,
+					'identifier' => $identifier,
+					'catalog_id' => $validated['catalog_id'] ?? null,
+					'is_active' => $validated['is_active'] ?? false,
+			]);
 
 			$material->allowedOperations()->sync($validated['allowed_operations'] ?? []);
 
@@ -184,17 +151,69 @@ use Illuminate\View\View;
 		{
 			return view('materials._delete', [
 					'material' => $material,
+					'rollsCount' => $material->rolls()->count(),
 			]);
 		}
 
 		public function destroy(Material $material): JsonResponse
 		{
-			$material->delete();
+			$material->load('rolls');
+
+			/*
+			 * Удаление запрещено, пока у материала есть рулоны
+			 * в наличии: сначала корректировочный ордер.
+			 */
+			if ($material->rolls->contains(static fn ($roll) => (float) $roll->weight > 0)) {
+				return response()->json([
+						'success' => false,
+						'message' => 'У материала есть рулоны в наличии, требуется корректировочный ордер.',
+				], 422);
+			}
+
+			// Материал удаляется в корзину вместе со своими рулонами.
+			DB::transaction(function () use ($material) {
+				$material->rolls()->delete();
+				$material->delete();
+			});
 
 			return response()->json([
 					'success' => true,
-					'message' => 'Материал успешно удалён.',
+					'message' => 'Материал удалён в корзину.',
 			]);
+		}
+
+		/**
+		 * Идентификатор из данных формы материала.
+		 */
+		private function materialIdentifier(array $validated): ?string
+		{
+			return Material::composeIdentifier(
+				$validated['code'],
+				$validated['grammage'] ?? null,
+				$validated['thickness'] ?? null,
+				$validated['format'] ?? null
+			);
+		}
+
+		/**
+		 * Гарантирует, что вычисленный идентификатор не занят другим материалом.
+		 */
+		private function ensureIdentifierIsFree(?string $identifier, ?int $ignoreId = null): void
+		{
+			if ($identifier === null) {
+				return;
+			}
+
+			$exists = Material::query()
+					->where('identifier', $identifier)
+					->when($ignoreId !== null, fn ($query) => $query->where('id', '!=', $ignoreId))
+					->exists();
+
+			if ($exists) {
+				throw ValidationException::withMessages([
+						'identifier' => 'Материал с идентификатором «' . $identifier . '» уже существует.',
+				]);
+			}
 		}
 
 		/**
@@ -219,5 +238,4 @@ use Illuminate\View\View;
 					->orderBy('id')
 					->get();
 		}
-
-}
+	}

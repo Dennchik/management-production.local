@@ -1,34 +1,46 @@
 <div class="material-show material-form" data-material-form>
 	<div class="material-show__header">
-		<h2 class="material-show__title">Создание материала</h2>
+		<h2 class="material-show__title">{{ isset($prefill) ? 'Новый формат материала' : 'Создание материала' }}</h2>
 	</div>
 
 	<div class="material-show__content">
 		<div class="material-show__row">
 			<span>Наименование:</span>
 			<label>
-				<input type="text" name="material-name" autocomplete="off">
+				<input type="text" name="material-name" autocomplete="off" value="{{ $prefill->name ?? '' }}">
 			</label>
 		</div>
 
 		<div class="material-show__row">
 			<span>Код:</span>
 			<label>
-				<input type="text" name="code" autocomplete="off">
+				<input type="text" name="code" autocomplete="off" value="{{ $prefill->code ?? '' }}">
 			</label>
+		</div>
+
+		<div class="material-show__row">
+			<span>Идентификатор:</span>
+			<input type="text" name="identifier" id="identifier" readonly>
 		</div>
 
 		<div class="material-show__row">
 			<span>Грамматура:</span>
 			<label>
-				<input type="number" name="grammage" min="0" step="0.01">
+				<input type="number" name="grammage" min="0" step="0.01" value="{{ $prefill->grammage ?? '' }}">
 			</label>
 		</div>
 
 		<div class="material-show__row">
 			<span>Толщина:</span>
 			<label>
-				<input type="number" name="thickness" min="0" step="0.01">
+				<input type="number" name="thickness" min="0" step="0.01" value="{{ $prefill->thickness ?? '' }}">
+			</label>
+		</div>
+
+		<div class="material-show__row">
+			<span>Формат:</span>
+			<label>
+				<input type="text" name="format" id="material-format" autocomplete="off" inputmode="numeric">
 			</label>
 		</div>
 
@@ -60,31 +72,7 @@
 		</div>
 
 		<div class="material-show__row">
-			<span>Тип материала:</span>
-			<label>
-				<div class="select material-select">
-					<input class="select__value" name="material_type" type="hidden" value="raw">
-
-					<button class="material-select__select-button select__button select-button" type="button"
-							aria-haspopup="listbox" aria-expanded="false">
-						<span class="material-select__select-value select__button-text">
-							{{ \App\Models\Material::TYPES['raw'] }}
-						</span>
-						<span class="material-select__select-arrow" aria-hidden="true"></span>
-					</button>
-
-					<div class="select__dropdown material-select__select-list _collapse" role="listbox">
-						@foreach (\App\Models\Material::TYPES as $typeValue => $typeLabel)
-							<button class="material-select__select-option select__item" type="button" role="option"
-									data-value="{{ $typeValue }}">{{ $typeLabel }}</button>
-						@endforeach
-					</div>
-				</div>
-			</label>
-		</div>
-
-		<div class="material-show__row">
-			<span>Разрешённые операции:</span>
+			<span>Назначение материала:</span>
 
 			<div class="material-form__operations">
 				@if ($productionLines->isEmpty())
@@ -92,7 +80,8 @@
 				@else
 					@foreach ($productionLines as $line)
 						<label>
-							<input type="checkbox" name="allowed_operations[]" value="{{ $line->id }}">
+							<input type="checkbox" name="allowed_operations[]" value="{{ $line->id }}"
+									{{ in_array($line->id, $selectedOperationIds ?? [], false) ? 'checked' : '' }}>
 							{{ $line->name }}
 						</label>
 					@endforeach

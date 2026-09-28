@@ -38,12 +38,6 @@
 			</label>
 		</div>
 
-		<div class="material-show__row">
-			<span>Сортировка:</span>
-			<label>
-				<input type="number" name="sort_order" min="0" step="1" value="500">
-			</label>
-		</div>
 
 		<div class="material-show__row">
 			<span>Статус:</span>

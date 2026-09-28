@@ -38,15 +38,13 @@
 					<div class="table__cell">№</div>
 					<div class="table__cell">Материал</div>
 					<div class="table__cell">Идентификатор</div>
-					<div class="table__cell">Формат</div>
 				</div>
 
 				@foreach ($productionLine->inputMaterials as $material)
 					<div class="table__row-line">
 						<div class="table__cell">{{ $loop->iteration }}</div>
 						<div class="table__cell">{{ $material->name }}</div>
-						<div class="table__cell">{{ $material->identifierForFormat($material->pivot->format) ?? '—' }}</div>
-						<div class="table__cell">{{ $material->pivot->format ?? '—' }}</div>
+						<div class="table__cell">{{ $material->identifier ?? '—' }}</div>
 					</div>
 				@endforeach
 			</div>
@@ -62,15 +60,13 @@
 					<div class="table__cell">№</div>
 					<div class="table__cell">Материал</div>
 					<div class="table__cell">Идентификатор</div>
-					<div class="table__cell">Формат</div>
 				</div>
 
 				@foreach ($productionLine->outputMaterials as $material)
 					<div class="table__row-line">
 						<div class="table__cell">{{ $loop->iteration }}</div>
 						<div class="table__cell">{{ $material->name }}</div>
-						<div class="table__cell">{{ $material->identifierForFormat($material->pivot->format) ?? '—' }}</div>
-						<div class="table__cell">{{ $material->pivot->format ?? '—' }}</div>
+						<div class="table__cell">{{ $material->identifier ?? '—' }}</div>
 					</div>
 				@endforeach
 			</div>

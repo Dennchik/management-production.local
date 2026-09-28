@@ -1,4 +1,4 @@
-import { CustomSelect } from '../../assets/select.js';
+import { CustomSelect, initSelects } from '../../assets/select.js';
 import { RollsApiService } from '../../services/rollsApi.js';
 
 export function initMaterialAdjustmentModule() {
@@ -6,141 +6,147 @@ export function initMaterialAdjustmentModule() {
 
    if (!form) return;
 
-   const selects = form.querySelectorAll('.material-select');
+   const rowsList = form.querySelector('[data-adjustment-rows]');
+   const addButton = form.querySelector('[data-adjustment-row-add]');
+   const rowTemplate = document.querySelector('[data-adjustment-row-template]');
 
-   const materialSelectEl = selects[0];
-   const rollSelectEl = selects[1];
+   if (!rowsList || !addButton || !rowTemplate) return;
 
-   if (!materialSelectEl || !rollSelectEl) {
-      return;
-   }
-
-   const materialSelect = new CustomSelect(materialSelectEl);
-
-   const rollSelect = new CustomSelect(rollSelectEl, {
-      placeholder: 'Сначала выберите материал',
-   });
-
-   const materialNameInput = form.querySelector('#material_name');
-   const weightBeforeInput = form.querySelector('#weight_before');
-   const adjustmentInput = form.querySelector('#adjustment');
-   const weightAfterInput = form.querySelector('#weight_after');
-
-   const rollList = rollSelectEl.querySelector('#rolls-list');
-   const rollEmptyMsg = rollSelectEl.querySelector('.select__empty');
+   const commentInput = form.querySelector('#comment');
 
    /*
-    * Материал -> загрузка рулонов материала.
+    * Строки одного ордера: материал -> рулон -> учётный остаток ->
+    * отклонение -> новый остаток. Шаблон строки рендерит сервер,
+    * JS клонирует, переиндексирует и вешает логику.
     */
-   materialSelectEl.addEventListener('select:change', async (e) => {
-      const materialId = e.detail.value;
+   const getRows = () =>
+      Array.from(rowsList.querySelectorAll('[data-adjustment-row]'));
 
-      if (materialNameInput) {
-         materialNameInput.value = e.detail.option?.dataset.name || '';
+   const escapeHtml = (value) =>
+      String(value)
+         .replace(/&/g, '&amp;')
+         .replace(/</g, '&lt;')
+         .replace(/>/g, '&gt;')
+         .replace(/"/g, '&quot;')
+         .replace(/'/g, '&#039;');
+
+   const trimZeros = (value) =>
+      String(value).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+
+   // =========================================================
+   // Переиндексация имён rows[i][...] после добавления/удаления
+   // =========================================================
+
+   const reindexRows = () => {
+      getRows().forEach((row, index) => {
+         row
+            .querySelector('[data-adjustment-material]')
+            ?.setAttribute('name', `rows[${index}][material_id]`);
+
+         row
+            .querySelector('[data-adjustment-roll]')
+            ?.setAttribute('name', `rows[${index}][roll_id]`);
+
+         row
+            .querySelector('[data-adjustment-input]')
+            ?.setAttribute('name', `rows[${index}][adjustment]`);
+      });
+   };
+
+   // =========================================================
+   // Кнопки удаления: единственную строку удалить нельзя
+   // =========================================================
+
+   const syncRemoveButtons = () => {
+      getRows().forEach((row, index) => {
+         const removeButton = row.querySelector('[data-adjustment-row-remove]');
+
+         if (removeButton) {
+            removeButton.hidden = getRows().length === 1;
+         }
+      });
+   };
+
+   // =========================================================
+   // Пересчёт «новый остаток» строки
+   // =========================================================
+
+   const updateRowAfter = (row) => {
+      const before = parseFloat(
+         row.querySelector('[data-adjustment-weight-before]')?.value || ''
+      );
+      const adjustment = parseFloat(
+         row.querySelector('[data-adjustment-input]')?.value || ''
+      );
+
+      const afterInput = row.querySelector('[data-adjustment-weight-after]');
+
+      if (afterInput) {
+         afterInput.value =
+            Number.isFinite(before) && Number.isFinite(adjustment)
+               ? String(Math.round((before + adjustment) * 1000) / 1000)
+               : '';
       }
+   };
 
-      resetRollState();
+   // =========================================================
+   // Загрузка рулонов материала строки
+   // =========================================================
 
-      if (!materialId) {
-         return;
-      }
+   const resetRollCell = (row) => {
+      const rollSelectEl = row.querySelector('[data-adjustment-roll-select]');
+      const rollList = row.querySelector('[data-adjustment-rolls-list]');
+      const emptyMsg = rollSelectEl?.querySelector('.select__empty');
 
-      if (rollSelect.valueSpan) {
-         rollSelect.valueSpan.textContent = 'Загрузка рулонов...';
-      }
-
-      try {
-         const rolls = await RollsApiService.fetchByMaterial(materialId);
-
-         renderRolls(rolls);
-      } catch (error) {
-         console.error('Ошибка загрузки рулонов:', error);
-
-         renderRollsError();
-      }
-   });
-
-   /*
-    * Выбор рулона -> текущий вес и конечный вес.
-    */
-   rollSelectEl.addEventListener('select:change', (e) => {
-      setRollWeight(e.detail.option);
-   });
-
-   /*
-    * Корректировка -> пересчёт конечного веса.
-    */
-   adjustmentInput?.addEventListener('input', updateWeightAfter);
-
-   /*
-    * Сброс формы.
-    */
-   const resetButton = form.querySelector('.issue-order__button--reset');
-
-   resetButton?.addEventListener('click', () => {
-      form.reset();
-
-      materialSelect.selectOption(null);
-
-      resetRollState();
-
-      if (materialNameInput) {
-         materialNameInput.value = '';
-      }
-
-      updateWeightAfter();
-   });
-
-   /*
-    * Восстановление после возврата с ошибкой валидации.
-    */
-   void restoreFormState();
-
-   function resetRollState() {
       if (rollList) {
          rollList.innerHTML = '';
       }
 
-      rollSelect.selectOption(null);
+      const rollHidden = row.querySelector('[data-adjustment-roll]');
 
-      if (weightBeforeInput) {
-         weightBeforeInput.value = '';
+      if (rollHidden) {
+         rollHidden.value = '';
       }
 
-      if (rollEmptyMsg) {
-         rollEmptyMsg.hidden = true;
-         rollEmptyMsg.textContent = 'Нет доступных рулонов';
+      if (emptyMsg) {
+         emptyMsg.hidden = true;
       }
 
-      if (rollSelect.valueSpan) {
-         rollSelect.valueSpan.textContent = 'Сначала выберите материал';
+      const valueSpan = rollSelectEl?.querySelector('.select__button-text');
+
+      if (valueSpan) {
+         valueSpan.textContent = 'Сначала выберите материал';
       }
 
-      updateWeightAfter();
-   }
+      const weightBefore = row.querySelector('[data-adjustment-weight-before]');
 
-   function renderRolls(rolls) {
-      if (!rollList) {
-         return;
+      if (weightBefore) {
+         weightBefore.value = '';
       }
+
+      updateRowAfter(row);
+   };
+
+   const renderRolls = (row, rolls) => {
+      const rollList = row.querySelector('[data-adjustment-rolls-list]');
+      const rollSelectEl = row.querySelector('[data-adjustment-roll-select]');
+      const emptyMsg = rollSelectEl?.querySelector('.select__empty');
+
+      if (!rollList) return;
 
       if (!Array.isArray(rolls) || rolls.length === 0) {
          rollList.innerHTML = '';
 
-         if (rollEmptyMsg) {
-            rollEmptyMsg.textContent = 'Нет доступных рулонов';
-            rollEmptyMsg.hidden = false;
-         }
-
-         if (rollSelect.valueSpan) {
-            rollSelect.valueSpan.textContent = 'Нет доступных рулонов';
+         if (emptyMsg) {
+            emptyMsg.textContent = 'Нет доступных рулонов';
+            emptyMsg.hidden = false;
          }
 
          return;
       }
 
-      if (rollEmptyMsg) {
-         rollEmptyMsg.hidden = true;
+      if (emptyMsg) {
+         emptyMsg.hidden = true;
       }
 
       rollList.innerHTML = rolls
@@ -158,9 +164,8 @@ export function initMaterialAdjustmentModule() {
                      <span>
                      ${escapeHtml(roll.roll_number ?? '')}
                   |
-                     ${roll.format ? `ф. ${escapeHtml(roll.format)} | ` : ''}
                      ${escapeHtml(roll.weight ?? '')}
-                     кг
+                  кг
                      </span>
 
                   </button>
@@ -168,115 +173,224 @@ export function initMaterialAdjustmentModule() {
          )
          .join('');
 
-      rollSelect.refresh();
+      const select = new CustomSelect(rollSelectEl, {
+         placeholder: 'Выберите рулон',
+      });
 
-      if (rollSelect.valueSpan) {
-         rollSelect.valueSpan.textContent = 'Выберите рулон';
-      }
-   }
+      rollSelectEl.addEventListener('select:change', (e) => {
+         const weightBefore = row.querySelector('[data-adjustment-weight-before]');
 
-   function renderRollsError() {
-      if (rollList) {
-         rollList.innerHTML = '';
-      }
+         if (weightBefore) {
+            weightBefore.value = e.detail.option?.dataset.weight || '';
+         }
 
-      if (rollEmptyMsg) {
-         rollEmptyMsg.textContent = 'Не удалось загрузить рулоны';
+         updateRowAfter(row);
+      });
+   };
 
-         rollEmptyMsg.hidden = false;
-      }
-
-      if (rollSelect.valueSpan) {
-         rollSelect.valueSpan.textContent = 'Не удалось загрузить рулоны';
-      }
-   }
-
-   function setRollWeight(option) {
-      if (weightBeforeInput) {
-         weightBeforeInput.value = option?.dataset.weight || '';
-      }
-
-      updateWeightAfter();
-   }
-
-   /**
-    * Конечный вес = текущий вес + корректировка.
-    */
-   function updateWeightAfter() {
-      if (!weightAfterInput) {
-         return;
-      }
-
-      const before = parseFloat(weightBeforeInput?.value || '');
-      const adjustment = parseFloat(adjustmentInput?.value || '');
-
-      weightAfterInput.value =
-         Number.isFinite(before) && Number.isFinite(adjustment)
-            ? String(Math.round((before + adjustment) * 1000) / 1000)
-            : '';
-   }
-
-   async function restoreFormState() {
-      const materialId = materialSelect.hiddenInput?.value || '';
-      const rollId = rollSelect.hiddenInput?.value || '';
+   const loadRolls = async (row, materialId) => {
+      resetRollCell(row);
 
       if (!materialId) {
          return;
       }
 
-      const materialOption = materialSelect.optionsList.find(
-         (option) => option.dataset.value === materialId
-      );
-
-      if (!materialOption) {
-         return;
-      }
-
-      materialSelect.selectOption(materialOption, false);
-
-      if (materialNameInput) {
-         materialNameInput.value = materialOption.dataset.name || '';
-      }
-
-      if (rollSelect.valueSpan) {
-         rollSelect.valueSpan.textContent = 'Загрузка рулонов...';
-      }
-
       try {
          const rolls = await RollsApiService.fetchByMaterial(materialId);
 
-         renderRolls(rolls);
-
-         if (!rollId) {
-            return;
-         }
-
-         const rollOption = rollSelect.optionsList.find(
-            (option) => option.dataset.value === rollId
-         );
-
-         if (!rollOption) {
-            return;
-         }
-
-         rollSelect.selectOption(rollOption, false);
-
-         setRollWeight(rollOption);
+         renderRolls(row, rolls);
       } catch (error) {
-         console.error('Ошибка восстановления рулонов:', error);
+         console.error('Ошибка загрузки рулонов:', error);
 
-         renderRollsError();
+         const emptyMsg = row.querySelector('.select__empty');
+
+         if (emptyMsg) {
+            emptyMsg.textContent = 'Не удалось загрузить рулоны';
+            emptyMsg.hidden = false;
+         }
+      }
+   };
+
+   // =========================================================
+   // Создание строки из шаблона
+   // =========================================================
+
+   const createRow = () => {
+      const templateContent = rowTemplate.content.cloneNode(true);
+      const row = templateContent.querySelector('tr');
+
+      rowsList.appendChild(row);
+
+      // Кастомные селекты клона инициализируются после вставки
+      initSelects(row);
+
+      const materialSelectEl = row.querySelector('.material-select');
+
+      materialSelectEl?.addEventListener('select:change', (e) => {
+         void loadRolls(row, e.detail.value);
+      });
+
+      row
+         .querySelector('[data-adjustment-input]')
+         ?.addEventListener('input', () => updateRowAfter(row));
+
+      row
+         .querySelector('[data-adjustment-row-remove]')
+         ?.addEventListener('click', () => {
+            if (getRows().length === 1) {
+               return;
+            }
+
+            row.remove();
+
+            reindexRows();
+            syncRemoveButtons();
+         });
+
+      return row;
+   };
+
+   // =========================================================
+   // Восстановление после возврата с ошибкой валидации:
+   // строки из old('rows'), рулоны подгружаются заново
+   // =========================================================
+
+   const restoreRows = async () => {
+      let oldRows = [];
+
+      try {
+         oldRows = JSON.parse(rowsList.dataset.oldRows || '[]') || [];
+      } catch {
+         oldRows = [];
       }
 
-      updateWeightAfter();
-   }
+      if (!Array.isArray(oldRows) || oldRows.length === 0) {
+         return;
+      }
 
-   function escapeHtml(value) {
-      return String(value)
-         .replace(/&/g, '&amp;')
-         .replace(/</g, '&lt;')
-         .replace(/>/g, '&gt;')
-         .replace(/"/g, '&quot;')
-         .replace(/'/g, '&#039;');
-   }
+      for (let index = 0; index < oldRows.length; index += 1) {
+         const oldRow = oldRows[index] || {};
+
+         const row = index === 0 ? getRows()[0] ?? createRow() : createRow();
+
+         if (oldRow.adjustment !== undefined && oldRow.adjustment !== null) {
+            const adjustmentInput = row.querySelector('[data-adjustment-input]');
+
+            if (adjustmentInput) {
+               adjustmentInput.value = oldRow.adjustment;
+            }
+         }
+
+         const materialId = String(oldRow.material_id ?? '');
+
+         if (!materialId) {
+            continue;
+         }
+
+         const materialOption = Array.from(
+            row.querySelectorAll('.select__item[data-value]')
+         ).find((option) => option.dataset.value === materialId);
+
+         const materialSelectEl = row.querySelector('.material-select');
+         const materialSelect = materialSelectEl
+            ? new CustomSelect(materialSelectEl)
+            : null;
+
+         if (materialOption && materialSelect) {
+            materialSelect.selectOption(materialOption, false);
+         }
+
+         const rollId = String(oldRow.roll_id ?? '');
+
+         if (!rollId) {
+            continue;
+         }
+
+         try {
+            const rolls = await RollsApiService.fetchByMaterial(materialId);
+
+            renderRolls(row, rolls);
+
+            const rollOption = Array.from(
+               row.querySelectorAll('.select__item[data-value]')
+            ).find((option) => option.dataset.value === rollId);
+
+            if (rollOption) {
+               row.querySelector('[data-adjustment-roll]').value = rollId;
+
+               const weightBefore = row.querySelector(
+                  '[data-adjustment-weight-before]'
+               );
+
+               if (weightBefore) {
+                  weightBefore.value = rollOption.dataset.weight || '';
+               }
+            }
+         } catch (error) {
+            console.error('Ошибка восстановления рулонов:', error);
+         }
+
+         updateRowAfter(row);
+      }
+   };
+
+   // =========================================================
+   // Добавление строки, сабмит, сброс
+   // =========================================================
+
+   addButton.addEventListener('click', () => {
+      const row = createRow();
+
+      reindexRows();
+      syncRemoveButtons();
+
+      row.querySelector('.select__button')?.focus();
+   });
+
+   form.addEventListener('submit', () => {
+      // Незаполненные строки не отправляются: материал и рулон
+      // без значения отключаются вместе с корректировкой.
+      getRows().forEach((row) => {
+         const material = row.querySelector('[data-adjustment-material]');
+         const roll = row.querySelector('[data-adjustment-roll]');
+         const adjustment = row.querySelector('[data-adjustment-input]');
+
+         const filled =
+            (material?.value || '') !== '' &&
+            (roll?.value || '') !== '' &&
+            (adjustment?.value || '') !== '';
+
+         if (!filled) {
+            [material, roll, adjustment].forEach((input) => {
+               if (input) {
+                  input.disabled = true;
+               }
+            });
+         }
+      });
+   });
+
+   const resetButton = form.querySelector('.issue-order__button--reset');
+
+   resetButton?.addEventListener('click', () => {
+      form.reset();
+
+      rowsList.innerHTML = '';
+
+      createRow();
+
+      reindexRows();
+      syncRemoveButtons();
+
+      if (commentInput) {
+         commentInput.value = '';
+      }
+   });
+
+   // Начальная строка + восстановление после ошибки
+   createRow();
+   reindexRows();
+   syncRemoveButtons();
+
+   void restoreRows();
 }

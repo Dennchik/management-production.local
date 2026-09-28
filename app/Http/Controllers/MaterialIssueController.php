@@ -63,13 +63,12 @@
 			]);
 		}
 
-		/**
-		 * Отображает форму расходного ордера.
-		 */
+	/**
+	 * Отображает форму расходного ордера.
+	 */
 	public function create(): View
 	{
 		$materials = Material::query()
-			->with('rolls:id,material_id,format')
 			->orderBy('name')
 			->get();
 

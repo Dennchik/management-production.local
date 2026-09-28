@@ -26,6 +26,7 @@
 		$tasks = ProductionTask::query()
 			->with(['material', 'productionLine.operation', 'operator'])
 			->withSum('outputs as produced_weight', 'actual_weight')
+			->withSum('inputs as consumed_weight', 'actual_weight')
 			->orderBy('id')
 			->get();
 
@@ -42,7 +43,7 @@
 
 		public function store(Request $request)
 		{
-			$validated = $request->validate($this->taskRules($request));
+			$validated = $this->limitCuttingInput($request->validate($this->taskRules($request)));
 
 			$outputMaterialId = $this->outputMaterialId($validated);
 
@@ -74,8 +75,8 @@
 			return view('tasks.edit', $this->formOptions($task) + [
 					'task' => $task->load([
 						'material',
-						'inputMaterials.rolls:id,material_id,format,identifier',
-						'outputMaterials.rolls:id,material_id,format,identifier',
+						'inputMaterials',
+						'outputMaterials',
 					]),
 			]);
 		}
@@ -88,7 +89,7 @@
 
 			// У начатой задачи уже выбраны рулоны-сырьё, поэтому состав материалов фиксируется
 			if ($task->status === 'pending') {
-				$validated = $request->validate($this->taskRules($request, $task));
+				$validated = $this->limitCuttingInput($request->validate($this->taskRules($request, $task)));
 
 				$outputMaterialId = $this->outputMaterialId($validated);
 
@@ -124,7 +125,7 @@
 			'material',
 			'operator',
 			'productionLine.operation',
-			'inputMaterials.rolls:id,material_id,format,identifier',
+			'inputMaterials',
 			'inputs.material',
 			'inputs.roll',
 			'outputs',
@@ -461,28 +462,14 @@
 		$produced = round((float) $outputs->sum('actual_weight'), 3);
 
 		// Недобор — завершение вне плана: разрешено всем,
-		// статус такой задачи правится правом tasks,status
-		$isShort = $totalProduced < (float) $task->quantity;
+		// статус такой задачи правится правом tasks,status.
+		// У резки план — входной вес, выход плану не сверяется.
+		$isShort = ! $task->isCutting() && $totalProduced < (float) $task->quantity;
 
 		$comment = 'Задача №' . $task->number
 				. ' (' . ($task->material->name ?? '') . ')';
 
-		// Выходная продукция оприходуется с форматом и идентификатором задачи.
-		$outputFormat = $task->outputMaterials()->first()?->pivot->format;
-
-		$outputIdentifier = MaterialRoll::composeIdentifier(
-				$task->material?->code,
-				$task->material?->grammage,
-				$task->material?->thickness,
-				$outputFormat
-		);
-
-			DB::transaction(function () use ($outputs, $task, $comment, $outputFormat, $outputIdentifier) {
-				// Формат продукции закрепляется за материалом
-				if ($outputFormat !== null) {
-					$task->material?->attachFormat($outputFormat);
-				}
-
+			DB::transaction(function () use ($outputs, $task, $comment) {
 				// Списание входного сырья по сохранённому расходу рулонов;
 			// уже списанные при прежнем завершении не трогаются
 			foreach ($task->inputs as $input) {
@@ -527,8 +514,6 @@
 								? $output->roll_number
 								: $task->number . '/' . $output->id,
 						'weight' => $output->actual_weight,
-						'format' => $outputFormat,
-						'identifier' => $outputIdentifier,
 				]);
 
 				MaterialReceiptItem::create([
@@ -644,35 +629,32 @@
 					->get();
 
 			$lines = ProductionLine::query()
-					->with([
-						'inputMaterials.rolls:id,material_id,format,identifier',
-						'outputMaterials.rolls:id,material_id,format,identifier',
-					])
+					->with(['operation', 'inputMaterials', 'outputMaterials'])
 					->orderBy('id')
 					->get();
 
-			// Данные шаблонов для формы: строка на материал+формат.
-			$formatEntry = static fn (Material $material) => [
+			// Данные шаблонов для формы: строка на материал.
+			$materialEntry = static fn (Material $material) => [
 					'id' => (string) $material->id,
 					'name' => $material->name,
 					'label' => trim($material->name
 							. ($material->grammage !== null ? ' | ' . rtrim(rtrim(number_format((float) $material->grammage, 2, '.', ''), '0'), '.') . ' гр' : '')
-							. ($material->thickness !== null ? ' | ' . $material->thickness . ' мкм' : '')
-							. ($material->pivot->format !== null ? ' | ' . $material->pivot->format : '')),
-					'identifier' => $material->identifierForFormat($material->pivot->format) ?? '',
-					'format' => $material->pivot->format !== null ? (string) $material->pivot->format : '',
+							. ($material->thickness !== null ? ' | ' . $material->thickness . ' мкм' : '')),
+					'identifier' => $material->identifier ?? '',
 			];
 
 			// Данные шаблонов для формы: JS заполняет таблицы материалов при выборе шаблона.
 			$templates = $lines->mapWithKeys(static fn (ProductionLine $line) => [
 					(string) $line->id => [
 							'operationId' => (string) $line->production_operation_id,
-							'inputs' => $line->inputMaterials->map($formatEntry)->values()->all(),
-							'outputs' => $line->outputMaterials->map($formatEntry)->values()->all(),
+							// У резки план задачи — вес на входе
+							'isCutting' => (bool) $line->operation?->is_cutting,
+							'inputs' => $line->inputMaterials->map($materialEntry)->values()->all(),
+							'outputs' => $line->outputMaterials->map($materialEntry)->values()->all(),
 					],
 			])->all();
 
-			// Разрешённые материалы по операциям — для фильтрации входов в форме.
+			// Назначенные материалы по операциям — для фильтрации входов в форме.
 			$allowedMaterials = DB::table('material_production_operation')
 					->get()
 					->groupBy('production_operation_id')
@@ -687,13 +669,10 @@
 						->max('number') + 1,
 					'allMaterials' => Material::query()
 						->where('is_active', true)
-						->with('rolls:id,material_id,format,identifier')
 						->orderBy('name')
 						->get(),
 					'products' => Material::query()
-						->where('material_type', 'product')
 						->where('is_active', true)
-						->with('rolls:id,material_id,format,identifier')
 						->orderBy('name')
 						->get(),
 					'operators' => User::query()
@@ -716,28 +695,23 @@
 					->max('number') + 1;
 			}
 
-			// Материал выбирается вместе с форматом:
-			// materials[] и materials_formats[] идут парами по индексу строки.
+			// Материалы задачи: materials[] по индексу строки.
 			foreach (['materials', 'output_materials'] as $key) {
 				$ids = array_values($data[$key] ?? []);
-				$formats = array_values($data[$key . '_formats'] ?? []);
 				$pairs = [];
 
-				foreach ($ids as $index => $materialId) {
+				foreach ($ids as $materialId) {
 					if ($materialId === null || $materialId === '') {
 						continue;
 					}
 
-					$format = $formats[$index] ?? null;
-
 					$pairs[] = [
 							'material_id' => (int) $materialId,
-							'format' => $format !== null && $format !== '' ? (int) $format : null,
 					];
 				}
 
 				$data[$key . '_pairs'] = $pairs;
-				unset($data[$key], $data[$key . '_formats']);
+				unset($data[$key]);
 			}
 
 			$request->replace($data);
@@ -759,16 +733,33 @@
 							},
 					],
 					'production_line_id' => ['nullable', 'integer', 'exists:production_lines,id'],
+					'operation_id' => ['nullable', 'integer', 'exists:production_operations,id'],
 					'materials_pairs' => ['nullable', 'array'],
 					'materials_pairs.*.material_id' => ['integer', 'exists:materials,id'],
-					'materials_pairs.*.format' => ['nullable', 'integer', 'min:0', 'max:65535'],
 					'output_materials_pairs' => ['nullable', 'array'],
 					'output_materials_pairs.*.material_id' => ['integer', 'exists:materials,id'],
-					'output_materials_pairs.*.format' => ['nullable', 'integer', 'min:0', 'max:65535'],
 					'quantity' => ['required', 'numeric', 'min:0.001'],
 					'operator_id' => ['nullable', 'integer', 'exists:users,id'],
 					'comment' => ['nullable', 'string'],
 			];
+		}
+
+		/**
+		 * На входе задачи линии в режиме резки — ровно один материал.
+		 * Линия берётся из шаблона, а без шаблона — из выбранной
+		 * в форме технологической линии (operation_id).
+		 */
+		private function limitCuttingInput(array $validated): array
+		{
+			$operation = isset($validated['production_line_id'])
+				? ProductionLine::find($validated['production_line_id'])?->operation
+				: ProductionOperation::find($validated['operation_id'] ?? null);
+
+			if ($operation?->is_cutting) {
+				$validated['materials_pairs'] = array_slice($validated['materials_pairs'] ?? [], 0, 1);
+			}
+
+			return $validated;
 		}
 
 		/**
@@ -789,25 +780,16 @@
 
 		/**
 		 * Заменяет материалы задачи одного направления (вход/выход).
-		 * Материал всегда входит с конкретным форматом.
 		 */
 		private function syncTaskMaterials(ProductionTask $task, string $direction, array $pairs): void
 		{
 			$rows = collect($pairs)
-				->unique(static fn (array $pair) => $pair['material_id'] . '|' . ($pair['format'] ?? ''))
-				->map(static function (array $pair) {
-					// Формат закрепляется за материалом при использовании в задаче
-					if (($pair['format'] ?? null) !== null) {
-						Material::query()->find($pair['material_id'])?->attachFormat($pair['format']);
-					}
-
-					return [
-							'task_id' => $task->id,
-							'material_id' => $pair['material_id'],
-							'direction' => $direction,
-							'format' => $pair['format'] ?? null,
-					];
-				})
+				->unique(static fn (array $pair) => $pair['material_id'])
+				->map(static fn (array $pair) => [
+						'task_id' => $task->id,
+						'material_id' => $pair['material_id'],
+						'direction' => $direction,
+				])
 				->values()
 				->all();
 
@@ -824,12 +806,12 @@
 		}
 
 		/**
-		 * Рулон берётся того же формата, что и материал задачи.
+		 * Рулон берётся среди рулонов материала задачи.
 		 * Рулон делится по весу: доступно «вес минус резерв других
 		 * задач в работе». Полностью занятые идут вниз списка
 		 * отключёнными с номером задачи.
 		 *
-		 * @param \Illuminate\Support\Collection $materials Материалы задачи (с pivot->format).
+		 * @param \Illuminate\Support\Collection $materials Материалы задачи.
 		 * @param \Illuminate\Support\Collection|null $excludeRollIds Рулон, уже взятые этой задачей.
 		 * @param int|null $currentTaskId Задача, чей резерв не считается занятым.
 		 */
@@ -850,15 +832,12 @@
 			$result = [];
 
 			foreach ($materials as $material) {
-				$format = $material->pivot->format ?? null;
-
 				$rolls = MaterialRoll::query()
 					->where('material_id', $material->id)
-					->when($format !== null, static fn ($query) => $query->where('format', $format))
 					->when($excludeRollIds !== null && $excludeRollIds->isNotEmpty(), static fn ($query) => $query->whereNotIn('id', $excludeRollIds))
 					->where('weight', '>', 0)
 					->orderBy('roll_number')
-					->get(['id', 'roll_number', 'weight', 'format']);
+					->get(['id', 'roll_number', 'weight']);
 
 				$result[$material->id] = $rolls
 					->map(static function (MaterialRoll $roll) use ($reservedByRoll) {

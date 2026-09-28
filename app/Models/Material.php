@@ -7,97 +7,60 @@
 	use Illuminate\Database\Eloquent\Relations\BelongsTo;
 	use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 	use Illuminate\Database\Eloquent\Relations\HasMany;
+	use Illuminate\Database\Eloquent\SoftDeletes;
 
 	#[Fillable([
 			'name',
 			'code',
 			'grammage',
 			'thickness',
+			'format',
+			'identifier',
 			'catalog_id',
-			'material_type',
 			'is_active',
 	])]
 	class Material extends Model
 	{
-		public const TYPES = [
-				'raw' => 'Расходник',
-				'product' => 'Продукция',
-		];
-
+		use SoftDeletes;
 		protected function casts(): array
 		{
 			return [
 					'grammage' => 'decimal:2',
 					'thickness' => 'decimal:2',
+					'format' => 'integer',
 					'is_active' => 'boolean',
-				'material_type' => 'string',
 			];
 		}
 
 		/**
-		 * Форматы этого материала по его рулонам, через запятую.
+		 * Вычисляет идентификатор материала: код + граммаж (для бумаги)
+		 * или толщина (для плёнки и фольги) + цифры формата.
+		 * Возвращает null, если данных для вычисления недостаточно.
 		 */
-		public function getRollFormatsAttribute(): string
+		public static function composeIdentifier(?string $code, $grammage, $thickness, $format): ?string
 		{
-			return $this->formatValues()
-				->map(static fn ($format) => (string) $format)
-				->implode(', ');
-		}
+			$value = $grammage ?? $thickness;
 
-		/**
-		 * Форматы, закреплённые за материалом: из таблицы форматов
-		 * плюс форматы живых рулонов (на случай рассинхрона).
-		 */
-		public function formatValues()
-		{
-			return $this->formats
-				->pluck('format')
-				->merge($this->rolls->pluck('format'))
-				->filter()
-				->unique()
-				->sort()
-				->values();
-		}
+			$formatPart = preg_replace('/\D/', '', (string) $format);
 
-		/**
-		 * Форматы материала, не зависящие от наличия рулонов.
-		 */
-		public function formats(): HasMany
-		{
-			return $this->hasMany(MaterialFormat::class);
-		}
+			if ($code === null || $code === '' || $value === null || $formatPart === '') {
+				return null;
+			}
 
-		/**
-		 * Привязывает формат к материалу, если он ещё не привязан.
-		 */
-		public function attachFormat($format): MaterialFormat
-		{
-			return $this->formats()->firstOrCreate([
-				'format' => (int) $format,
-			]);
-		}
+			// Значение идёт в идентификатор цифрами: 6,35 -> «635»,
+			// 0,76 -> «76», минимум два знака: толщина 7 мкм -> «07».
+			$valuePart = str_pad(
+				(string) ltrim((string) preg_replace('/\D/', '', (string) (float) $value), '0'),
+				2,
+				'0',
+				STR_PAD_LEFT
+			);
 
-		/**
-		 * Идентификаторы этого материала по его рулонам, через запятую.
-		 */
-		public function getRollIdentifiersAttribute(): string
-		{
-			return $this->rolls
-				->pluck('identifier')
-				->filter()
-				->unique()
-				->sort(SORT_STRING)
-				->implode(', ');
-		}
+			if ($valuePart === '') {
+				return null;
+			}
 
-		/**
-		 * Идентификатор рулонов заданного формата этого материала.
-		 */
-		public function identifierForFormat($format): ?string
-		{
-			return $this->rolls
-				->first(static fn ($roll) => (string) $roll->format === (string) $format)
-				?->identifier;
+			return $code . $valuePart . $formatPart;
 		}
 
 		/**

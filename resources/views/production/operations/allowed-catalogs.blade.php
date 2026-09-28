@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Разрешённые материалы — ' . $operation->name)
+@section('title', 'Назначенные материалы — ' . $operation->name)
 
 @section('content')
 	<div class="main-content__content materials"
 			data-allowed-catalogs-page
 			data-allowed-catalogs-update="{{ route('production.operations.allowed-catalogs.update', $operation) }}">
 		<div class="main-content__header">
-			<h1 class="main-content__title">Разрешённые материалы — {{ $operation->name }}</h1>
+			<h1 class="main-content__title">Назначенные материалы — {{ $operation->name }}</h1>
 
 			<a class="button button--secondary" href="{{ route('production.lines.show', $operation) }}">
 				<span>Назад к линиям</span>
@@ -19,7 +19,7 @@
 			<span> / </span>
 			<a href="{{ route('production.lines.show', $operation) }}">{{ $operation->name }}</a>
 			<span> / </span>
-			<a href="{{ route('production.operations.allowed-catalogs', $operation) }}">Разрешённые материалы</a>
+			<a href="{{ route('production.operations.allowed-catalogs', $operation) }}">Назначенные материалы</a>
 			@foreach ($breadcrumbs as $breadcrumb)
 				<span> / </span>
 				@if ($loop->last)

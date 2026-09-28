@@ -39,7 +39,8 @@
 				<tbody>
 				{{-- @var \App\Models\MaterialReceipt $receipt --}}
 				@forelse ($receipts as $receipt)
-					<tr class="material__material-row" data-receipt-modal-open data-receipt-id="{{ $receipt->getKey()}}">
+					<tr class="material__material-row" data-row-link="{{ route('material-receipts.show', $receipt) }}"
+							tabindex="0" role="link">
 						{{-- Дата --}}
 						<td> {{ $receipt->created_at->format('d.m.Y H:i') }} </td>
 						{{-- Материалы --}}

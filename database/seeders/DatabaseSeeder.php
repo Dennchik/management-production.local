@@ -14,11 +14,13 @@
 		 */
 		public function run(): void
 		{
-			// Пользователи, роли и станки + справочник материалов.
+			// Пользователи, роли и станки + справочники материалов
+			// и технологических линий.
 			//
 			$this->call([
 					UserSeeder::class,
 					MaterialSeeder::class,
+					ProductionOperationSeeder::class,
 			]);
 		}
 	}

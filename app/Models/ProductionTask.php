@@ -98,7 +98,7 @@
 				'task_id',
 				'material_id'
 			)
-				->withPivot('direction', 'format')
+				->withPivot('direction')
 				->orderBy('id');
 		}
 
@@ -137,11 +137,25 @@
 	}
 
 	/**
+	 * Задача на резку: план указывается на входе (сколько резать),
+	 * выход оператор вносит сам — сравнения с планом нет.
+	 */
+	public function isCutting(): bool
+	{
+		return (bool) $this->productionLine?->operation?->is_cutting;
+	}
+
+	/**
 	 * Задача завершена с недобором планового веса.
 	 * В списках используется алиас produced_weight (withSum), чтобы не грузить выходы.
+	 * Для резки план — входной вес, выход плану не сверяется.
 	 */
 	public function isShort(): bool
 	{
+		if ($this->isCutting()) {
+			return false;
+		}
+
 		return $this->status === 'done'
 				&& (float) ($this->produced_weight ?? $this->producedWeight()) < (float) $this->quantity;
 	}

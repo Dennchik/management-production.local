@@ -20,6 +20,7 @@ import { initProductionLinesModule } from './modules/pages/production-lines.js';
 import { initProductionOperations } from './modules/pages/production-operations.js';
 import { initTaskPageModule } from './modules/pages/task.js';
 import { initUsersModule } from './modules/pages/users.js';
+import { initTrashModule } from './modules/pages/trash.js';
 
 document.addEventListener('DOMContentLoaded', () => {
    initFiltersModule();
@@ -37,4 +38,5 @@ document.addEventListener('DOMContentLoaded', () => {
    initTasksFormModule();
    initTaskPageModule();
    initUsersModule();
+   initTrashModule();
 });

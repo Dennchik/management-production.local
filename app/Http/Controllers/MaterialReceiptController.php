@@ -76,7 +76,6 @@
 	public function create(): View
 	{
 		$materials = Material::query()
-			->with('rolls:id,material_id,format')
 			->orderBy('name')
 			->get();
 
@@ -98,15 +97,6 @@
 									'required',
 									'integer',
 									'exists:materials,id',
-							],
-
-							'format' => [
-									// В режиме общего веса формат обязателен: он делит
-									// рулоны «Общий вес» между форматами материала
-									$mode === 'total_weight' ? 'required' : 'nullable',
-									'integer',
-									'min:0',
-									'max:65535',
 							],
 
 							'rolls' => [
@@ -154,15 +144,10 @@
 									'string',
 							],
 					],
-					[
+						[
 							'material_id.required' => 'Укажите материал.',
 							'material_id.integer' => 'Некорректный материал.',
 							'material_id.exists' => 'Выбранный материал не существует.',
-
-							'format.required' => 'Укажите формат.',
-							'format.integer' => 'Формат должен быть целым числом.',
-							'format.min' => 'Формат должен быть не меньше 0.',
-							'format.max' => 'Формат не должен превышать 65535.',
 
 							'rolls.required' => 'Добавьте хотя бы один рулон.',
 							'rolls.array' => 'Некорректный список рулонов.',
@@ -182,34 +167,15 @@
 
 			$material = Material::findOrFail($validated['material_id']);
 
-			/*
-			 * Формат выбирается отдельным селектом и сохраняется
-			 * на каждом рулоне вместе с вычисленным идентификатором.
-			 */
-			$format = $validated['format'] ?? null;
-
-			$identifier = MaterialRoll::composeIdentifier(
-					$material->code,
-					$material->grammage,
-					$material->thickness,
-					$format
-			);
-
 			try {
-				DB::transaction(function () use ($validated, $material, $format, $identifier, $mode) {
-					// Формат закрепляется за материалом: остаётся доступным,
-					// когда рулоны этого формата закончатся
-					if ($format !== null) {
-						$material->attachFormat($format);
-					}
-
+				DB::transaction(function () use ($validated, $material, $mode) {
 					$receipt = MaterialReceipt::create([
 							'comment' => $validated['comment'] ?? null,
 							'user_id' => auth()->id(), // Временно, пока нет авторизации
 					]);
 
 					// Режим общего веса: весь вес уходит в один рулон
-					// «Общий вес» этого материала и формата, вес суммируется.
+					// «Общий вес» этого материала, вес суммируется.
 					if ($mode === 'total_weight') {
 						$totalWeight = round(
 								collect($validated['rolls'])->sum(static fn (array $roll) => (float) $roll['weight']),
@@ -219,7 +185,6 @@
 						$roll = MaterialRoll::query()
 							->where('material_id', $material->id)
 							->where('roll_number', self::TOTAL_WEIGHT_ROLL_NUMBER)
-							->where('format', $format)
 							->lockForUpdate()
 							->first();
 
@@ -228,8 +193,6 @@
 									'material_id' => $material->id,
 									'roll_number' => self::TOTAL_WEIGHT_ROLL_NUMBER,
 									'weight' => $totalWeight,
-									'format' => $format,
-									'identifier' => $identifier,
 							]);
 						} else {
 							$roll->update([
@@ -252,8 +215,6 @@
 								'material_id' => $material->id,
 								'roll_number' => $rollData['roll_number'],
 								'weight' => $rollData['weight'],
-								'format' => $format,
-								'identifier' => $identifier,
 						]);
 
 						MaterialReceiptItem::create([

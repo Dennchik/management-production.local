@@ -45,8 +45,20 @@
 								<tr style="cursor: pointer;" onclick="window.location='{{ route('tasks.show', $task) }}'">
 									<td>{{ $task->number }}</td>
 									<td>{{ $task->material?->name }}</td>
-									<td>{{ $made }} из {{ $plan }} <span class="{{ $task->isShort() ? 'text-red-soft' : '' }}"
-											style="{{ $task->isShort() ? '' : 'color: var(--text-muted);' }}">осталось {{ $left }}</span></td>
+									<td>
+										@if ($task->isCutting())
+											@php
+												// Прогресс резки — по входу: сколько списано из плана резки
+												$reserved = (float) ($task->consumed_weight ?? 0);
+												$reservedLeft = rtrim(rtrim(number_format(max(0, (float) $task->quantity - $reserved), 3, '.', ''), '0'), '.');
+												$reservedMade = rtrim(rtrim(number_format($reserved, 3, '.', ''), '0'), '.');
+											@endphp
+											{{ $reservedMade }} из {{ $plan }} <span style="color: var(--text-muted);">осталось резать {{ $reservedLeft }}</span>
+										@else
+											{{ $made }} из {{ $plan }} <span class="{{ $task->isShort() ? 'text-red-soft' : '' }}"
+													style="{{ $task->isShort() ? '' : 'color: var(--text-muted);' }}">осталось {{ $left }}</span>
+										@endif
+									</td>
 									<td>{{ $task->operator?->name ?? '—' }}</td>
 									<td><span class="status-chip status-chip--{{ $task->statusClass() }}">{{ $task->statusLabel() }}</span></td>
 								</tr>

@@ -225,6 +225,11 @@ export function initProductionOperationForm(form) {
          const result = await response.json();
 
          if (!response.ok || !result.success) {
+            showOperationFormError(
+               operationForm,
+               result.message || firstValidationError(result.errors)
+            );
+
             if (submitButton) {
                submitButton.disabled = false;
             }
@@ -321,4 +326,48 @@ export function initProductionOperationForm(form) {
    if (operationForm) {
       operationForm.addEventListener('submit', submitOperation);
    }
+}
+
+/**
+ * Первая ошибка валидации из ответа Laravel.
+ *
+ * @param {Object|null} errors Ошибки валидации {field: [messages]}.
+ * @returns {string} Текст ошибки.
+ */
+function firstValidationError(errors) {
+   if (!errors) {
+      return '';
+   }
+
+   const first = Object.values(errors)[0];
+
+   return Array.isArray(first) ? first[0] : String(first ?? '');
+}
+
+/**
+ * Показывает ошибку сохранения внутри формы операции —
+ * вверху формы, чтобы была видна в модалке без прокрутки.
+ *
+ * @param {HTMLElement} form Форма операции.
+ * @param {string} message Текст ошибки.
+ */
+function showOperationFormError(form, message) {
+   if (!form || !message) {
+      return;
+   }
+
+   let error = form.querySelector('[data-operation-form-error]');
+
+   if (!error) {
+      error = document.createElement('div');
+      error.setAttribute('data-operation-form-error', '');
+      error.style.cssText =
+         'color: #c0392b; padding: 10px 14px; margin-bottom: 12px;' +
+         'border: 1px solid #c0392b; border-radius: 8px;';
+
+      form.prepend(error);
+   }
+
+   error.textContent = message;
+   error.scrollIntoView({ block: 'nearest' });
 }

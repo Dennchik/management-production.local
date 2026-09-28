@@ -12,57 +12,75 @@
 		 * Заполняет справочник каталогами и материалами.
 		 *
 		 * Рулоны не создаются: склад наполняется приходными ордерами.
-		 * Форматы из остатков закрепляются за материалом в
-		 * material_formats, чтобы список форматов работал
-		 * и без рулонов.
+		 * Формат материала берётся из ключа остатков — формат
+		 * является атрибутом материала.
 		 */
 		public function run(): void
 		{
 			foreach ($this->catalogTree() as $node) {
-				$this->seedCatalogNode($node, null, 'raw');
+				$this->seedCatalogNode($node, null);
 			}
 		}
 
 		/**
 		 * Создаёт каталог (при необходимости вложенный) и его материалы.
-		 *
-		 * @param string $defaultType Тип материала, наследуемый от родительского узла.
 		 */
-		private function seedCatalogNode(array $node, ?int $parentId, string $defaultType): void
+		private function seedCatalogNode(array $node, ?int $parentId): void
 		{
 			$catalog = Catalog::updateOrCreate(
 				['name' => $node['name'], 'parent_id' => $parentId],
 				['sort_order' => $node['sort_order'] ?? 500, 'is_active' => true]
 			);
 
-			$materialType = $node['material_type'] ?? $defaultType;
+					foreach ($node['materials'] ?? [] as $material) {
+						// Ключ остатков — формат материала (атрибут материала);
+						// ключ null (без формата) PHP превращает в пустую строку.
+						$format = null;
 
-			foreach ($node['materials'] ?? [] as $material) {
-				$model = Material::updateOrCreate(
-					[
-						'name' => $material['name'],
-						'code' => $material['code'],
-						'grammage' => $material['grammage'] ?? null,
-						'thickness' => $material['thickness'] ?? null,
-					],
-					[
-						'catalog_id' => $catalog->id,
-						'material_type' => $material['material_type'] ?? $materialType,
-						'is_active' => true,
-					]
-				);
+						foreach (array_keys($material['stock'] ?? []) as $stockFormat) {
+							if ($stockFormat !== '') {
+								$format = (int) $stockFormat;
+								break;
+							}
+						}
 
-				// Ключи остатков — форматы материала; закрепляем их за материалом
-				foreach (array_keys($material['stock'] ?? []) as $format) {
-					// Ключ null (без формата) PHP превращает в пустую строку.
-					if ($format !== '') {
-						$model->attachFormat($format);
+						// Формат пишется только когда он есть в остатках:
+						// у материала без ключа stock он не должен затираться.
+						$payload = [
+							'catalog_id' => $catalog->id,
+							'is_active' => true,
+						];
+
+						if ($format !== null) {
+							$payload['format'] = $format;
+						}
+
+						$model = Material::updateOrCreate(
+							[
+								'name' => $material['name'],
+								'code' => $material['code'],
+								'grammage' => $material['grammage'] ?? null,
+								'thickness' => $material['thickness'] ?? null,
+							],
+							$payload
+						);
+
+						// Идентификатор вычисляется заново, когда для него
+						// достаточно данных (код + грамматура/толщина + формат)
+						if ($model->format !== null) {
+							$model->update([
+								'identifier' => Material::composeIdentifier(
+									$model->code,
+									$model->grammage,
+									$model->thickness,
+									$model->format
+								),
+							]);
+						}
 					}
-				}
-			}
 
 			foreach ($node['children'] ?? [] as $child) {
-				$this->seedCatalogNode($child, $catalog->id, $materialType);
+				$this->seedCatalogNode($child, $catalog->id);
 			}
 		}
 
@@ -389,7 +407,6 @@
 				 * МК (мелованный картон) — производимая продукция
 				 */
 				[
-					'material_type' => 'product',
 					'name' => 'МК',
 					'sort_order' => 11,
 					'children' => [

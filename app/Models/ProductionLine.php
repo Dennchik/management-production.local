@@ -31,7 +31,7 @@
 					Material::class,
 					'production_line_material'
 			)
-				->withPivot('direction', 'format')
+				->withPivot('direction')
 				->orderBy('id');
 		}
 

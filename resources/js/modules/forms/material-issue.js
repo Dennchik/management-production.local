@@ -23,6 +23,7 @@ export function initMaterialIssueModule() {
 
    const materialNameInput = form.querySelector('#material_name');
    const materialIdentifierInput = form.querySelector('#material_identifier');
+   const materialFormatInput = form.querySelector('#material_format');
 
    const remainingWeightInput = form.querySelector('#remaining_weight');
 
@@ -92,6 +93,10 @@ export function initMaterialIssueModule() {
          materialIdentifierInput.value = '';
       }
 
+      if (materialFormatInput) {
+         materialFormatInput.value = '';
+      }
+
       if (weightInput) {
          weightInput.removeAttribute('max');
       }
@@ -111,8 +116,8 @@ export function initMaterialIssueModule() {
    void restoreFormState();
 
    /*
-    * Заполняет информацию о выбранном материале.
-    * Идентификатор заполняется позже — с выбранного рулона.
+    * Заполняет информацию о выбранном материале:
+    * имя, идентификатор и формат — атрибуты материала.
     */
    function fillMaterialInfo(option) {
       if (materialNameInput) {
@@ -120,7 +125,11 @@ export function initMaterialIssueModule() {
       }
 
       if (materialIdentifierInput) {
-         materialIdentifierInput.value = '';
+         materialIdentifierInput.value = option?.dataset.identifier || '';
+      }
+
+      if (materialFormatInput) {
+         materialFormatInput.value = option?.dataset.format || '';
       }
    }
 
@@ -189,14 +198,11 @@ export function initMaterialIssueModule() {
                data-value="${escapeHtml(roll.id ?? '')}"
                data-roll="${escapeHtml(roll.roll_number ?? '')}"
                data-weight="${escapeHtml(roll.weight ?? '')}"
-               data-format="${escapeHtml(roll.format ?? '')}"
-               data-identifier="${escapeHtml(roll.identifier ?? '')}"
                aria-selected="false">
 
                   <span>
                   ${escapeHtml(roll.roll_number ?? '')}
                |
-                  ${roll.format ? `ф. ${escapeHtml(roll.format)} | ` : ''}
                   ${escapeHtml(roll.weight ?? '')}
                   кг
                   </span>
@@ -236,15 +242,11 @@ export function initMaterialIssueModule() {
    }
 
    /*
-    * Отображает идентификатор и остаток выбранного рулона
+    * Отображает остаток выбранного рулона
     * и ограничивает поле веса расхода.
     */
    function setRollWeight(option) {
       const weight = option?.dataset.weight || '';
-
-      if (materialIdentifierInput) {
-         materialIdentifierInput.value = option?.dataset.identifier || '';
-      }
 
       if (remainingWeightInput) {
          remainingWeightInput.value = weight;

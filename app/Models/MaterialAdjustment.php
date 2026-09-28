@@ -12,6 +12,7 @@
 		'weight_before',
 		'adjustment',
 		'weight_after',
+		'batch_id',
 		'comment',
 		'user_id',
 	])]
@@ -24,6 +25,18 @@
 				'adjustment' => 'decimal:3',
 				'weight_after' => 'decimal:3',
 			];
+		}
+
+		/**
+		 * Строки того же ордера корректировки (включая эту).
+		 */
+		public function orderRows()
+		{
+			return static::query()
+				->where('batch_id', $this->batch_id)
+				->when($this->batch_id === null, fn ($query) => $query->where('id', $this->id))
+				->orderBy('id')
+				->get();
 		}
 
 		public function material(): BelongsTo

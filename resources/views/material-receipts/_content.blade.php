@@ -43,8 +43,8 @@
 						@foreach ($receipt->items as $item)
 							<tr>
 								<td>{{ $item->material->name }}</td>
-								<td>{{ $item->roll->format ?? '—' }}</td>
-								<td>{{ $item->roll->identifier ?? '—' }}</td>
+								<td>{{ $item->material->format ?? '—' }}</td>
+								<td>{{ $item->material->identifier ?? '—' }}</td>
 								<td>{{ $item->roll->roll_number }}</td>
 								<td>{{ number_format($item->weight, 3, '.', '') }}</td>
 							</tr>

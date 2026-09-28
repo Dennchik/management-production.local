@@ -9,6 +9,7 @@
 	use App\Http\Controllers\MaterialMovementController;
 	use App\Http\Controllers\MaterialReceiptController;
 	use App\Http\Controllers\MaterialRollController;
+	use App\Http\Controllers\TrashController;
 	use App\Http\Controllers\ProductionOperationController;
 	use App\Http\Controllers\ProductionTaskController;
 	use App\Http\Controllers\WarehouseController;
@@ -308,12 +309,30 @@
 
 		/*
 		|--------------------------------------------------------------------------
+		| Корзина
+		|--------------------------------------------------------------------------
+		*/
+
+		Route::get('/trash', [TrashController::class, 'index'])
+				->middleware('can.do:materials')
+				->name('trash.index');
+
+		Route::post('/trash/{type}/{id}', [TrashController::class, 'restore'])
+				->middleware('can.do:materials,delete')
+				->name('trash.restore');
+
+		Route::delete('/trash/{type}/{id}', [TrashController::class, 'destroy'])
+				->middleware('can.do:materials,delete')
+				->name('trash.destroy');
+
+		/*
+		|--------------------------------------------------------------------------
 		| Справочник материалов и каталоги
 		|--------------------------------------------------------------------------
 		*/
 
-		Route::get('/materials', [MaterialController::class, 'index'])
-				->middleware('can.do:materials')
+		// Справочник слит со складом: старый адрес ведёт на объединённую страницу.
+		Route::get('/materials', fn () => redirect()->route('warehouse.index', request()->query()))
 				->name('materials.index');
 
 		Route::get('/materials/create', [MaterialController::class, 'create'])

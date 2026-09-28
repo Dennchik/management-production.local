@@ -6,6 +6,7 @@
 	use Illuminate\Database\Eloquent\Model;
 	use Illuminate\Database\Eloquent\Relations\BelongsTo;
 	use Illuminate\Database\Eloquent\Relations\HasMany;
+	use Illuminate\Database\Eloquent\SoftDeletes;
 	use Illuminate\Support\Collection;
 
 	#[Fillable([
@@ -16,6 +17,7 @@
 	])]
 	class Catalog extends Model
 	{
+		use SoftDeletes;
 		public const HIERARCHY_SETTING_KEY = 'catalogs.hierarchy_enabled';
 
 		protected function casts(): array
@@ -46,10 +48,14 @@
 
 		/**
 		 * Включена ли иерархия каталогов.
+		 *
+		 * Переключатель снят с интерфейса: иерархия всегда включена.
+		 * Настройка и её логика остаются в системе — вернём в интерфейс,
+		 * когда понадобится.
 		 */
 		public static function hierarchyEnabled(): bool
 		{
-			return Setting::enabled(static::HIERARCHY_SETTING_KEY, true);
+			return true;
 		}
 
 		/**

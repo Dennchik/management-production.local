@@ -34,7 +34,8 @@
 					<tbody>
 
 					@forelse ($issues as $issue)
-						<tr class="material__material-row" data-issue-modal-open data-issue-id="{{ $issue->getKey()}}">
+						<tr class="material__material-row" data-row-link="{{ route('material-issues.show', $issue) }}"
+								tabindex="0" role="link">
 							{{-- Дата --}}
 							<td> {{ $issue->created_at->format('d.m.Y H:i') }} </td>
 							<td> {{ $issue->material->name }} </td>

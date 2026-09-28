@@ -3,7 +3,7 @@
 @section('title', 'Создание производственной линии — ' . $operation->name)
 
 @section('content')
-	<div class="main-content__content" data-production-lines-page>
+	<div class="main-content__content" data-production-lines-page @if ($isCutting) data-cutting-mode="1" @endif>
 		<div class="main-content__header">
 			<h1 class="main-content__title">Создание производственной линии</h1>
 		</div>
@@ -36,20 +36,26 @@
 
 			@include('production.operations._line-materials-table', [
 					'title' => 'Материалы (вход)',
-					'description' => 'Материалы с разрешённой операцией «' . $operation->name . '».',
+					'description' => $isCutting
+							? 'Один материал: на вход линии резки поступает единственный материал.'
+							: 'Материалы с разрешённой операцией «' . $operation->name . '».',
 					'inputName' => 'materials',
 					'materials' => $materials,
 					'emptyText' => 'Нет материалов с разрешённой операцией «' . $operation->name . '».',
+					'allowAdd' => !$isCutting,
 			])
 
 			<div data-autofill-line-name>
 				@include('production.operations._line-materials-table', [
 						'title' => 'Материалы (выход)',
-						'description' => 'Материалы со справочника с типом «Продукция».',
+						'description' => $isCutting
+								? 'Тот же материал в других форматах: выбор по материалу входа.'
+								: 'Материалы, назначенные выбранным выходным линиям технологической линии «' . $operation->name . '».',
 						'inputName' => 'output_materials',
 						'materials' => $outputMaterials,
-						'emptyText' => 'В справочнике нет активных материалов с типом «Продукция».',
-						'allowAdd' => false,
+						'emptyText' => 'Нет назначенных материалов у выбранных выходных линий.',
+						'allowAdd' => $isCutting,
+						'allowAddFormat' => $isCutting,
 				])
 			</div>
 

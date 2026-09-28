@@ -170,55 +170,6 @@
 						</div>
 					</div>
 
-					{{-- Идентификатор --}}
-					<div class="filters-actions__filter">
-						<label class="filters-actions__filter-label" for="rolls-identifier">Идентификатор</label>
-
-						<div data-select>
-							<div class="select filters-actions__filter-select">
-								<input class="select__button" id="rolls-identifier" type="text"
-										value="{{ ($identifier ?? '') ?: 'Все идентификаторы' }}" readonly autocomplete="off">
-
-								<input class="select__value" name="identifier" type="hidden" value="{{ $identifier ?? '' }}">
-
-								<div class="select__dropdown _collapse">
-									<div class="select__wrapper">
-										<div class="material-select__select-search">
-
-											<input class="material-select__select-search-input select__search"
-													id="rolls-identifier-search" type="search" placeholder="Поиск идентификатора..."
-													autocomplete="off">
-
-											<button class="material-select__select-search-clear select__search-clear"
-													type="button" aria-label="Очистить поиск" hidden>
-
-												<i class="icon icon-close" aria-hidden="true"></i>
-
-											</button>
-										</div>
-
-										<div class="select__item {{ ($identifier ?? '') === '' ? '_selected' : '' }}"
-												tabindex="0" data-value="">
-											Все идентификаторы
-										</div>
-
-										@foreach ($identifiers ?? [] as $materialIdentifier)
-
-											<div class="select__item {{ (string) ($identifier ?? '') === (string)
-											$materialIdentifier ? '_selected' : '' }}" tabindex="0"
-													data-value="{{ $materialIdentifier }}">
-												{{ $materialIdentifier }}
-											</div>
-
-										@endforeach
-
-										<div class="material-select__select-empty select__empty" hidden>Ничего не найдено</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-
 					{{-- Движение материалов --}}
 				@elseif ($filterType === 'material-movements')
 

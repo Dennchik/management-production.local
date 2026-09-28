@@ -1,73 +1,92 @@
 @extends('layouts.app')
 
-@section('title', 'Склад')
+@section('title', 'Материалы')
 
 @section('content')
 
-	<div class="main-content__content">
+	@php
+		$user = auth()->user();
+
+		/*
+		 * Управление материалами и каталогами доступно по праву «Материалы»;
+		 * без него страница остаётся складским просмотром остатков.
+		 */
+		$canMaterials = $user?->may('materials');
+		$canMaterialsCreate = $user?->may('materials', 'create');
+		$canMaterialsEdit = $user?->may('materials', 'edit');
+		$canMaterialsDelete = $user?->may('materials', 'delete');
+	@endphp
+
+	<div class="main-content__content materials"
+			data-materials-page
+			data-hierarchy="1"
+			data-current-catalog="{{ $currentCatalog?->id }}">
 
 		{{-- Фильтр --}}
 		@include('layouts.filters-actions')
+
 		<div class="main-content__header">
-			<h1 class="main-content__title">Склад</h1>
+			<h1 class="main-content__title">Материалы</h1>
+
+			@if ($canMaterialsCreate)
+				<div class="catalogs__header-actions">
+					<button class="button button--primary materials__create" type="button" data-material-create>
+						<i class="icon icon-plus" aria-hidden="true"></i>
+						<span>Создать</span>
+					</button>
+				</div>
+			@endif
 		</div>
-		<div class="material">
-			{{-- Таблица склада --}}
-			<table class="material__table">
 
-				<thead>
-				<tr>
-					<th>Материал</th>
-					<th>Идентификатор</th>
-					<th>Формат</th>
-					<th>Рулонов</th>
-					<th>Остаток, кг</th>
-				</tr>
-				</thead>
+		{{-- Таблица склада на компоненте .table: каталоги раскрываются строками --}}
+		<div class="table table--warehouse">
+			<div class="table__row-line table__row--header">
+				<div class="table__cell">Каталог / Материал</div>
+				<div class="table__cell">Идентификатор</div>
+				<div class="table__cell">Формат</div>
+				<div class="table__cell">Рулонов</div>
+				<div class="table__cell">Остаток, кг</div>
 
-				<tbody>
+				@if ($canMaterials)
+					<div class="table__cell materials__table-edit">
+						<i class="icon-settings-cogs icon"></i>
+					</div>
+				@endif
+			</div>
 
-				@forelse ($materials as $material)
-					@php
-						/*
-						 * Группы рулонов по формату: отдельная строка
-						 * на каждый формат; без рулонов — одна строка «—».
-						 */
-						$formatGroups = $material->rolls
-							->groupBy(fn ($roll) => $roll->format ?? '')
-							->sortBy(fn ($group, $format) => (int) $format);
-					@endphp
-
-					@foreach ($formatGroups->isEmpty() ? collect([null]) : $formatGroups as $group)
-						@php
-							$groupRolls = $group ?? collect();
-							$groupFormats = $groupRolls->pluck('format')->filter()->unique()->values();
-							$groupIdentifiers = $groupRolls->pluck('identifier')->filter()->unique()->sort(SORT_STRING)->values();
-						@endphp
-
-						<tr class="material__material-row" data-row-link="{{ route('warehouse.material', $material) }}"
-								tabindex="0" role="link">
-
-							<td> {{ $material->name }} </td>
-							<td> {{ $groupIdentifiers->implode(', ') ?: '—' }} </td>
-							<td> {{ $groupFormats->implode(', ') ?: '—' }} </td>
-							<td> {{ $groupRolls->count() }} </td>
-							<td>
-								{{ number_format($groupRolls->sum('weight'), 3, '.', '') }}
-							</td>
-
-						</tr>
+			<div class="table__body" data-materials-body>
+				@if ($flatList)
+					{{-- Фильтры пробивают иерархию: материалы всех каталогов подряд --}}
+					@foreach ($materials as $material)
+						@include('warehouse._material-row', ['material' => $material, 'depth' => 0])
 					@endforeach
 
-				@empty
+					@if ($materials->isEmpty())
+						<div class="table__row-line">
+							<div class="table__cell" style="grid-column: 1 / -1;">Склад пуст</div>
+						</div>
+					@endif
+				@else
+					{{-- Материалы без каталога — в корне таблицы --}}
+					@foreach ($rootMaterials as $material)
+						@include('warehouse._material-row', ['material' => $material, 'depth' => 0])
+					@endforeach
 
-					<tr>
-						<td colspan="5">Склад пуст</td>
-					</tr>
+					@foreach ($catalogTree as $node)
+						@include('warehouse._catalog-branch', [
+								'node' => $node,
+								'depth' => 0,
+								'ancestors' => '',
+						])
+					@endforeach
 
-				@endforelse
-				</tbody>
-			</table>
+					@if ($catalogTree->isEmpty() && $rootMaterials->isEmpty())
+						<div class="table__row-line">
+							<div class="table__cell" style="grid-column: 1 / -1;">Каталоги и материалы не добавлены.</div>
+						</div>
+					@endif
+				@endif
+			</div>
 		</div>
 	</div>
 

@@ -25,10 +25,18 @@
 		</div>
 
 		<div class="material-issue__row">
+			<div class="material-issue__label">Формат</div>
+
+			<div class="material-issue__value">
+				{{ $issue->material->format ?? '—' }}
+			</div>
+		</div>
+
+		<div class="material-issue__row">
 			<div class="material-issue__label">Идентификатор</div>
 
 			<div class="material-issue__value">
-				{{ $issue->roll->identifier ?? '—' }}
+				{{ $issue->material->identifier ?? '—' }}
 			</div>
 		</div>
 

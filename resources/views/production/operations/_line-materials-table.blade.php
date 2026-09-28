@@ -1,7 +1,6 @@
 @php
 	// Строки материалов: null — пустая строка для выбора.
-	// Материал всегда выбирается с конкретным форматом:
-	// скрытые поля materials[] и materials_formats[] идут парами по индексу строки.
+	// Формат и идентификатор — атрибуты материала.
 	if (!isset($rows)) {
 		$rows = collect([null]);
 	} elseif ($rows->isEmpty()) {
@@ -17,8 +16,16 @@
 		</div>
 
 		@if (($allowAdd ?? true))
-			<button class="button button--secondary" type="button" data-production-line-add-material>
+			<button class="button button--secondary" type="button" data-production-line-add-material
+					@if (($buttonsHidden ?? false)) hidden @endif>
 				Добавить материал
+			</button>
+		@endif
+
+		@if (($allowAddFormat ?? false))
+			<button class="button button--secondary" type="button" data-production-line-add-format
+					@if (($buttonsHidden ?? false)) hidden @endif>
+				Добавить формат
 			</button>
 		@endif
 	</div>
@@ -28,7 +35,6 @@
 			<div class="table__cell">№</div>
 			<div class="table__cell">Материал</div>
 			<div class="table__cell">Идентификатор</div>
-			<div class="table__cell">Формат</div>
 			<div class="table__cell materials__table-edit">
 				<i class="icon-settings-cogs icon"></i>
 			</div>
@@ -36,18 +42,12 @@
 
 		<div class="table__body" data-production-line-materials>
 			@foreach ($rows as $row)
-				@php
-					$rowFormat = $row?->pivot->format ?? null;
-					$rowIdentifier = $row ? $row->identifierForFormat($rowFormat) : null;
-				@endphp
-
 				<div class="table__row-line" data-production-line-material>
 					<div class="table__cell" data-line-index>{{ $loop->iteration }}</div>
 					<div class="table__cell">
 						<div data-select>
 							<div class="select material-select operation-form">
 								<input class="select__value" type="hidden" name="{{ $inputName }}[]" value="{{ $row->id ?? '' }}">
-								<input class="select__format-value" type="hidden" name="{{ $inputName }}_formats[]" value="{{ $rowFormat ?? '' }}">
 
 								<button class="material-select__select-button select__button select-button"
 										type="button" aria-haspopup="listbox" aria-expanded="false">
@@ -67,40 +67,22 @@
 
 									@foreach ($materials as $material)
 
-										@php
-											/*
-											 * Отдельный пункт на каждый формат;
-											 * без рулонов — один пункт без формата.
-											 */
-											$formatGroups = $material->rolls
-												->groupBy(fn ($roll) => $roll->format ?? '')
-												->sortBy(fn ($group, $format) => (int) $format);
-										@endphp
-
-										@foreach ($formatGroups->isEmpty() ? collect([null]) : $formatGroups as $group)
-											@php
-												$groupFormat = $group?->pluck('format')->filter()->unique()->first();
-												$groupIdentifier = $group?->pluck('identifier')->filter()->unique()->sort(SORT_STRING)->first();
-												$groupFormatsLabel = $group?->pluck('format')->filter()->unique()->values()->implode(', ');
-												$isSelected = ($row?->id ?? null) === $material->id
-													&& (string) ($rowFormat ?? '') === (string) ($groupFormat ?? '');
-											@endphp
-
-											<button class="material-select__select-option select__item" type="button" role="option"
-													data-value="{{ $material->id }}"
-													aria-selected="{{ $isSelected ? 'true' : 'false' }}"
-													data-name="{{ $material->name }}"
-													data-identifier="{{ $groupIdentifier ?? '' }}"
-													data-format="{{ $groupFormat ?? '' }}">
-												<span>
-													{{ $material->name }}
-													@if ($material->grammage) | {{ rtrim(rtrim(number_format($material->grammage, 2, '.', ''), '0'), '.') }} гр @endif
-													@if ($material->thickness) | {{ $material->thickness }} мкм @endif
-													@if ($groupFormatsLabel) | {{ $groupFormatsLabel }} @endif
-												</span>
-											</button>
-
-										@endforeach
+										<button class="material-select__select-option select__item" type="button" role="option"
+												data-value="{{ $material->id }}"
+												aria-selected="{{ ($row?->id ?? null) === $material->id ? 'true' : 'false' }}"
+												data-name="{{ $material->name }}"
+												data-identifier="{{ $material->identifier ?? '' }}"
+												data-code="{{ $material->code }}"
+												data-grammage="{{ $material->grammage ?? '' }}"
+												data-thickness="{{ $material->thickness ?? '' }}"
+												data-format="{{ $material->format ?? '' }}">
+											<span>
+												{{ $material->name }}
+												@if ($material->grammage) | {{ rtrim(rtrim(number_format($material->grammage, 2, '.', ''), '0'), '.') }} гр @endif
+												@if ($material->thickness) | {{ $material->thickness }} мкм @endif
+												@if ($material->format) | {{ $material->format }} @endif
+											</span>
+										</button>
 
 									@endforeach
 
@@ -111,8 +93,7 @@
 							</div>
 						</div>
 					</div>
-					<div class="table__cell" data-cell-identifier>{{ $rowIdentifier ?? '' }}</div>
-					<div class="table__cell" data-cell-format>{{ $rowFormat ?? '' }}</div>
+					<div class="table__cell" data-cell-identifier>{{ $row?->identifier ?? '' }}</div>
 					<div class="table__cell production-line-materials__actions">
 						<button type="button" class="production-line-materials__remove"
 								data-production-line-remove-material

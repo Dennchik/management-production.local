@@ -8,11 +8,6 @@
 			<h1 class="main-content__title">Каталоги</h1>
 
 			<div class="catalogs__header-actions">
-				<label class="catalogs__hierarchy-toggle">
-					<input type="checkbox" name="hierarchy_enabled" {{ $hierarchyEnabled ? 'checked' : '' }}>
-					<span>Иерархия каталогов</span>
-				</label>
-
 				<button class="button button--primary materials__create" type="button" data-catalog-create>
 					<i class="icon icon-plus" aria-hidden="true"></i>
 					<span>Создать</span>
@@ -75,7 +70,7 @@
 								<td>{{ $loop->iteration }}</td>
 								<td class="catalogs__name-cell">
 									<a class="catalogs__name catalogs__name-link" style="--catalog-depth: {{ $depth }}"
-											href="{{ route('materials.index', ['catalog' => $catalog->id]) }}">
+											href="{{ route('warehouse.index', ['catalog' => $catalog->id]) }}">
 										{{ $catalog->name }}
 									</a>
 								</td>

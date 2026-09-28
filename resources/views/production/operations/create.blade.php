@@ -43,6 +43,45 @@
 							<span>Линия активна</span>
 						</label>
 					</div>
+
+					<div class="form-field form-field--checkbox">
+						<label class="form-field__label">
+							<input type="hidden" name="is_cutting" value="0">
+							<input type="checkbox" name="is_cutting" value="1" @checked(old('is_cutting', false))>
+							<span>Режим резки</span>
+						</label>
+						<p class="operation-form__section-description">
+							На входе один материал, на выходе — тот же материал другого формата.
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="operation-form__section">
+				<div class="operation-form__section-header">
+					<div>
+						<h2 class="operation-form__section-title">Выходные товары</h2>
+						<p class="operation-form__section-description">
+							Технологические линии, на которые поступает продукция этой линии.
+							Их назначенные материалы доступны на выходе шаблонов производства.
+						</p>
+					</div>
+				</div>
+
+				<div class="operation-form__fields">
+					@if ($operationsList->isEmpty())
+						<p class="operation-form__section-description">Нет других активных технологических линий.</p>
+					@else
+						@foreach ($operationsList as $outputOperation)
+							<div class="form-field form-field--checkbox">
+								<label class="form-field__label">
+									<input type="checkbox" name="output_operations[]" value="{{ $outputOperation->id }}"
+											{{ in_array($outputOperation->id, old('output_operations', []), false) ? 'checked' : '' }}>
+									<span>{{ $outputOperation->name }}</span>
+								</label>
+							</div>
+						@endforeach
+					@endif
 				</div>
 			</div>
 
