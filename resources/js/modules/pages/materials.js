@@ -347,6 +347,9 @@ async function createCatalog() {
 
       const form = document.querySelector('[data-catalog-form]');
 
+      // Кастомные селекты внутри модалки инициализируются после вставки.
+      initSelects(form);
+
       form?.querySelector('input[name="catalog-name"]')?.focus();
    } catch (error) {
       return;
@@ -383,6 +386,7 @@ async function createMaterial() {
       // Кастомные селекты внутри модалки инициализируются после вставки.
       initSelects(form);
       initIdentifierMirror(form);
+      initNameMirror(form);
 
       form?.querySelector('input[name="material-name"]')?.focus();
    } catch (error) {
@@ -619,6 +623,118 @@ async function refreshMaterialsTable() {
    }
 }
 
+/**
+ * Автосборка названия по шаблону (форма создания материала):
+ * «|» в шаблоне — разделитель, попадает в итоговое название.
+ * Одно поле «Название»: набранный текст считается основой и при
+ * вводе грамматуры/толщины/формата дополняется по шаблону.
+ *
+ * @param {HTMLElement} form Контейнер формы материала.
+ */
+function initNameMirror(form) {
+   const nameInput = form?.querySelector("#material-name");
+   const templateInput = form?.querySelector("#name-template");
+
+   if (!nameInput || !templateInput) {
+      return;
+   }
+
+   const trimZeros = (value) =>
+      String(value).replace(/(\.\d*?)0+$/, "\$1").replace(/\.$/, "");
+
+   const values = () => {
+      const grammage = trimZeros(form.querySelector("input[name=\"grammage\"]")?.value ?? "");
+      const thickness = trimZeros(form.querySelector("input[name=\"thickness\"]")?.value ?? "");
+
+      return {
+         название: base,
+         грамматура: grammage !== "" ? `${grammage} гр` : "",
+         толщина: thickness !== "" ? `${thickness} мкм` : "",
+         формат: form.querySelector("input[name=\"format\"]")?.value.trim() ?? "",
+      };
+   };
+
+   /*
+    * Собирает название по шаблону: токены заменяются значениями,
+    * разделители между токенами сохраняются; пустые токены выпадают
+    * вместе с примыкающими разделителями.
+    */
+   const compose = () => {
+      const tokenValues = values();
+      const parts = templateInput.value.split(/(название|грамматура|толщина|формат)/i);
+
+      let result = "";
+      let pendingSeparator = "";
+
+      parts.forEach((part) => {
+         const token = part.trim().toLowerCase();
+
+         if (token === "название" || token === "грамматура" || token === "толщина" || token === "формат") {
+            const value = tokenValues[token] ?? "";
+
+            if (value !== "") {
+               result += pendingSeparator + value;
+               pendingSeparator = "";
+            } else {
+               // Пустой токен выпадает вместе с разделителем перед ним
+               pendingSeparator = "";
+            }
+         } else {
+            pendingSeparator += part;
+         }
+      });
+
+      // Без ведущих и хвостовых разделителей (крайние токены пусты)
+      return result.trim().replace(/^[|\s]+/, '').replace(/[|\s]+$/, '');
+   };
+
+   let base = "";
+   let lastComposed = "";
+   let manual = nameInput.value !== "";
+
+   const apply = () => {
+      const composed = compose();
+
+      if (composed !== "") {
+         nameInput.value = composed;
+         lastComposed = composed;
+      }
+   };
+
+   // Пользователь печатает основу названия
+   nameInput.addEventListener("input", () => {
+      base = nameInput.value;
+      manual = true;
+   });
+
+   // Уход из поля названия: если имя не правили вручную,
+   // основой остаётся прежняя база, и состав применяется
+   nameInput.addEventListener("blur", () => {
+      if (!manual && base !== "") {
+         apply();
+      }
+   });
+
+   // Характеристики дополняют название по шаблону
+   for (const field of ["grammage", "thickness", "format"]) {
+      form
+         .querySelector(`input[name="${field}"]`)
+         ?.addEventListener("input", () => {
+            if (manual) {
+               base = nameInput.value;
+            }
+
+            manual = false;
+            apply();
+         });
+   }
+
+   // Правка шаблона пересобирает название сразу
+   templateInput.addEventListener("input", () => {
+      manual = false;
+      apply();
+   });
+}
 /**
  * Живой пересчёт идентификатора в форме материала:
  * код + грамматура/толщина + цифры формата.

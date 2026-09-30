@@ -5,16 +5,30 @@
 
 	<div class="material-show__content">
 		<div class="material-show__row">
-			<span>Наименование:</span>
+			<span>Шаблон названия:</span>
 			<label>
-				<input type="text" name="material-name" autocomplete="off" value="{{ $prefill->name ?? '' }}">
+				<input type="text" name="name-template" id="name-template" autocomplete="off"
+						value="Название | грамматура | толщина | формат">
+			</label>
+		</div>
+
+		<div class="material-show__row">
+			<span>Название:</span>
+			<label>
+				<input type="text" name="material-name" id="material-name" autocomplete="off" list="names-list" value="{{ $prefill->name ?? '' }}">
+				<datalist id="names-list">
+					{{-- Список наименований будет заполнен позже по справочнику пользователя --}}
+				</datalist>
 			</label>
 		</div>
 
 		<div class="material-show__row">
 			<span>Код:</span>
 			<label>
-				<input type="text" name="code" autocomplete="off" value="{{ $prefill->code ?? '' }}">
+				<input type="text" name="code" autocomplete="off" list="codes-list" value="{{ $prefill->code ?? '' }}">
+				<datalist id="codes-list">
+					{{-- Список кодов будет заполнен позже по справочнику пользователя --}}
+				</datalist>
 			</label>
 		</div>
 
@@ -26,7 +40,10 @@
 		<div class="material-show__row">
 			<span>Грамматура:</span>
 			<label>
-				<input type="number" name="grammage" min="0" step="0.01" value="{{ $prefill->grammage ?? '' }}">
+				<input type="number" name="grammage" min="0" step="0.01" list="grammages-list" value="{{ $prefill->grammage ?? '' }}">
+				<datalist id="grammages-list">
+					{{-- Список грамматур будет заполнен позже по справочнику пользователя --}}
+				</datalist>
 			</label>
 		</div>
 

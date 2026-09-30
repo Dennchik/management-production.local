@@ -161,9 +161,9 @@
 						</div>
 
 						<p style="margin: 0 0 1rem; color: var(--text-muted);">
-							Укажите расход или остаток по каждому рулону — второе поле пересчитается само и сразу сохранится.
-							Вес, указанный при взятии рулона, попадает в расход и резервируется: остальной вес рулона доступен другим задачам.
-							Остаток после взятия пустой — заполните его вручную.
+							Перед завершением заполните остатки по всем взятым рулонам.
+							Для обычного рулона остаток подставлен (вес − расход), для рулона «Общий вес»
+							остаток вводится вручную — списание из общего веса считается как взятый вес минус остаток.
 						</p>
 
 						<div data-task-add-error hidden style="margin: 0 0 1rem; color: var(--alarm);"></div>
@@ -175,7 +175,6 @@
 									<tr>
 										<th>Рулон</th>
 										<th>Вес рулона, кг</th>
-										<th>Расход, кг</th>
 										<th>Остаток, кг</th>
 									</tr>
 									</thead>
@@ -187,33 +186,38 @@
 										@endphp
 
 										<tr>
-											<th colspan="4" style="text-align: left;">
+											<th colspan="3" style="text-align: left;">
 												{{ $material->name }}
 											</th>
 										</tr>
 
 										@foreach ($materialInputs as $input)
 											@php
-												$rollWeight = (string) ($input->roll?->weight ?? 0);
+												$isSharedRoll = $input->roll?->roll_number === \App\Http\Controllers\MaterialReceiptController::TOTAL_WEIGHT_ROLL_NUMBER;
+												// Общий вес: «вес рулона» = взятый оператором вес (это расход);
+												// обычный рулон: вес из рулона
+												$rollWeight = $isSharedRoll
+														? (float) ($input->actual_weight ?? 0)
+														: (float) ($input->roll?->weight ?? 0);
 												$savedUsed = (float) ($input->actual_weight ?? 0);
 												$index = $input->id;
+												// Остаток предзаполнен для обычного рулона: вес − расход;
+												// у общего веса оператор указывает сам
+												$prefillRemaining = $isSharedRoll
+														? null
+														: rtrim(rtrim(number_format(max(0, $rollWeight - $savedUsed), 3, '.', ''), '0'), '.');
 											@endphp
 
 											<tr data-task-roll data-roll-weight="{{ $rollWeight }}">
 												<td>{{ $input->roll?->roll_number ?? '—' }}</td>
-												<td>{{ $input->roll ? rtrim(rtrim(number_format((float) $rollWeight, 3, '.', ''), '0'), '.') : '—' }}</td>
+												<td>{{ rtrim(rtrim(number_format($rollWeight, 3, '.', ''), '0'), '.') }}</td>
 												<td>
+													{{-- Остаток обязателен к заполнению перед завершением --}}
 													<input class="issue-order__input" type="number" step="0.001" min="0"
 															style="min-height: 36px; width: 100%;"
-															name="inputs[{{ $index }}][used]" data-roll-used
-															value="{{ old('inputs.' . $index . '.used', rtrim(rtrim(number_format($savedUsed, 3, '.', ''), '0'), '.')) }}">
-												</td>
-												<td>
-													{{-- Остаток вводится вручную: пустым после взятия рулона --}}
-													<input class="issue-order__input" type="number" step="0.001"
-															style="min-height: 36px; width: 100%;"
 															name="inputs[{{ $index }}][remaining]" data-roll-remaining
-															value="{{ old('inputs.' . $index . '.remaining') }}">
+															value="{{ old('inputs.' . $index . '.remaining', $prefillRemaining) }}"
+															@if (! $isSharedRoll) data-roll-remaining-prefilled="1" @endif>
 													<input type="hidden" name="inputs[{{ $index }}][id]" value="{{ $input->id }}">
 												</td>
 											</tr>
@@ -221,7 +225,7 @@
 
 										@if ($materialRolls->isNotEmpty())
 											<tr>
-												<td colspan="4" style="padding: 6px 8px;">
+												<td colspan="3" style="padding: 6px 8px;">
 													<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
 														<div class="select material-select"
 																style="flex: 1 1 220px;"
@@ -287,7 +291,7 @@
 											</tr>
 										@else
 											<tr>
-												<td colspan="4" style="padding: 6px 8px; color: var(--text-muted);">
+												<td colspan="3" style="padding: 6px 8px; color: var(--text-muted);">
 													Свободных рулонов этого формата нет.
 												</td>
 											</tr>
@@ -341,6 +345,11 @@
 							<button class="button button--secondary" type="button" data-output-roll-add>
 								+ Ещё рулон
 							</button>
+
+							{{-- Общий вес сделанной продукции --}}
+							<p style="margin: 0.8rem 0 0; font-weight: 600;">
+								Общий вес сделанного: <span data-outputs-total>{{ rtrim(rtrim(number_format((float) $task->outputs->sum('actual_weight'), 3, '.', ''), '0'), '.') }}</span> кг
+							</p>
 						</div>
 					</div>
 

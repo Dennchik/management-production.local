@@ -270,5 +270,23 @@ export class CustomSelect {
 export function initSelects(container = document) {
    const selects = container.querySelectorAll('.select, .material-select');
 
-   return Array.from(selects).map((element) => new CustomSelect(element));
+   // Мёртвые экземпляры (модалка закрыта, контент заменён) держат
+   // document-слушатели и мешают closeAllExcept — вычищаем их.
+   if (window._activeSelects) {
+      window._activeSelects = window._activeSelects.filter(
+         (select) => document.contains(select.container)
+      );
+   }
+
+   return Array.from(selects).map((element) => {
+      // Повторная инициализация даёт двойной toggle (селект «сразу
+      // закрывается») — пропускаем уже инициализированные.
+      if (element.dataset.selectInitialized) {
+         return null;
+      }
+
+      element.dataset.selectInitialized = 'true';
+
+      return new CustomSelect(element);
+   });
 }

@@ -165,18 +165,36 @@ function firstError(data) {
 function updateProgress(made, left) {
    const block = document.querySelector('[data-task-progress]');
 
-   if (!block) {
-      return;
+   if (block) {
+      const trim = (value) => String(Math.round(value * 1000) / 1000);
+
+      block.querySelector('[data-task-progress-made]').textContent = trim(made);
+
+      const leftSpan = block.querySelector('[data-task-progress-left]');
+      leftSpan.textContent = `осталось ${trim(left)}`;
+      leftSpan.classList.remove('text-red-soft');
+      leftSpan.style.color = 'var(--text-muted)';
    }
 
-   const trim = (value) => String(Math.round(value * 1000) / 1000);
+   updateOutputsTotal();
+}
 
-   block.querySelector('[data-task-progress-made]').textContent = trim(made);
+/**
+ * Пересчитывает строку «Общий вес сделанного» по строкам продукции.
+ */
+function updateOutputsTotal() {
+   const total = Array.from(document.querySelectorAll('[data-output-roll]'))
+      .reduce((sum, row) => {
+         const weight = parseFloat(row.querySelector('[data-output-weight]')?.value || '0');
 
-   const leftSpan = block.querySelector('[data-task-progress-left]');
-   leftSpan.textContent = `осталось ${trim(left)}`;
-   leftSpan.classList.remove('text-red-soft');
-   leftSpan.style.color = 'var(--text-muted)';
+         return sum + (Number.isFinite(weight) ? weight : 0);
+      }, 0);
+
+   const totalSpan = document.querySelector('[data-outputs-total]');
+
+   if (totalSpan) {
+      totalSpan.textContent = String(Math.round(total * 1000) / 1000);
+   }
 }
 
 /**
@@ -210,91 +228,12 @@ function jsonRequest(url, method, body = null) {
 }
 
 /**
- * Связка расход ↔ остаток + автосохранение расхода.
- * Слушатели делегированы форме — работают после подмены секции сырья.
+ * Остатки взятых рулонов вводятся вручную и уходят в форму
+ * завершения — расход не редактируется, автосохранение не нужно.
  *
  * @param {HTMLElement} form
  */
 function initRollWeights(form) {
-   let timer = null;
-   let lastTarget = null;
-
-   const round = (value) => String(Math.round(value * 1000) / 1000);
-
-   /**
-    * Сохраняет расход рулона на сервере.
-    *
-    * @param {HTMLInputElement} target
-    */
-   const save = (target) => {
-      const row = target.closest('[data-task-roll]');
-      const inputId = row?.querySelector('input[name$="[id]"]')?.value;
-      const taskId = form.dataset.taskId;
-
-      if (!row || !inputId || !taskId) {
-         return;
-      }
-
-      const used = row.querySelector('[data-roll-used]')?.value ?? '0';
-
-      setStatus('Сохранение…');
-
-      jsonRequest(`/tasks/${taskId}/inputs/${inputId}`, 'PUT', { used })
-         .then(() => setStatus('Сохранено'))
-         .catch((error) => setStatus(error.message, true));
-   };
-
-   form.addEventListener('input', (event) => {
-      const target = event.target;
-
-      if (!target.matches?.('[data-roll-used], [data-roll-remaining]')) {
-         return;
-      }
-
-      const row = target.closest('[data-task-roll]');
-      const weight = parseFloat(row?.dataset.rollWeight || '0');
-      const usedInput = row?.querySelector('[data-roll-used]');
-      const remainingInput = row?.querySelector('[data-roll-remaining]');
-
-      if (!usedInput || !remainingInput) {
-         return;
-      }
-
-      if (target === usedInput) {
-         remainingInput.value = round(weight - Number(usedInput.value || 0));
-      } else {
-         usedInput.value = round(weight - Number(remainingInput.value || 0));
-      }
-
-      lastTarget = target;
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-         lastTarget = null;
-         save(target);
-      }, 700);
-   });
-
-   // Уход из поля сохраняет сразу, без ожидания паузы.
-   form.addEventListener('change', (event) => {
-      const target = event.target;
-
-      if (!target.matches?.('[data-roll-used], [data-roll-remaining]')) {
-         return;
-      }
-
-      clearTimeout(timer);
-      lastTarget = null;
-      save(target);
-   });
-
-   // Закрытие страницы с несохранённой правкой — отправляем сразу.
-   window.addEventListener('beforeunload', () => {
-      if (lastTarget) {
-         clearTimeout(timer);
-         save(lastTarget);
-         lastTarget = null;
-      }
-   });
 }
 
 /**
@@ -352,6 +291,11 @@ function initOutputRolls(form) {
 
       if (!target.matches?.('[data-output-number], [data-output-weight]')) {
          return;
+      }
+
+      // Итог продукции пересчитывается сразу, до сохранения
+      if (target.matches?.('[data-output-weight]')) {
+         updateOutputsTotal();
       }
 
       lastTarget = target;

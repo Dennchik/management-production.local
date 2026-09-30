@@ -137,7 +137,20 @@
 			if ($task->status === 'in_progress') {
 				$takenRollIds = $task->inputs()->pluck('roll_id')->filter()->values();
 
-				$availableRolls = $this->rollsForMaterials($task->inputMaterials, $takenRollIds, $task->id);
+				/*
+				 * «Общий вес» можно брать многократно: не исключаем его
+				 * из списка свободных, даже если задача уже брала порцию.
+				 */
+				$sharedTakenIds = MaterialRoll::query()
+						->whereIn('id', $takenRollIds)
+						->where('roll_number', MaterialReceiptController::TOTAL_WEIGHT_ROLL_NUMBER)
+						->pluck('id');
+
+				$availableRolls = $this->rollsForMaterials(
+						$task->inputMaterials,
+						$takenRollIds->diff($sharedTakenIds)->values(),
+						$task->id
+				);
 
 				// Задачи, запущенные до автосохранения продукции: добавляем
 				// первую строку, чтобы рулоны было куда вносить.
@@ -216,13 +229,19 @@
 					'inputs.*.roll_id' => [
 							'nullable', 'integer', 'exists:material_rolls,id',
 					// Рулон нельзя взять повторно; берётся только с расходом,
-					// не превышающим доступный вес (весь минус резерв других задач)
+					// не превышающим доступный вес (весь минус резерв других задач).
+					// Рулон «Общий вес» — исключение: его можно брать
+					// многократно, каждая порция — отдельная строка.
 					function ($attribute, $value, $fail) use ($request, $task) {
 						if (empty($value)) {
 							return;
 						}
 
-						if ($task->inputs()->where('roll_id', (int) $value)->exists()) {
+						$roll = MaterialRoll::query()->find((int) $value);
+						$isShared = $roll !== null
+								&& $roll->roll_number === MaterialReceiptController::TOTAL_WEIGHT_ROLL_NUMBER;
+
+						if (! $isShared && $task->inputs()->where('roll_id', (int) $value)->exists()) {
 							$fail('Этот рулон уже взят задачей.');
 
 							return;
@@ -461,6 +480,27 @@
 
 		$produced = round((float) $outputs->sum('actual_weight'), 3);
 
+		/*
+		 * Остатки из формы завершения: [id ввода => остаток].
+		 * Пока не заполнены остатки по всем взятым рулонам,
+		 * завершение запрещено.
+		 */
+		$remainingByInput = collect($request->input('inputs', []))
+				->filter(static fn ($row) => isset($row['id']))
+				->mapWithKeys(static fn ($row) => [(int) $row['id'] => $row['remaining'] ?? null]);
+
+		$missingRemaining = $task->inputs
+				->filter(static fn ($input) => $input->roll_id !== null && $input->issued_at === null)
+				->filter(static fn ($input) => ! isset($remainingByInput[$input->id])
+						|| $remainingByInput[$input->id] === null
+						|| $remainingByInput[$input->id] === '');
+
+		if ($missingRemaining->isNotEmpty()) {
+			throw ValidationException::withMessages([
+					'inputs' => 'Заполните остатки по всем взятым рулонам.',
+			]);
+		}
+
 		// Недобор — завершение вне плана: разрешено всем,
 		// статус такой задачи правится правом tasks,status.
 		// У резки план — входной вес, выход плану не сверяется.
@@ -469,9 +509,10 @@
 		$comment = 'Задача №' . $task->number
 				. ' (' . ($task->material->name ?? '') . ')';
 
-			DB::transaction(function () use ($outputs, $task, $comment) {
-				// Списание входного сырья по сохранённому расходу рулонов;
-			// уже списанные при прежнем завершении не трогаются
+			DB::transaction(function () use ($outputs, $task, $comment, $remainingByInput) {
+				// Списание входного сырья: списание = остаток, вычисленный
+				// из остатка в форме (для общего веса — из взятого веса минус остаток);
+				// уже списанные при прежнем завершении не трогаются
 			foreach ($task->inputs as $input) {
 				if ($input->roll_id === null || $input->issued_at !== null) {
 					continue;
@@ -482,8 +523,25 @@
 					->lockForUpdate()
 					->firstOrFail();
 
-				$used = round((float) ($input->actual_weight ?? 0), 3);
-				$remaining = round((float) $roll->weight - $used, 3);
+				$isShared = $roll->roll_number === MaterialReceiptController::TOTAL_WEIGHT_ROLL_NUMBER;
+
+				// Общий вес: оператор указал взятый вес (actual_weight) и
+				// остаток ИЗ взятого — списание = взятый − остаток, вес рулона
+				// уменьшается на списанное. Обычный рулон: остаток — итоговый
+				// вес рулона, списание = вес − остаток.
+				$used = $isShared
+						? round((float) $input->actual_weight - (float) $remainingByInput[$input->id], 3)
+						: round((float) $roll->weight - (float) $remainingByInput[$input->id], 3);
+
+				$newWeight = $isShared
+						? round((float) $roll->weight - max(0, $used), 3)
+						: (float) $remainingByInput[$input->id];
+
+				if ($used < 0) {
+					throw ValidationException::withMessages([
+							'inputs' => 'Остаток не может быть больше доступного веса рулона «' . $roll->roll_number . '».',
+					]);
+				}
 
 				if ($used > 0) {
 					MaterialIssue::create([
@@ -495,24 +553,48 @@
 					]);
 				}
 
-				$roll->update(['weight' => $remaining]);
+				$roll->update(['weight' => $newWeight]);
 
-				$input->update(['issued_at' => now()]);
+				// У обычного рулона расход = вес − остаток; у общего веса
+				// расход остаётся взятым оператором весом
+				if (! $isShared) {
+					$input->update(['issued_at' => now(), 'actual_weight' => $used]);
+				} else {
+					$input->update(['issued_at' => now()]);
+				}
 			}
 
 			// Оприходование выходной продукции новыми рулонами;
 			// номера введены на странице задачи, по умолчанию «номерЗадачи/порядковый».
+			// На праймировании выходной рулон наследует номер входного:
+			// физически тот же рулон, уже праймированного материала.
+			$isPriming = $task->productionLine?->operation?->code === 'priming';
+
+			$inputRollNumbers = $task->inputs
+					->filter(static fn ($input) => $input->roll_id !== null)
+					->sortBy('id')
+					->values();
+
 			$receipt = MaterialReceipt::create([
 					'comment' => $comment,
 					'user_id' => auth()->id(),
 			]);
 
-			foreach ($outputs as $output) {
+			foreach ($outputs as $outputIndex => $output) {
+				$fallbackNumber = $output->roll_number !== ''
+						? $output->roll_number
+						: $task->number . '/' . $output->id;
+
+				$inheritedNumber = $isPriming
+						? ($inputRollNumbers[$outputIndex]?->roll?->roll_number
+								?? $inputRollNumbers->first()?->roll?->roll_number)
+						: null;
+
 				$roll = MaterialRoll::create([
 						'material_id' => $task->material_id,
-						'roll_number' => $output->roll_number !== ''
-								? $output->roll_number
-								: $task->number . '/' . $output->id,
+						'roll_number' => $isPriming && $inheritedNumber !== null
+								? $inheritedNumber
+								: $fallbackNumber,
 						'weight' => $output->actual_weight,
 				]);
 
