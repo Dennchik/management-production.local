@@ -64,6 +64,29 @@ export function initMaterialsModule() {
    // Делегирование на контейнере страницы: переживает
    // обновление списка каталогов и материалов.
    materialsPage.addEventListener('click', (event) => {
+      // «Раскрыть всё» / «Скрыть всё» — массовое управление ветками.
+      const expandAllButton = event.target.closest('[data-catalogs-expand]');
+      const collapseAllButton = event.target.closest('[data-catalogs-collapse]');
+
+      if (expandAllButton || collapseAllButton) {
+         const expandAll = !!expandAllButton;
+
+         materialsPage
+            .querySelectorAll('[data-catalog-toggle]')
+            .forEach((row) => {
+               row.setAttribute('aria-expanded', expandAll ? 'true' : 'false');
+            });
+
+         materialsPage
+            .querySelectorAll('.table__branch[data-catalog-branch]')
+            .forEach((branch) => {
+               branch.hidden = !expandAll;
+            });
+
+         markLastWarehouseRow(materialsPage);
+         return;
+      }
+
       // Кнопки каталога не должны раскрывать/сворачивать ветку.
       const catalogRowButton = event.target.closest('[data-catalog-row-button]');
 

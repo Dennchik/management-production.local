@@ -28,14 +28,24 @@
 		<div class="main-content__header">
 			<h1 class="main-content__title">Материалы</h1>
 
-			@if ($canMaterialsCreate)
-				<div class="catalogs__header-actions">
+			<div class="catalogs__header-actions">
+				@if ($catalogTree->isNotEmpty())
+					<button class="button button--secondary" type="button" data-catalogs-expand>
+						<span>Раскрыть всё</span>
+					</button>
+
+					<button class="button button--secondary" type="button" data-catalogs-collapse>
+						<span>Скрыть всё</span>
+					</button>
+				@endif
+
+				@if ($canMaterialsCreate)
 					<button class="button button--primary materials__create" type="button" data-material-create>
 						<i class="icon icon-plus" aria-hidden="true"></i>
 						<span>Создать</span>
 					</button>
-				</div>
-			@endif
+				@endif
+			</div>
 		</div>
 
 		{{-- Таблица склада на компоненте .table: каталоги раскрываются строками --}}
