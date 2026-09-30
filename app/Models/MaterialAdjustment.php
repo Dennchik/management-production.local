@@ -41,12 +41,12 @@
 
 		public function material(): BelongsTo
 		{
-			return $this->belongsTo(Material::class);
+			return $this->belongsTo(Material::class)->withTrashed();
 		}
 
 		public function roll(): BelongsTo
 		{
-			return $this->belongsTo(MaterialRoll::class);
+			return $this->belongsTo(MaterialRoll::class)->withTrashed();
 		}
 
 		public function user(): BelongsTo
