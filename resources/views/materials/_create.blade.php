@@ -8,7 +8,7 @@
 			<span>Шаблон названия:</span>
 			<label>
 				<input type="text" name="name-template" id="name-template" autocomplete="off"
-						value="Название | грамматура | толщина | формат">
+						value="{{ $nameTemplate }}">
 			</label>
 		</div>
 

@@ -6,9 +6,11 @@
 	use App\Models\Material;
 	use App\Models\MaterialRoll;
 	use App\Models\Setting;
+	use Illuminate\Http\Exceptions\HttpResponseException;
 	use Illuminate\Http\JsonResponse;
 	use Illuminate\Http\Request;
 	use Illuminate\Support\Facades\DB;
+	use Illuminate\Validation\Rule;
 	use Illuminate\View\View;
 
 	class CatalogController extends Controller
@@ -179,7 +181,12 @@
 		{
 			$validated = $request->validate([
 					'name' => ['required', 'string', 'max:255'],
-					'parent_id' => ['nullable', 'integer', 'exists:catalogs,id'],
+					// Удалённые (в корзине) каталоги нельзя выбирать родителем.
+					'parent_id' => [
+							'nullable',
+							'integer',
+							Rule::exists('catalogs', 'id')->whereNull('deleted_at'),
+					],
 					'sort_order' => ['nullable', 'integer', 'min:0'],
 					'is_active' => ['boolean'],
 			]);
@@ -188,7 +195,14 @@
 
 			if ($catalog !== null && $parentId !== null) {
 				if ($parentId === $catalog->id || Catalog::descendantIds($catalog->id)->contains($parentId)) {
-					abort(422, 'Нельзя вложить каталог в самого себя или в своего потомка.');
+					$message = 'Нельзя вложить каталог в самого себя или в своего потомка.';
+
+					throw new HttpResponseException(response()->json([
+							'message' => $message,
+							'errors' => [
+									'parent_id' => [$message],
+							],
+					], 422));
 				}
 			}
 

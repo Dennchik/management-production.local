@@ -26,7 +26,7 @@
 			// Перенос форматов с существующих рулонов
 			DB::statement(
 				'INSERT INTO material_formats (material_id, format, created_at, updated_at)
-				 SELECT DISTINCT material_id, format, NOW(), NOW()
+				 SELECT DISTINCT material_id, format, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 				 FROM material_rolls
 				 WHERE format IS NOT NULL'
 			);

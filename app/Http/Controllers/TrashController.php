@@ -8,6 +8,11 @@
 	use Illuminate\Support\Facades\DB;
 	use Illuminate\View\View;
 
+	/** Занятый идентификатор или имя при восстановлении из корзины. */
+	class RestoreConflictException extends \RuntimeException
+	{
+	}
+
 	class TrashController extends Controller
 	{
 		/**
@@ -47,7 +52,9 @@
 
 						Material::onlyTrashed()
 								->where('catalog_id', $catalog->id)
-								->each(static function (Material $material) {
+								->each(function (Material $material) {
+									$this->ensureMaterialCanBeRestored($material);
+
 									$material->rolls()->restore();
 									$material->restore();
 								});
@@ -57,9 +64,16 @@
 
 					$material = Material::onlyTrashed()->findOrFail($id);
 
+					$this->ensureMaterialCanBeRestored($material);
+
 					$material->rolls()->restore();
 					$material->restore();
 				});
+			} catch (RestoreConflictException $e) {
+				return response()->json([
+						'success' => false,
+						'message' => $e->getMessage(),
+				], 422);
 			} catch (\Throwable $e) {
 				return response()->json([
 						'success' => false,
@@ -75,8 +89,7 @@
 
 		/**
 		 * Удаляет запись из корзины навсегда.
-		 */
-		public function destroy(string $type, int $id): JsonResponse
+		 */		public function destroy(string $type, int $id): JsonResponse
 		{
 			try {
 				DB::transaction(function () use ($type, $id) {
@@ -111,5 +124,28 @@
 					'success' => true,
 					'message' => 'Запись удалена навсегда.',
 			]);
+		}
+
+		/**
+		 * Проверяет, что идентификатор материала не занят активным
+		 * материалом: иначе восстановление упрётся в уникальный индекс.
+		 */
+		private function ensureMaterialCanBeRestored(Material $material): void
+		{
+			if ($material->identifier === null) {
+				return;
+			}
+
+			$busy = Material::query()
+					->where('identifier', $material->identifier)
+					->where('id', '!=', $material->id)
+					->exists();
+
+			if ($busy) {
+				throw new RestoreConflictException(
+						'Нельзя восстановить: материал с идентификатором «'
+						. $material->identifier . '» уже существует.'
+				);
+			}
 		}
 	}

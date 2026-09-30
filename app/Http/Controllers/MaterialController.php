@@ -5,14 +5,21 @@
 	use App\Models\Catalog;
 	use App\Models\Material;
 	use App\Models\ProductionOperation;
+	use App\Models\Setting;
 	use Illuminate\Http\JsonResponse;
 	use Illuminate\Http\Request;
+	use Illuminate\Validation\Rule;
 	use Illuminate\Support\Facades\DB;
 	use Illuminate\Validation\ValidationException;
 	use Illuminate\View\View;
 
 	class MaterialController extends Controller
 	{
+		/** Ключ настройки шаблона названия материала. */
+		public const NAME_TEMPLATE_SETTING_KEY = 'materials.name_template';
+
+		public const DEFAULT_NAME_TEMPLATE = 'Название | грамматура | толщина | формат';
+
 		public function create(): View
 		{
 			$number = Material::query()->count() + 1;
@@ -26,6 +33,7 @@
 
 			return view('materials._create', [
 					'number' => $number,
+					'nameTemplate' => $this->nameTemplate(),
 					'catalogOptions' => $this->catalogOptions(),
 					'selectedCatalogId' => $prefill?->catalog_id ?? request('catalog'),
 					'productionLines' => $this->productionLines(),
@@ -53,6 +61,7 @@
 			return view('materials._edit', [
 					'material' => $material,
 					'number' => $number,
+					'nameTemplate' => $this->nameTemplate(),
 					'catalogOptions' => $this->catalogOptions(),
 					'productionLines' => $this->productionLines(),
 					'selectedOperationIds' => $material->allowedOperations()->pluck(
@@ -63,21 +72,13 @@
 
 		public function store(Request $request): JsonResponse
 		{
-			$validated = $request->validate([
-					'name' => ['required', 'string', 'max:255'],
-					'code' => ['required', 'string', 'max:10'],
-					'grammage' => ['nullable', 'numeric', 'min:0'],
-					'thickness' => ['nullable', 'numeric', 'min:0'],
-					'format' => ['nullable', 'integer', 'min:0', 'max:65535'],
-					'catalog_id' => ['nullable', 'integer', 'exists:catalogs,id'],
-					'allowed_operations' => ['nullable', 'array'],
-					'allowed_operations.*' => ['integer', 'exists:production_operations,id'],
-					'is_active' => ['boolean'],
-			]);
+			$validated = $this->validateMaterial($request);
 
 			$identifier = $this->materialIdentifier($validated);
 
 			$this->ensureIdentifierIsFree($identifier);
+
+			$this->saveNameTemplate($validated);
 
 			$material = Material::create([
 					'name' => $validated['name'],
@@ -107,17 +108,9 @@
 
 		public function update(Request $request, Material $material): JsonResponse
 		{
-			$validated = $request->validate([
-					'name' => ['required', 'string', 'max:255'],
-					'code' => ['required', 'string', 'max:10'],
-					'grammage' => ['nullable', 'numeric', 'min:0'],
-					'thickness' => ['nullable', 'numeric', 'min:0'],
-					'format' => ['nullable', 'integer', 'min:0', 'max:65535'],
-					'catalog_id' => ['nullable', 'integer', 'exists:catalogs,id'],
-					'allowed_operations' => ['nullable', 'array'],
-					'allowed_operations.*' => ['integer', 'exists:production_operations,id'],
-					'is_active' => ['boolean'],
-			]);
+			$validated = $this->validateMaterial($request);
+
+			$this->saveNameTemplate($validated);
 
 			/*
 			 * Идентификатор пересчитывается при каждом сохранении;
@@ -183,9 +176,58 @@
 		}
 
 		/**
-		 * Идентификатор из данных формы материала.
+		 * Общие правила валидации формы материала (создание и редактирование).
 		 */
-		private function materialIdentifier(array $validated): ?string
+		private function validateMaterial(Request $request): array
+		{
+			return $request->validate([
+					'name' => ['required', 'string', 'max:255'],
+					'code' => ['required', 'string', 'max:10'],
+					'grammage' => ['nullable', 'numeric', 'min:0'],
+					'thickness' => ['nullable', 'numeric', 'min:0'],
+					'format' => ['nullable', 'integer', 'min:0', 'max:65535'],
+					// Удалённые (в корзине) каталоги нельзя выбирать.
+					'catalog_id' => [
+							'nullable',
+							'integer',
+							Rule::exists('catalogs', 'id')->whereNull('deleted_at'),
+					],
+					'allowed_operations' => ['nullable', 'array'],
+					'allowed_operations.*' => ['integer', 'exists:production_operations,id'],
+					'is_active' => ['boolean'],
+					'name_template' => ['nullable', 'string', 'max:255'],
+			]);
+		}
+
+		/**
+		 * Запоминает шаблон названия материала как глобальную настройку.
+		 */
+		private function saveNameTemplate(array $validated): void
+		{
+			if (array_key_exists('name_template', $validated)
+					&& $validated['name_template'] !== null
+					&& trim($validated['name_template']) !== '') {
+				Setting::set(
+						self::NAME_TEMPLATE_SETTING_KEY,
+						trim($validated['name_template'])
+				);
+			}
+		}
+
+		/**
+		 * Текущий шаблон названия материала.
+		 */
+		private function nameTemplate(): string
+		{
+			return Setting::get(
+					self::NAME_TEMPLATE_SETTING_KEY,
+					self::DEFAULT_NAME_TEMPLATE
+			);
+		}
+
+		/**
+		 * Идентификатор из данных формы материала.
+		 */		private function materialIdentifier(array $validated): ?string
 		{
 			return Material::composeIdentifier(
 				$validated['code'],
@@ -202,6 +244,20 @@
 		{
 			if ($identifier === null) {
 				return;
+			}
+
+			// Уникальный индекс в БД действует и на записи в корзине,
+			// поэтому проверяем с withTrashed и объясняем это пользователю.
+			$trashed = Material::withTrashed()
+					->where('identifier', $identifier)
+					->whereNotNull('deleted_at')
+					->when($ignoreId !== null, fn ($query) => $query->where('id', '!=', $ignoreId))
+					->first();
+
+			if ($trashed !== null) {
+				throw ValidationException::withMessages([
+						'identifier' => 'Материал с идентификатором «' . $identifier . '» находится в корзине. Восстановите его или удалите из корзины безвозвратно.',
+				]);
 			}
 
 			$exists = Material::query()

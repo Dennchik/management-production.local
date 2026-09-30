@@ -79,7 +79,8 @@
 			return $this->belongsToMany(
 					ProductionOperation::class,
 					'material_production_operation'
-			)->orderBy('id');
+			// id уточняем таблицей: в запросе есть join, и голый "id" неоднозначен.
+			)->orderBy('production_operations.id');
 		}
 
 		/**

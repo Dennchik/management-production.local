@@ -457,7 +457,7 @@ async function saveMaterial(button) {
       const result = await response.json().catch(() => ({}));
 
       if (!response.ok || !result.material) {
-         showMaterialFormError(form, result.message);
+         showMaterialFormError(form, extractFormError(result));
          button.disabled = false;
          return;
       }
@@ -519,6 +519,7 @@ async function editMaterial(button) {
 
       initSelects(form);
       initIdentifierMirror(form);
+      initNameMirror(form);
 
       form?.querySelector('input[name="material-name"]')?.focus();
    } catch (error) {
@@ -572,7 +573,7 @@ async function updateMaterial(button) {
       const result = await response.json().catch(() => ({}));
 
       if (!response.ok || !result.material) {
-         showMaterialFormError(form, result.message);
+         showMaterialFormError(form, extractFormError(result));
          button.disabled = false;
          return;
       }
@@ -826,6 +827,9 @@ function getMaterialData(form) {
       name:
          form.querySelector('input[name="material-name"]')?.value.trim() || '',
 
+      name_template:
+         form.querySelector('#name-template')?.value.trim() || null,
+
       code: form.querySelector('input[name="code"]')?.value.trim() || '',
 
       grammage: form.querySelector('input[name="grammage"]')?.value || null,
@@ -843,6 +847,29 @@ function getMaterialData(form) {
       is_active:
          form.querySelector('input[name="is_active"]')?.checked ?? false,
    };
+}
+
+/**
+ * Извлекает текст ошибки из ответа сервера: сначала валидационные
+ * ошибки (result.errors), затем общее сообщение (result.message).
+ *
+ * @param {Object} result Разобранный JSON-ответ.
+ * @returns {string} Текст ошибки.
+ */
+function extractFormError(result) {
+   const errors = result?.errors;
+
+   if (errors && typeof errors === 'object') {
+      const first = Object.values(errors).find(
+         (messages) => Array.isArray(messages) && messages.length > 0
+      );
+
+      if (first) {
+         return first[0];
+      }
+   }
+
+   return result?.message || 'Не удалось сохранить. Попробуйте ещё раз.';
 }
 
 /**

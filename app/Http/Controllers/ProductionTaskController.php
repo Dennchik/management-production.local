@@ -566,8 +566,8 @@
 
 			// Оприходование выходной продукции новыми рулонами;
 			// номера введены на странице задачи, по умолчанию «номерЗадачи/порядковый».
-			// На праймировании выходной рулон наследует номер входного:
-			// физически тот же рулон, уже праймированного материала.
+			// На праймировании выходной рулон наследует номер входного
+			// с пометкой «ПР»: физически тот же рулон, праймированного материала.
 			$isPriming = $task->productionLine?->operation?->code === 'priming';
 
 			$inputRollNumbers = $task->inputs
@@ -593,7 +593,7 @@
 				$roll = MaterialRoll::create([
 						'material_id' => $task->material_id,
 						'roll_number' => $isPriming && $inheritedNumber !== null
-								? $inheritedNumber
+								? static::primingRollNumber($inheritedNumber)
 								: $fallbackNumber,
 						'weight' => $output->actual_weight,
 				]);
@@ -975,5 +975,17 @@
 			);
 
 			return max(0.0, round((float) $roll->weight - $reserved, 3));
+		}
+
+		/**
+		 * Номер рулона после праймирования: номер входного рулона с пометкой «ПР».
+		 */
+		private static function primingRollNumber(string $number): string
+		{
+			$trimmed = trim($number);
+
+			return str_ends_with(mb_strtolower($trimmed), 'пр')
+					? $trimmed
+					: $trimmed . ' ПР';
 		}
 	}

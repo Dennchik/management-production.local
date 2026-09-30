@@ -30,6 +30,9 @@
 			}
 
 			Schema::table('materials', function (Blueprint $table) {
+				// SQLite не умеет удалять колонку, входящую в индекс:
+				// сначала снимаем уникальный индекс идентификатора.
+				$table->dropUnique(['identifier']);
 				$table->dropColumn(['format', 'identifier']);
 			});
 		}

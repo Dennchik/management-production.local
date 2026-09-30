@@ -5,6 +5,14 @@
 
 	<div class="material-show__content">
 		<div class="material-show__row">
+			<span>Шаблон названия:</span>
+			<label>
+				<input type="text" name="name-template" id="name-template" autocomplete="off"
+						value="{{ $nameTemplate }}">
+			</label>
+		</div>
+
+		<div class="material-show__row">
 			<span>Наименование:</span>
 			<label>
 				<input type="text" name="material-name" value="{{ $material->name }}" autocomplete="off">

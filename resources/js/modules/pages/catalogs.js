@@ -197,9 +197,10 @@ async function saveCatalog(button) {
          body: JSON.stringify(getCatalogData(form)),
       });
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
       if (!response.ok || !result.catalog) {
+         showCatalogFormError(form, extractFormError(result));
          button.disabled = false;
          return;
       }
@@ -300,9 +301,10 @@ async function updateCatalog(button) {
          body: JSON.stringify(getCatalogData(form)),
       });
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
       if (!response.ok || !result.catalog) {
+         showCatalogFormError(form, extractFormError(result));
          button.disabled = false;
          return;
       }
@@ -318,6 +320,60 @@ async function updateCatalog(button) {
    } catch (error) {
       button.disabled = false;
    }
+}
+
+/**
+ * Извлекает текст ошибки из ответа сервера: сначала валидационные
+ * ошибки (result.errors), затем общее сообщение (result.message).
+ *
+ * @param {Object} result Разобранный JSON-ответ.
+ * @returns {string} Текст ошибки.
+ */
+function extractFormError(result) {
+   const errors = result?.errors;
+
+   if (errors && typeof errors === 'object') {
+      const first = Object.values(errors).find(
+         (messages) => Array.isArray(messages) && messages.length > 0
+      );
+
+      if (first) {
+         return first[0];
+      }
+   }
+
+   return result?.message || 'Не удалось сохранить. Попробуйте ещё раз.';
+}
+
+/**
+ * Показывает ошибку сохранения внутри формы каталога.
+ *
+ * @param {HTMLElement} form Контейнер формы каталога.
+ * @param {string} message Текст ошибки.
+ */
+function showCatalogFormError(form, message) {
+   if (!form || !message) {
+      return;
+   }
+
+   let error = form.querySelector('[data-catalog-form-error]');
+
+   if (!error) {
+      error = document.createElement('div');
+      error.setAttribute('data-catalog-form-error', '');
+      error.style.color = '#c0392b';
+      error.style.paddingTop = '8px';
+
+      const actions = form.querySelector('[class*="__actions"]');
+
+      if (actions) {
+         form.insertBefore(error, actions);
+      } else {
+         form.appendChild(error);
+      }
+   }
+
+   error.textContent = message;
 }
 
 /**
