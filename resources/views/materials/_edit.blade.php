@@ -15,7 +15,7 @@
 		<div class="material-show__row">
 			<span>Наименование:</span>
 			<label>
-				<input type="text" name="material-name" value="{{ $material->name }}" autocomplete="off">
+				<input type="text" name="material-name" id="material-name" value="{{ $material->name }}" autocomplete="off">
 			</label>
 		</div>
 

@@ -1,5 +1,6 @@
 import { CustomSelect, initSelects } from '../../assets/select.js';
 import { RollsApiService } from '../../services/rollsApi.js';
+import { confirmRowRemoval, rowRemovalText } from '../ui/row-remove-confirm.js';
 
 export function initMaterialAdjustmentModule() {
    const form = document.querySelector('[data-adjustment-order]');
@@ -50,20 +51,6 @@ export function initMaterialAdjustmentModule() {
          row
             .querySelector('[data-adjustment-input]')
             ?.setAttribute('name', `rows[${index}][adjustment]`);
-      });
-   };
-
-   // =========================================================
-   // Кнопки удаления: единственную строку удалить нельзя
-   // =========================================================
-
-   const syncRemoveButtons = () => {
-      getRows().forEach((row, index) => {
-         const removeButton = row.querySelector('[data-adjustment-row-remove]');
-
-         if (removeButton) {
-            removeButton.hidden = getRows().length === 1;
-         }
       });
    };
 
@@ -237,14 +224,18 @@ export function initMaterialAdjustmentModule() {
       row
          .querySelector('[data-adjustment-row-remove]')
          ?.addEventListener('click', () => {
-            if (getRows().length === 1) {
-               return;
-            }
+            confirmRowRemoval({
+               text: rowRemovalText(
+                  row,
+                  '[data-adjustment-material]',
+                  '.material-select .select__button-text'
+               ),
+               onConfirm: () => {
+                  row.remove();
 
-            row.remove();
-
-            reindexRows();
-            syncRemoveButtons();
+                  reindexRows();
+               },
+            });
          });
 
       return row;
@@ -342,7 +333,6 @@ export function initMaterialAdjustmentModule() {
       const row = createRow();
 
       reindexRows();
-      syncRemoveButtons();
 
       row.querySelector('.select__button')?.focus();
    });
@@ -380,7 +370,6 @@ export function initMaterialAdjustmentModule() {
       createRow();
 
       reindexRows();
-      syncRemoveButtons();
 
       if (commentInput) {
          commentInput.value = '';
@@ -390,7 +379,6 @@ export function initMaterialAdjustmentModule() {
    // Начальная строка + восстановление после ошибки
    createRow();
    reindexRows();
-   syncRemoveButtons();
 
    void restoreRows();
 }

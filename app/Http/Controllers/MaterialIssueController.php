@@ -8,12 +8,14 @@
 	use Illuminate\Http\RedirectResponse;
 	use Illuminate\Http\Request;
 	use Illuminate\Support\Facades\DB;
+	use Illuminate\Support\Str;
 	use Illuminate\View\View;
 
 	class MaterialIssueController extends Controller
 	{
 		/**
-		 * Список расходных ордеров.
+		 * Список расходных ордеров: строки одного сабмита
+		 * с общим batch_id показываются как один документ.
 		 */
 		public function index(Request $request): View
 		{
@@ -34,15 +36,21 @@
 					->latest()
 					->get();
 
+			// Старые однострочные записи (без batch_id) остаются документами
+			// из одной строки.
+			$orders = $issues
+					->groupBy(static fn (MaterialIssue $issue) => $issue->batch_id ?? 'single-' . $issue->id)
+					->values();
+
 			return view('material-issues.index', compact(
-					'issues',
+					'orders',
 					'dateFrom',
 					'dateTo'
 			));
 		}
 
 		/**
-		 * Просмотр расходного ордера.
+		 * Просмотр расходного ордера: все строки ордера.
 		 */
 		public function show(MaterialIssue $issue): View
 		{
@@ -52,14 +60,24 @@
 					'user',
 			]);
 
+			$rows = $issue->orderRows();
+
+			$rows->load([
+					'material',
+					'roll',
+					'user',
+			]);
+
 			if (request()->ajax()) {
 				return view('material-issues._content', [
 						'issue' => $issue,
+						'rows' => $rows,
 				]);
 			}
 
 			return view('material-issues.show', [
 					'issue' => $issue,
+					'rows' => $rows,
 			]);
 		}
 
@@ -76,25 +94,35 @@
 	}
 
 		/**
-		 * Сохраняет операцию расхода сырья.
+		 * Сохраняет расходный ордер с одной или несколькими позициями:
+		 * материал и рулон выбираются в каждой строке.
 		 */
 		public function store(Request $request): RedirectResponse
 		{
 			$validated = $request->validate(
 					[
-							'material_id' => [
+							'rows' => [
+									'required',
+									'array',
+									'min:1',
+							],
+
+							'rows.*.material_id' => [
 									'required',
 									'integer',
 									'exists:materials,id',
 							],
 
-							'roll_id' => [
+							'rows.*.roll_id' => [
 									'required',
 									'integer',
+									// Один рулон не может быть указан в двух
+									// позициях одного ордера
+									'distinct',
 									'exists:material_rolls,id',
 							],
 
-							'weight' => [
+							'rows.*.weight' => [
 									'required',
 									'numeric',
 									'gt:0',
@@ -106,86 +134,94 @@
 							],
 					],
 					[
-							'material_id.required' => 'Укажите материал.',
-							'material_id.integer' => 'Некорректный материал.',
-							'material_id.exists' => 'Выбранный материал не существует.',
+							'rows.required' => 'Добавьте хотя бы одну позицию.',
+							'rows.min' => 'Добавьте хотя бы одну позицию.',
 
-							'roll_id.required' => 'Укажите рулон.',
-							'roll_id.integer' => 'Некорректный рулон.',
-							'roll_id.exists' => 'Выбранный рулон не существует.',
+							'rows.*.material_id.required' => 'Укажите материал в каждой позиции.',
+							'rows.*.material_id.integer' => 'Некорректный материал.',
+							'rows.*.material_id.exists' => 'Выбранный материал не существует.',
 
-							'weight.required' => 'Укажите вес.',
-							'weight.numeric' => 'Вес должен быть числом.',
-							'weight.gt' => 'Вес должен быть больше 0.',
+							'rows.*.roll_id.required' => 'Укажите рулон в каждой позиции.',
+							'rows.*.roll_id.integer' => 'Некорректный рулон.',
+							'rows.*.roll_id.distinct' => 'Один и тот же рулон указан в нескольких позициях.',
+							'rows.*.roll_id.exists' => 'Выбранный рулон не существует.',
+
+							'rows.*.weight.required' => 'Укажите вес расхода в каждой позиции.',
+							'rows.*.weight.numeric' => 'Вес должен быть числом.',
+							'rows.*.weight.gt' => 'Вес должен быть больше 0.',
 
 							'comment.string' => 'Комментарий должен быть текстом.',
 					]
 			);
 
+			$batchId = (string) Str::uuid();
+
 			try {
-				DB::transaction(function () use ($validated) {
-					/*
-					 * Блокируем выбранный рулон на время операции,
-					 * чтобы два одновременных расхода не списали
-					 * больше материала, чем фактически есть.
-					 */
-					$roll = MaterialRoll::query()
-							->lockForUpdate()
-							->findOrFail($validated['roll_id']);
+				DB::transaction(function () use ($validated, $batchId) {
+					foreach ($validated['rows'] as $row) {
+						/*
+						 * Блокируем рулон на время операции, чтобы два
+						 * одновременных расхода не списали больше материала,
+						 * чем фактически есть.
+						 */
+						$roll = MaterialRoll::query()
+								->lockForUpdate()
+								->findOrFail($row['roll_id']);
 
-					/*
-					 * Проверяем, что рулон относится именно
-					 * к выбранному материалу.
-					 */
-					if ((int)$roll->material_id !== (int)$validated['material_id']) {
-						throw new \Exception(
-								'Выбранный рулон не относится к выбранному материалу.'
-						);
+						/*
+						 * Проверяем, что рулон относится именно
+						 * к выбранному материалу.
+						 */
+						if ((int) $roll->material_id !== (int) $row['material_id']) {
+							throw new \Exception(
+									'Выбранный рулон не относится к выбранному материалу.'
+							);
+						}
+
+						$currentWeight = round((float) $roll->weight, 3);
+						$issueWeight = round((float) $row['weight'], 3);
+
+						/*
+						 * Проверяем достаточность остатка.
+						 */
+						if ($issueWeight > $currentWeight) {
+							throw new \Exception(
+									'Недостаточно материала на рулоне «' . $roll->roll_number . '». Доступно: '
+									. number_format($currentWeight, 3, '.', '')
+									. ' кг'
+							);
+						}
+
+						/*
+						 * Создаём позицию расходного ордера.
+						 */
+						MaterialIssue::create([
+								'material_id' => $roll->material_id,
+								'roll_id' => $roll->id,
+								'weight' => $issueWeight,
+								'batch_id' => $batchId,
+								'comment' => $validated['comment'] ?? null,
+								'user_id' => auth()->id(),
+						]);
+
+						/*
+						 * Уменьшаем текущий остаток рулона.
+						 */
+						$roll->update([
+								'weight' => round($currentWeight - $issueWeight, 3),
+						]);
 					}
-
-					$currentWeight = (float)$roll->weight;
-					$issueWeight = (float)$validated['weight'];
-
-					/*
-					 * Проверяем достаточность остатка.
-					 */
-					if ($issueWeight > $currentWeight) {
-						throw new \Exception(
-								'Недостаточно материала на рулоне. Доступно: '
-								. number_format($currentWeight, 3, '.', '')
-								. ' кг'
-						);
-					}
-
-					/*
-					 * Создаём операцию расхода.
-					 */
-					MaterialIssue::create([
-							'material_id' => $roll->material_id,
-							'roll_id' => $roll->id,
-							'weight' => $issueWeight,
-							'comment' => $validated['comment'] ?? null,
-							'user_id' => auth()->id(),
-					]);
-
-					/*
-					 * Уменьшаем текущий остаток рулона.
-					 */
-					$roll->update([
-							'weight' => $currentWeight - $issueWeight,
-					]);
 				});
 
 				return redirect()
 						->route('material-issues.create')
-						->with('success', 'Материал успешно списан.');
+						->with('success', 'Материалы успешно списаны (позиций: ' . count($validated['rows']) . ').');
 			} catch (\Exception $e) {
 				return back()
 						->withInput()
 						->withErrors([
-								'weight' => $e->getMessage(),
+								'rows' => $e->getMessage(),
 						]);
 			}
 		}
 	}
-

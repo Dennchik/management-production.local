@@ -152,10 +152,9 @@ class ReceiptsIssuesRollsTest extends TestCase
         $material = $this->makeMaterial();
 
         $response = $this->post(route('material-receipts.store'), [
-            'material_id' => $material->id,
             'rolls' => [
-                ['roll_number' => 'R-001', 'weight' => 120.5],
-                ['roll_number' => 'R-002', 'weight' => 79.5],
+                ['material_id' => $material->id, 'roll_number' => 'R-001', 'weight' => 120.5],
+                ['material_id' => $material->id, 'roll_number' => 'R-002', 'weight' => 79.5],
             ],
             'comment' => 'Партия №17',
         ]);
@@ -194,22 +193,19 @@ class ReceiptsIssuesRollsTest extends TestCase
         $material = $this->makeMaterial();
 
         $this->post(route('material-receipts.store'), [
-            'material_id' => $material->id,
-            'rolls' => [['roll_number' => 'R-100', 'weight' => 50]],
+            'rolls' => [['material_id' => $material->id, 'roll_number' => 'R-100', 'weight' => 50]],
         ])->assertRedirect(route('material-receipts.create'));
 
         // Тот же номер для того же материала — ошибка валидации.
         $this->post(route('material-receipts.store'), [
-            'material_id' => $material->id,
-            'rolls' => [['roll_number' => 'R-100', 'weight' => 50]],
+            'rolls' => [['material_id' => $material->id, 'roll_number' => 'R-100', 'weight' => 50]],
         ])
             ->assertSessionHasErrors(['rolls.0.roll_number']);
 
         // Тот же номер для другого материала разрешён.
         $other = $this->makeMaterial('Плёнка 20 мкм');
         $this->post(route('material-receipts.store'), [
-            'material_id' => $other->id,
-            'rolls' => [['roll_number' => 'R-100', 'weight' => 30]],
+            'rolls' => [['material_id' => $other->id, 'roll_number' => 'R-100', 'weight' => 30]],
         ])->assertSessionHasNoErrors();
 
         // Только два реально созданных рулона: R-100 для обоих материалов.
@@ -222,16 +218,15 @@ class ReceiptsIssuesRollsTest extends TestCase
         $this->loginWarehouseUser();
         $material = $this->makeMaterial();
 
-        // Не указан материал.
+        // Не указан материал в строке.
         $this->post(route('material-receipts.store'), [
             'rolls' => [['roll_number' => 'R-1', 'weight' => 10]],
-        ])->assertSessionHasErrors(['material_id']);
+        ])->assertSessionHasErrors(['rolls.0.material_id']);
 
         // Несуществующий материал.
         $this->post(route('material-receipts.store'), [
-            'material_id' => 99999,
-            'rolls' => [['roll_number' => 'R-1', 'weight' => 10]],
-        ])->assertSessionHasErrors(['material_id']);
+            'rolls' => [['material_id' => 99999, 'roll_number' => 'R-1', 'weight' => 10]],
+        ])->assertSessionHasErrors(['rolls.0.material_id']);
 
         // Пустой список рулонов.
         $this->post(route('material-receipts.store'), [
@@ -241,13 +236,11 @@ class ReceiptsIssuesRollsTest extends TestCase
 
         // Нулевой и отрицательный вес.
         $this->post(route('material-receipts.store'), [
-            'material_id' => $material->id,
-            'rolls' => [['roll_number' => 'R-1', 'weight' => 0]],
+            'rolls' => [['material_id' => $material->id, 'roll_number' => 'R-1', 'weight' => 0]],
         ])->assertSessionHasErrors(['rolls.0.weight']);
 
         $this->post(route('material-receipts.store'), [
-            'material_id' => $material->id,
-            'rolls' => [['roll_number' => 'R-1', 'weight' => -5]],
+            'rolls' => [['material_id' => $material->id, 'roll_number' => 'R-1', 'weight' => -5]],
         ])->assertSessionHasErrors(['rolls.0.weight']);
 
         // Ничего не должно быть создано.
@@ -263,10 +256,9 @@ class ReceiptsIssuesRollsTest extends TestCase
         // Первый приход в режиме общего веса.
         $this->post(route('material-receipts.store'), [
             'mode' => 'total_weight',
-            'material_id' => $material->id,
             'rolls' => [
-                ['roll_number' => null, 'weight' => 100],
-                ['roll_number' => null, 'weight' => 50.5],
+                ['material_id' => $material->id, 'roll_number' => null, 'weight' => 100],
+                ['material_id' => $material->id, 'roll_number' => null, 'weight' => 50.5],
             ],
             'comment' => 'Общий вес',
         ])->assertSessionHasNoErrors();
@@ -281,8 +273,7 @@ class ReceiptsIssuesRollsTest extends TestCase
         // Второй приход суммируется в тот же рулон.
         $this->post(route('material-receipts.store'), [
             'mode' => 'total_weight',
-            'material_id' => $material->id,
-            'rolls' => [['roll_number' => null, 'weight' => 49.5]],
+            'rolls' => [['material_id' => $material->id, 'roll_number' => null, 'weight' => 49.5]],
         ])->assertSessionHasNoErrors();
 
         $roll->refresh();
@@ -298,8 +289,7 @@ class ReceiptsIssuesRollsTest extends TestCase
         $material = $this->makeMaterial();
 
         $this->post(route('material-receipts.store'), [
-            'material_id' => $material->id,
-            'rolls' => [['roll_number' => 'R-777', 'weight' => 42]],
+            'rolls' => [['material_id' => $material->id, 'roll_number' => 'R-777', 'weight' => 42]],
             'comment' => 'Показ',
         ]);
 
@@ -315,6 +305,91 @@ class ReceiptsIssuesRollsTest extends TestCase
         $this->get(route('material-receipts.show', $receipt), ['X-Requested-With' => 'XMLHttpRequest'])
             ->assertOk()
             ->assertViewIs('material-receipts._content');
+    }
+
+    public function test_store_creates_receipt_with_multiple_materials(): void
+    {
+        $user = $this->loginWarehouseUser();
+        $paper = $this->makeMaterial('Бумага 80');
+        $film = $this->makeMaterial('Плёнка 20 мкм');
+
+        $this->post(route('material-receipts.store'), [
+            'rolls' => [
+                ['material_id' => $paper->id, 'roll_number' => 'P-001', 'weight' => 100],
+                ['material_id' => $film->id, 'roll_number' => 'F-001', 'weight' => 50],
+                ['material_id' => $paper->id, 'roll_number' => 'P-002', 'weight' => 25.5],
+            ],
+            'comment' => 'Два материала',
+        ])
+            ->assertRedirect(route('material-receipts.create'))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseCount('material_receipts', 1);
+        $this->assertSame(3, MaterialRoll::count());
+        $this->assertDatabaseHas('material_rolls', ['material_id' => $film->id, 'roll_number' => 'F-001']);
+        $this->assertSame(125.5, (float) $paper->rolls()->sum('weight'));
+
+        $receipt = MaterialReceipt::first();
+        $this->assertSame(3, $receipt->items()->count());
+        $this->assertSame(2, $receipt->items->unique('material_id')->count());
+
+        // Один и тот же номер у разных материалов ордера разрешён.
+        $this->post(route('material-receipts.store'), [
+            'rolls' => [
+                ['material_id' => $paper->id, 'roll_number' => 'X-1', 'weight' => 10],
+                ['material_id' => $film->id, 'roll_number' => 'X-1', 'weight' => 20],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(2, MaterialRoll::where('roll_number', 'X-1')->count());
+    }
+
+    public function test_store_rejects_duplicate_roll_number_within_one_request(): void
+    {
+        $this->loginWarehouseUser();
+        $material = $this->makeMaterial();
+
+        $this->from(route('material-receipts.create'))
+            ->post(route('material-receipts.store'), [
+                'rolls' => [
+                    ['material_id' => $material->id, 'roll_number' => 'D-1', 'weight' => 10],
+                    ['material_id' => $material->id, 'roll_number' => 'D-1', 'weight' => 20],
+                ],
+            ])
+            ->assertRedirect(route('material-receipts.create'))
+            ->assertSessionHasErrors(['rolls.1.roll_number']);
+
+        // Ордер не создан: валидация до транзакции.
+        $this->assertDatabaseCount('material_receipts', 0);
+        $this->assertDatabaseCount('material_rolls', 0);
+    }
+
+    public function test_store_total_weight_mode_groups_rows_by_material(): void
+    {
+        $this->loginWarehouseUser();
+        $paper = $this->makeMaterial('Бумага 80');
+        $film = $this->makeMaterial('Плёнка 20 мкм');
+
+        $this->post(route('material-receipts.store'), [
+            'mode' => 'total_weight',
+            'rolls' => [
+                ['material_id' => $paper->id, 'roll_number' => null, 'weight' => 100],
+                ['material_id' => $film->id, 'roll_number' => null, 'weight' => 60],
+                ['material_id' => $paper->id, 'roll_number' => null, 'weight' => 40],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        // По одному рулону «Общий вес» на каждый материал.
+        $this->assertSame(2, MaterialRoll::count());
+        $this->assertDatabaseHas('material_rolls', [
+            'material_id' => $paper->id, 'roll_number' => 'Общий вес', 'weight' => 140,
+        ]);
+        $this->assertDatabaseHas('material_rolls', [
+            'material_id' => $film->id, 'roll_number' => 'Общий вес', 'weight' => 60,
+        ]);
+
+        $receipt = MaterialReceipt::first();
+        $this->assertSame(2, $receipt->items()->count());
     }
 
     /*
@@ -345,8 +420,9 @@ class ReceiptsIssuesRollsTest extends TestCase
         $this->get(route('material-issues.index'))
             ->assertOk()
             ->assertViewIs('material-issues.index')
-            ->assertViewHas('issues', fn ($issues) => $issues->count() === 1
-                && $issues->first()->comment === 'Списание в цех');
+            ->assertViewHas('orders', fn ($orders) => $orders->count() === 1
+                && $orders->first()->count() === 1
+                && $orders->first()->first()->comment === 'Списание в цех');
 
         // Пользователь без права warehouse не допущен.
         $outsider = $this->makeUserWithPermissions(['materials' => ['view']], 'Чужой', 'outsider');
@@ -379,13 +455,13 @@ class ReceiptsIssuesRollsTest extends TestCase
         ]);
 
         $this->post(route('material-issues.store'), [
-            'material_id' => $material->id,
-            'roll_id' => $roll->id,
-            'weight' => 37.25,
+            'rows' => [
+                ['material_id' => $material->id, 'roll_id' => $roll->id, 'weight' => 37.25],
+            ],
             'comment' => 'В производство',
         ])
             ->assertRedirect(route('material-issues.create'))
-            ->assertSessionHas('success', 'Материал успешно списан.');
+            ->assertSessionHas('success', 'Материалы успешно списаны (позиций: 1).');
 
         $roll->refresh();
         $this->assertSame(62.75, (float) $roll->weight);
@@ -411,9 +487,9 @@ class ReceiptsIssuesRollsTest extends TestCase
         ]);
 
         $this->post(route('material-issues.store'), [
-            'material_id' => $material->id,
-            'roll_id' => $roll->id,
-            'weight' => 25,
+            'rows' => [
+                ['material_id' => $material->id, 'roll_id' => $roll->id, 'weight' => 25],
+            ],
         ])->assertSessionHasNoErrors();
 
         $roll->refresh();
@@ -444,12 +520,12 @@ class ReceiptsIssuesRollsTest extends TestCase
 
         $this->from(route('material-issues.create'))
             ->post(route('material-issues.store'), [
-                'material_id' => $material->id,
-                'roll_id' => $roll->id,
-                'weight' => 10.001,
+                'rows' => [
+                    ['material_id' => $material->id, 'roll_id' => $roll->id, 'weight' => 10.001],
+                ],
             ])
             ->assertRedirect(route('material-issues.create'))
-            ->assertSessionHasErrors(['weight']);
+            ->assertSessionHasErrors(['rows']);
 
         // Остаток и список расхода не изменились.
         $roll->refresh();
@@ -471,12 +547,12 @@ class ReceiptsIssuesRollsTest extends TestCase
 
         $this->from(route('material-issues.create'))
             ->post(route('material-issues.store'), [
-                'material_id' => $materialA->id,
-                'roll_id' => $roll->id,
-                'weight' => 5,
+                'rows' => [
+                    ['material_id' => $materialA->id, 'roll_id' => $roll->id, 'weight' => 5],
+                ],
             ])
             ->assertRedirect(route('material-issues.create'))
-            ->assertSessionHasErrors(['weight']);
+            ->assertSessionHasErrors(['rows']);
 
         $roll->refresh();
         $this->assertSame(100.0, (float) $roll->weight);
@@ -496,31 +572,31 @@ class ReceiptsIssuesRollsTest extends TestCase
 
         // Несуществующий рулон.
         $this->post(route('material-issues.store'), [
-            'material_id' => $material->id,
-            'roll_id' => 99999,
-            'weight' => 1,
-        ])->assertSessionHasErrors(['roll_id']);
+            'rows' => [
+                ['material_id' => $material->id, 'roll_id' => 99999, 'weight' => 1],
+            ],
+        ])->assertSessionHasErrors(['rows.0.roll_id']);
 
         // Несуществующий материал.
         $this->post(route('material-issues.store'), [
-            'material_id' => 99999,
-            'roll_id' => $roll->id,
-            'weight' => 1,
-        ])->assertSessionHasErrors(['material_id']);
+            'rows' => [
+                ['material_id' => 99999, 'roll_id' => $roll->id, 'weight' => 1],
+            ],
+        ])->assertSessionHasErrors(['rows.0.material_id']);
 
         // Нулевой вес.
         $this->post(route('material-issues.store'), [
-            'material_id' => $material->id,
-            'roll_id' => $roll->id,
-            'weight' => 0,
-        ])->assertSessionHasErrors(['weight']);
+            'rows' => [
+                ['material_id' => $material->id, 'roll_id' => $roll->id, 'weight' => 0],
+            ],
+        ])->assertSessionHasErrors(['rows.0.weight']);
 
         // Отрицательный вес.
         $this->post(route('material-issues.store'), [
-            'material_id' => $material->id,
-            'roll_id' => $roll->id,
-            'weight' => -1,
-        ])->assertSessionHasErrors(['weight']);
+            'rows' => [
+                ['material_id' => $material->id, 'roll_id' => $roll->id, 'weight' => -1],
+            ],
+        ])->assertSessionHasErrors(['rows.0.weight']);
 
         $this->assertDatabaseCount('material_issues', 0);
         $this->assertSame(50.0, (float) $roll->fresh()->weight);
@@ -553,6 +629,144 @@ class ReceiptsIssuesRollsTest extends TestCase
         $this->get(route('material-issues.show', $issue), ['X-Requested-With' => 'XMLHttpRequest'])
             ->assertOk()
             ->assertViewIs('material-issues._content');
+    }
+
+    public function test_issue_store_creates_multi_row_order_with_shared_batch(): void
+    {
+        $user = $this->loginWarehouseUser();
+        $paper = $this->makeMaterial('Бумага 80');
+        $film = $this->makeMaterial('Плёнка 20 мкм');
+
+        $paperRoll = MaterialRoll::create(['material_id' => $paper->id, 'roll_number' => 'P-1', 'weight' => 100]);
+        $filmRoll = MaterialRoll::create(['material_id' => $film->id, 'roll_number' => 'F-1', 'weight' => 80]);
+
+        $this->post(route('material-issues.store'), [
+            'rows' => [
+                ['material_id' => $paper->id, 'roll_id' => $paperRoll->id, 'weight' => 30],
+                ['material_id' => $film->id, 'roll_id' => $filmRoll->id, 'weight' => 20],
+            ],
+            'comment' => 'Два материала в цех',
+        ])
+            ->assertRedirect(route('material-issues.create'))
+            ->assertSessionHas('success', 'Материалы успешно списаны (позиций: 2).');
+
+        $this->assertDatabaseCount('material_issues', 2);
+
+        $issues = MaterialIssue::orderBy('id')->get();
+        $this->assertNotNull($issues[0]->batch_id);
+        $this->assertSame($issues[0]->batch_id, $issues[1]->batch_id);
+        $this->assertSame('Два материала в цех', $issues[0]->comment);
+
+        $this->assertSame(70.0, (float) $paperRoll->fresh()->weight);
+        $this->assertSame(60.0, (float) $filmRoll->fresh()->weight);
+    }
+
+    public function test_issue_store_rejects_same_roll_in_two_rows(): void
+    {
+        $this->loginWarehouseUser();
+        $material = $this->makeMaterial();
+
+        $roll = MaterialRoll::create(['material_id' => $material->id, 'roll_number' => 'R-1', 'weight' => 100]);
+
+        $this->from(route('material-issues.create'))
+            ->post(route('material-issues.store'), [
+                'rows' => [
+                    ['material_id' => $material->id, 'roll_id' => $roll->id, 'weight' => 10],
+                    ['material_id' => $material->id, 'roll_id' => $roll->id, 'weight' => 20],
+                ],
+            ])
+            ->assertRedirect(route('material-issues.create'))
+            ->assertSessionHasErrors(['rows.1.roll_id']);
+
+        $this->assertDatabaseCount('material_issues', 0);
+        $this->assertSame(100.0, (float) $roll->fresh()->weight);
+    }
+
+    public function test_issue_store_rolls_back_all_rows_on_insufficient_stock(): void
+    {
+        $this->loginWarehouseUser();
+        $material = $this->makeMaterial();
+        $other = $this->makeMaterial('Плёнка 20 мкм');
+
+        $okRoll = MaterialRoll::create(['material_id' => $material->id, 'roll_number' => 'OK-1', 'weight' => 100]);
+        $smallRoll = MaterialRoll::create(['material_id' => $other->id, 'roll_number' => 'SM-1', 'weight' => 5]);
+
+        $this->from(route('material-issues.create'))
+            ->post(route('material-issues.store'), [
+                'rows' => [
+                    ['material_id' => $material->id, 'roll_id' => $okRoll->id, 'weight' => 10],
+                    ['material_id' => $other->id, 'roll_id' => $smallRoll->id, 'weight' => 10],
+                ],
+            ])
+            ->assertRedirect(route('material-issues.create'))
+            ->assertSessionHasErrors(['rows']);
+
+        // Транзакция откатилась целиком: ни одной позиции, остатки без изменений.
+        $this->assertDatabaseCount('material_issues', 0);
+        $this->assertSame(100.0, (float) $okRoll->fresh()->weight);
+        $this->assertSame(5.0, (float) $smallRoll->fresh()->weight);
+    }
+
+    public function test_issue_index_groups_rows_of_one_batch_as_single_document(): void
+    {
+        $this->loginWarehouseUser();
+        $material = $this->makeMaterial();
+        $other = $this->makeMaterial('Плёнка 20 мкм');
+
+        $roll1 = MaterialRoll::create(['material_id' => $material->id, 'roll_number' => 'G-1', 'weight' => 50]);
+        $roll2 = MaterialRoll::create(['material_id' => $other->id, 'roll_number' => 'G-2', 'weight' => 60]);
+
+        $this->post(route('material-issues.store'), [
+            'rows' => [
+                ['material_id' => $material->id, 'roll_id' => $roll1->id, 'weight' => 10],
+                ['material_id' => $other->id, 'roll_id' => $roll2->id, 'weight' => 20],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        // Старая однострочная запись без batch_id — отдельный документ.
+        MaterialIssue::create([
+            'material_id' => $material->id,
+            'roll_id' => $roll1->id,
+            'weight' => 5,
+            'user_id' => auth()->id(),
+        ]);
+
+        $this->get(route('material-issues.index'))
+            ->assertOk()
+            ->assertViewHas('orders', function ($orders) {
+                $multi = $orders->firstWhere(fn ($order) => $order->count() === 2);
+                $single = $orders->firstWhere(fn ($order) => $order->count() === 1);
+
+                return $orders->count() === 2
+                    && $multi !== null
+                    && $multi->pluck('material.name')->unique()->count() === 2
+                    && $single !== null;
+            });
+    }
+
+    public function test_issue_show_renders_all_rows_of_the_order(): void
+    {
+        $this->loginWarehouseUser();
+        $material = $this->makeMaterial();
+        $other = $this->makeMaterial('Плёнка 20 мкм');
+
+        $roll1 = MaterialRoll::create(['material_id' => $material->id, 'roll_number' => 'S-1', 'weight' => 50]);
+        $roll2 = MaterialRoll::create(['material_id' => $other->id, 'roll_number' => 'S-2', 'weight' => 60]);
+
+        $this->post(route('material-issues.store'), [
+            'rows' => [
+                ['material_id' => $material->id, 'roll_id' => $roll1->id, 'weight' => 10],
+                ['material_id' => $other->id, 'roll_id' => $roll2->id, 'weight' => 20],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $issue = MaterialIssue::first();
+
+        $this->get(route('material-issues.show', $issue))
+            ->assertOk()
+            ->assertViewIs('material-issues.show')
+            ->assertViewHas('rows', fn ($rows) => $rows->count() === 2
+                && (float) $rows->sum('weight') === 30.0);
     }
 
     /*
@@ -604,16 +818,15 @@ class ReceiptsIssuesRollsTest extends TestCase
         $material = $this->makeMaterial();
 
         $this->post(route('material-receipts.store'), [
-            'material_id' => $material->id,
-            'rolls' => [['roll_number' => 'R-MOVE', 'weight' => 100]],
+            'rolls' => [['material_id' => $material->id, 'roll_number' => 'R-MOVE', 'weight' => 100]],
         ]);
 
         $roll = MaterialRoll::where('roll_number', 'R-MOVE')->first();
 
         $this->post(route('material-issues.store'), [
-            'material_id' => $material->id,
-            'roll_id' => $roll->id,
-            'weight' => 30,
+            'rows' => [
+                ['material_id' => $material->id, 'roll_id' => $roll->id, 'weight' => 30],
+            ],
         ]);
 
         $response = $this->get(route('material-rolls.show', $roll))
@@ -707,10 +920,9 @@ class ReceiptsIssuesRollsTest extends TestCase
 
         // 1. Приход двух рулонов.
         $this->post(route('material-receipts.store'), [
-            'material_id' => $material->id,
             'rolls' => [
-                ['roll_number' => 'L-1', 'weight' => 200],
-                ['roll_number' => 'L-2', 'weight' => 300],
+                ['material_id' => $material->id, 'roll_number' => 'L-1', 'weight' => 200],
+                ['material_id' => $material->id, 'roll_number' => 'L-2', 'weight' => 300],
             ],
         ])->assertSessionHasNoErrors();
 
@@ -720,9 +932,9 @@ class ReceiptsIssuesRollsTest extends TestCase
         // 2. Частичный расход первого рулона.
         $roll1 = MaterialRoll::where('roll_number', 'L-1')->first();
         $this->post(route('material-issues.store'), [
-            'material_id' => $material->id,
-            'roll_id' => $roll1->id,
-            'weight' => 50,
+            'rows' => [
+                ['material_id' => $material->id, 'roll_id' => $roll1->id, 'weight' => 50],
+            ],
         ])->assertSessionHasNoErrors();
 
         $this->assertSame(450.0, (float) $material->rolls()->sum('weight'));
@@ -731,9 +943,9 @@ class ReceiptsIssuesRollsTest extends TestCase
         // 3. Полный расход второго рулона — рулон «выдан».
         $roll2 = MaterialRoll::where('roll_number', 'L-2')->first();
         $this->post(route('material-issues.store'), [
-            'material_id' => $material->id,
-            'roll_id' => $roll2->id,
-            'weight' => 300,
+            'rows' => [
+                ['material_id' => $material->id, 'roll_id' => $roll2->id, 'weight' => 300],
+            ],
         ])->assertSessionHasNoErrors();
 
         $this->assertSame(0.0, (float) $roll2->fresh()->weight);

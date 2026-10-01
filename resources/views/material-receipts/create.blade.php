@@ -35,105 +35,25 @@
 				</fieldset>
 			</div>
 
-			{{-- Материал --}}
-			<div class="receipt-order__line">
-				<fieldset class="receipt-order__field">
-					<label class="receipt-order__label" for="material_select">Материал</label>
-
-					<div data-select>
-						<div class="select material-select receipt-order">
-							<input class="select__value" id="material_id" name="material_id"
-									type="hidden" value="{{ old('material_id') }}">
-
-							<button class="material-select__select-button select__button select-button"
-									id="material_select" type="button" aria-haspopup="listbox" aria-expanded="false">
-								<span class="material-select__select-value select__button-text">Выберите материал</span>
-
-								<span class="material-select__select-arrow" aria-hidden="true"></span>
-							</button>
-
-							<div class="select__dropdown material-select__select-list _collapse" role="listbox">
-								<div class="material-select__select-search">
-									<input class="material-select__select-search-input select__search"
-											id="material_search" type="search"
-											placeholder="Поиск материала..." autocomplete="off">
-
-									<button class="material-select__select-search-clear select__search-clear"
-											type="button" aria-label="Очистить поиск" hidden>
-										<i class="icon icon-close" aria-hidden="true"></i>
-									</button>
-								</div>
-
-								@foreach ($materials as $material)
-									{{-- Один пункт на материал: формат и идентификатор — атрибуты материала --}}
-									<button class="material-select__select-option select__item"
-											type="button" role="option" data-value="{{ $material->id }}"
-											data-grammage="{{ $material->grammage }}" data-thickness="{{ $material->thickness }}"
-											data-format="{{ $material->format }}"
-											data-code="{{ $material->code }}"
-											data-identifier="{{ $material->identifier }}"
-											aria-selected="{{ old('material_id') == $material->id ? 'true' : 'false' }}">
-
-										<span>{{ preg_replace('/\s*гр\.?\s*$/ui', '', $material->name) }}@if ($material->grammage)
-												| {{ rtrim(rtrim(number_format($material->grammage, 2, '.', ''), '0'), '.') }} гр
-											@endif @if ($material->thickness)
-												| {{ $material->thickness }} мкм
-											@endif</span>
-									</button>
-
-								@endforeach
-
-								<div class="material-select__select-empty select__empty" hidden>
-									Ничего не найдено
-								</div>
-							</div>
-						</div>
-					</div>
-				</fieldset>
-
-				{{-- Граммаж --}}
-				<fieldset class="receipt-order__field">
-					<label class="receipt-order__label" for="grammage">Граммаж</label>
-					<input class="receipt-order__input" id="grammage" type="text" readonly>
-				</fieldset>
-
-				{{-- Толщина --}}
-				<fieldset class="receipt-order__field">
-					<label class="receipt-order__label" for="thickness">Толщина</label>
-					<input class="receipt-order__input" id="thickness" type="text" readonly>
-				</fieldset>
-
-				{{-- Формат --}}
-				<fieldset class="receipt-order__field">
-					<label class="receipt-order__label" for="material-format">Формат</label>
-					<input class="receipt-order__input" id="material-format" type="text" readonly>
-				</fieldset>
-
-				{{-- Идентификатор --}}
-				<fieldset class="receipt-order__field">
-					<label class="receipt-order__label" for="identifier">Идентификатор</label>
-					<input class="receipt-order__input" id="identifier" type="text" readonly>
-				</fieldset>
-			</div>
-
-			{{-- Рулоны --}}
+			{{-- Позиции ордера: материал + рулон + вес --}}
 			<div class="receipt-order__line">
 				<div class="receipt-order__rolls">
 					<div class="receipt-order__rolls-header">
 						<h2 class="receipt-order__rolls-title" data-receipt-rolls-title> Рулоны </h2>
 
 						<button class="receipt-order__roll-add button" type="button" data-receipt-roll-add>
-							<span>Добавить рулон</span>
+							<span data-receipt-roll-add-text>Добавить рулон</span>
 						</button>
 					</div>
 
 					<p class="receipt-order__rolls-hint" data-receipt-total-hint hidden>
-						Весь указанный вес будет приходован на рулон «Общий вес» выбранного материала.
+						Весь указанный вес будет приходован на рулон «Общий вес» каждого выбранного материала.
 					</p>
 
 					<table class="receipt-order__rolls-table">
 						<thead>
 							<tr>
+								<th>Материал</th>
 								<th data-receipt-roll-number-column>Номер рулона</th>
 								<th>Вес, кг</th>
 								<th></th>
@@ -144,6 +64,7 @@
 							@php
 								$oldRolls = old('rolls', [
 									 [
+										  'material_id' => '',
 										  'roll_number' => '',
 										  'weight' => '',
 									 ],
@@ -153,6 +74,50 @@
 							@foreach ($oldRolls as $index => $roll)
 
 								<tr data-receipt-roll>
+
+									<td>
+										<div data-select>
+											<div class="select material-select" data-receipt-material-select>
+												<input class="select__value" type="hidden"
+														name="rolls[{{ $index }}][material_id]" data-receipt-roll-material
+														value="{{ $roll['material_id'] ?? '' }}">
+
+												<button class="material-select__select-button select__button select-button"
+														type="button" aria-haspopup="listbox" aria-expanded="false">
+													<span class="material-select__select-value select__button-text">Выберите материал</span>
+
+													<span class="material-select__select-arrow" aria-hidden="true"></span>
+												</button>
+
+												<div class="select__dropdown material-select__select-list _collapse" role="listbox">
+													<div class="material-select__select-search">
+														<input class="material-select__select-search-input select__search"
+																type="search"
+																placeholder="Поиск материала..." autocomplete="off">
+
+														<button class="material-select__select-search-clear select__search-clear"
+																type="button" aria-label="Очистить поиск" hidden>
+															<i class="icon icon-close" aria-hidden="true"></i>
+														</button>
+													</div>
+
+													@foreach ($materials as $material)
+														<button class="material-select__select-option select__item"
+																type="button" role="option" data-value="{{ $material->id }}"
+																aria-selected="false">
+
+															<span>{{ $material->name }}</span>
+														</button>
+
+													@endforeach
+
+													<div class="material-select__select-empty select__empty" hidden>
+														Ничего не найдено
+													</div>
+												</div>
+											</div>
+										</div>
+									</td>
 
 									<td data-receipt-roll-number-field>
 										<input class="receipt-order__input" id="roll_number_{{ $index }}"
@@ -170,7 +135,7 @@
 
 									<td>
 										<button class="receipt-order__roll-remove button" type="button"
-												data-receipt-roll-remove aria-label="Удалить рулон" hidden>
+												data-receipt-roll-remove aria-label="Удалить рулон">
 											<span>Удалить</span>
 										</button>
 									</td>
@@ -206,5 +171,71 @@
 			</div>
 		</div>
 	</form>
+
+	{{-- Шаблон строки табличной части; JS клонирует и переиндексирует rolls[0] --}}
+	<template data-receipt-roll-template>
+		<tr data-receipt-roll>
+			<td>
+				<div data-select>
+					<div class="select material-select" data-receipt-material-select>
+						<input class="select__value" type="hidden"
+								name="rolls[0][material_id]" data-receipt-roll-material value="">
+
+						<button class="material-select__select-button select__button select-button"
+								type="button" aria-haspopup="listbox" aria-expanded="false">
+							<span class="material-select__select-value select__button-text">Выберите материал</span>
+
+							<span class="material-select__select-arrow" aria-hidden="true"></span>
+						</button>
+
+						<div class="select__dropdown material-select__select-list _collapse" role="listbox">
+							<div class="material-select__select-search">
+								<input class="material-select__select-search-input select__search"
+										type="search" placeholder="Поиск материала..." autocomplete="off">
+
+								<button class="material-select__select-search-clear select__search-clear"
+										type="button" aria-label="Очистить поиск" hidden>
+									<i class="icon icon-close" aria-hidden="true"></i>
+								</button>
+							</div>
+
+							@foreach ($materials as $material)
+								<button class="material-select__select-option select__item"
+										type="button" role="option" data-value="{{ $material->id }}"
+										aria-selected="false">
+
+									<span>{{ $material->name }}</span>
+								</button>
+
+							@endforeach
+
+							<div class="material-select__select-empty select__empty" hidden>
+								Ничего не найдено
+							</div>
+						</div>
+					</div>
+				</div>
+			</td>
+
+			<td data-receipt-roll-number-field>
+				<input class="receipt-order__input" id="roll_number_0"
+						name="rolls[0][roll_number]" data-receipt-roll-number type="text"
+						value="" aria-label="Номер рулона">
+			</td>
+
+			<td>
+				<input class="receipt-order__input" id="weight_0"
+						name="rolls[0][weight]" data-receipt-roll-weight
+						type="number" step="0.001" min="0" value="" aria-label="Вес, кг">
+			</td>
+
+			<td>
+				<button class="receipt-order__roll-remove button" type="button"
+						data-receipt-roll-remove aria-label="Удалить рулон">
+					<span>Удалить</span>
+				</button>
+			</td>
+		</tr>
+	</template>
 
 @endsection

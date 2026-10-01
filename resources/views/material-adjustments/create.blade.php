@@ -149,7 +149,7 @@
 
 			<td>
 				<button class="receipt-order__roll-remove button" type="button"
-						data-adjustment-row-remove aria-label="Удалить позицию" hidden>
+						data-adjustment-row-remove aria-label="Удалить позицию">
 					<span>Удалить</span>
 				</button>
 			</td>

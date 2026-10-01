@@ -14,12 +14,6 @@
 
 	<div class="table__cell table__cell--stack">
 		— {{ $material->name }}
-		@if ($material->grammage)
-			| {{ rtrim(rtrim(number_format($material->grammage, 2, '.', ''), '0'), '.') }} гр
-		@endif
-		@if ($material->thickness)
-			| {{ rtrim(rtrim(number_format($material->thickness, 2, '.', ''), '0'), '.') }} мкм
-		@endif
 	</div>
 	<div class="table__cell"> {{ $material->identifier ?? '—' }} </div>
 	<div class="table__cell"> {{ $material->format ?? '—' }} </div>

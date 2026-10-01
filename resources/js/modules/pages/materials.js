@@ -648,7 +648,7 @@ async function refreshMaterialsTable() {
 }
 
 /**
- * Автосборка названия по шаблону (форма создания материала):
+ * Автосборка названия по шаблону (формы создания и редактирования материала):
  * «|» в шаблоне — разделитель, попадает в итоговое название.
  * Одно поле «Название»: набранный текст считается основой и при
  * вводе грамматуры/толщины/формата дополняется по шаблону.
@@ -712,6 +712,93 @@ function initNameMirror(form) {
       return result.trim().replace(/^[|\s]+/, '').replace(/[|\s]+$/, '');
    };
 
+   /*
+    * Рендеры токенов (грамматура/толщина/формат) как они попадают
+    * в собранное название. Сюда же включаются «голые» числа:
+    * основа названия могла быть набрана вместе с ними.
+    */
+   const escape = (part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+   const tokenRenders = () => {
+      const grammage = trimZeros(form.querySelector("input[name=\"grammage\"]")?.value ?? "");
+      const thickness = trimZeros(form.querySelector("input[name=\"thickness\"]")?.value ?? "");
+      const format = (form.querySelector("input[name=\"format\"]")?.value ?? "").trim();
+
+      const renders = [];
+
+      if (format !== "") {
+         renders.push(escape(format));
+      }
+
+      if (thickness !== "") {
+         renders.push(`${escape(thickness)}\\s*мкм\\.?`);
+      }
+
+      if (grammage !== "") {
+         renders.push(`${escape(grammage)}\\s*гр\\.?`);
+         renders.push(escape(grammage));
+      }
+
+      return renders;
+   };
+
+   // Рендеры последней сборки: при смене характеристики в поле уже
+   // новое значение, а срезать из названия нужно ещё и старое
+   let lastRenders = tokenRenders();
+
+   /*
+    * Отрезает от набранного названия уже собранные токены (грамматура,
+    * толщина, формат): основа не должна содержать их, иначе пересборка
+    * по шаблону добавит каждый токен второй раз.
+    */
+   const stripComposedTokens = (value) => {
+      const patterns = [...tokenRenders(), ...lastRenders];
+
+      if (patterns.length === 0) {
+         return value.trim();
+      }
+
+      // Токены в конце (шаблон «Название | …»)
+      const strippedEnd = cutTokens(value.trim(), patterns, "end");
+
+      if (strippedEnd !== "") {
+         return strippedEnd;
+      }
+
+      // Токены в начале (шаблон «… | Название») — без голого числа
+      return cutTokens(value.trim(), patterns.slice(0, 3), "start");
+
+      /*
+       * Срезает токены с указанного края; вместе с токеном выпадают
+       * примыкающие разделители шаблона («|», пробелы, дефисы).
+       */
+      function cutTokens(text, tokenPatterns, side) {
+         let result = text;
+         let cut = false;
+
+         for (const pattern of tokenPatterns) {
+            const regex = side === "end"
+               ? new RegExp(`[\\s|]*${pattern}[^\\p{L}\\p{N}]*$`, "iu")
+               : new RegExp(`^[^\\p{L}\\p{N}]*[\\s|]*${pattern}`, "iu");
+
+            const stripped = result.replace(regex, "").trim();
+
+            if (stripped !== result) {
+               result = stripped;
+               cut = true;
+            }
+         }
+
+         if (cut) {
+            result = side === "end"
+               ? result.replace(/[^\p{L}\p{N}]+$/u, "").trim()
+               : result.replace(/^[^\p{L}\p{N}]+/u, "").trim();
+         }
+
+         return result;
+      }
+   };
+
    let base = "";
    let lastComposed = "";
    let manual = nameInput.value !== "";
@@ -722,12 +809,13 @@ function initNameMirror(form) {
       if (composed !== "") {
          nameInput.value = composed;
          lastComposed = composed;
+         lastRenders = tokenRenders();
       }
    };
 
    // Пользователь печатает основу названия
    nameInput.addEventListener("input", () => {
-      base = nameInput.value;
+      base = stripComposedTokens(nameInput.value);
       manual = true;
    });
 
@@ -745,7 +833,7 @@ function initNameMirror(form) {
          .querySelector(`input[name="${field}"]`)
          ?.addEventListener("input", () => {
             if (manual) {
-               base = nameInput.value;
+               base = stripComposedTokens(nameInput.value);
             }
 
             manual = false;
