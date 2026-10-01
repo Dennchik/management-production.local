@@ -7,7 +7,8 @@
 		display: grid;
 		grid-template-columns:  1.5fr repeat(2, 0.5fr);
 		gap: 2rem;
-		align-items: center;align-items: end
+		align-items: center;
+		align-items: end
 	}
 
 	// .issue-order__line--material — строка характеристик материала:
@@ -31,7 +32,7 @@
 	// .production-task__field
 	&__field {
 		&:nth-child(5) {
-//			grid-column: span 2;
+			//			grid-column: span 2;
 		}
 	}
 
@@ -52,7 +53,6 @@
 	// .receipt-order__mode-button
 	&__mode-button:not(._active) {
 		color: var(--color-text);
-
 		background: var(--background-gray);
 	}
 
@@ -68,7 +68,6 @@
 	// .receipt-order__rolls-hint
 	&__rolls-hint {
 		margin: 0;
-
 		font-size: 1.4rem;
 		color: var(--text-muted);
 	}
@@ -76,11 +75,12 @@
 	// receipt-order__rolls
 	&__rolls {
 		display: flex;
-		flex-direction: column;
-		gap: var(--gap);
 
 		// Строка рулонов — flex-элемент: растягиваем на всю ширину формы
 		flex: 1 1 auto;
+		flex-direction: column;
+		gap: var(--gap);
+
 		width: 100%;
 	}
 
@@ -91,11 +91,10 @@
 	 * материала не растягивает таблицу за экран, а обрезается.
 	 */
 	&__rolls-table {
+		table-layout: fixed;
+		border: 1px solid var(--border-color);
 		background: var(--color-white);
 		box-shadow: none;
-		border: 1px solid var(--border-color);
-
-		table-layout: fixed;
 
 		thead {
 			background: var(--background-gray);
@@ -140,14 +139,12 @@
 		td:last-child {
 			width: 10rem;
 			padding: 0 0.6rem;
-
 			text-align: center;
 		}
 
 		.receipt-order__roll-remove {
 			width: 100%;
 			padding: 0.6rem 0.4rem;
-
 			font-size: 1.3rem;
 		}
 
@@ -155,7 +152,6 @@
 		.select__button-text {
 			overflow: hidden;
 			min-width: 0;
-
 			text-overflow: ellipsis;
 			white-space: nowrap;
 		}
