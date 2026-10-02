@@ -21,6 +21,7 @@
 					UserSeeder::class,
 					MaterialSeeder::class,
 					ProductionOperationSeeder::class,
+					ProductionDemoSeeder::class,
 			]);
 		}
 	}
