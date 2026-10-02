@@ -6,44 +6,44 @@
 	<div class="material-show__content">
 		<div class="material-show__row">
 			<span>Наименование:</span>
-			<strong>{{ $material->name }}</strong>
+			<div class="material-show__info">{{ $material->name }}</div>
 		</div>
 
 		<div class="material-show__row">
 			<span>Код:</span>
-			<strong>{{ $material->code }}</strong>
+			<div class="material-show__info">{{ $material->code }}</div>
 		</div>
 
 		<div class="material-show__row">
 			<span>Идентификатор:</span>
-			<strong>{{ $material->identifier ?? '—' }}</strong>
+			<div class="material-show__info">{{ $material->identifier ?? '—' }}</div>
 		</div>
 
 		<div class="material-show__row">
 			<span>Грамматура:</span>
-			<strong>{{ $material->grammage ?? '—' }}</strong>
+			<div class="material-show__info">{{ $material->grammage ?? '—' }}</div>
 		</div>
 
 		<div class="material-show__row">
 			<span>Толщина:</span>
-			<strong>{{ $material->thickness ?? '—' }}</strong>
+			<div class="material-show__info">{{ $material->thickness ?? '—' }}</div>
 		</div>
 
 		<div class="material-show__row">
 			<span>Формат:</span>
-			<strong>{{ $material->format ?? '—' }}</strong>
+			<div class="material-show__info">{{ $material->format ?? '—' }}</div>
 		</div>
 
 		<div class="material-show__row">
 			<span>Назначение материала:</span>
-			<strong>
+			<div>
 				{{ $material->allowedOperations->pluck('name')->implode(', ') ?: '—' }}
-			</strong>
+			</div class="material-show__info">
 		</div>
 
 		<div class="material-show__row">
 			<span>Статус:</span>
-			<strong>{{ $material->is_active ? 'Активен' : 'Неактивен' }}</strong>
+			<div class="material-show__info">{{ $material->is_active ? 'Активен' : 'Неактивен' }}</div>
 		</div>
 	</div>
 </div>

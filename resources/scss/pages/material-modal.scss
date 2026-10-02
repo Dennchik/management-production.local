@@ -21,13 +21,6 @@
 				width: auto;}
 		}
 	}
-
-	// .material-form__status
-	&__status {
-		input {
-			width: auto;
-		}
-	}
 }
 
 .material-show {
@@ -54,18 +47,29 @@
 		margin-top: var(--padding);
 	}
 
-	// .material-form__operations
+	// .material-show__operations
 	&__operations {
 		display: flex;
 		flex-direction: column;
 		gap: var(--gap);
 	}
 
+	// material-show__status
+	&__status {
+		input {
+			width: auto;
+		}
+	}
 }
 
 .material-receipt, .material-issue, .operation-confirm, .material-show {
 	width: 100%;
-
+	// .material-receipt__body
+	&__body {
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
 	// .material-receipt__header
 	&__header {
 		display: flex;

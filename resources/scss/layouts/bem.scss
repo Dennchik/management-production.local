@@ -104,7 +104,7 @@ table {
 
 	th,
 	td {
-		padding: 0.5rem 1.6rem;
+		padding: 1rem 1.6rem;
 		border-bottom: 1px solid var(--border-color);
 		text-align: left;
 		vertical-align: middle;
@@ -125,8 +125,7 @@ table {
 		white-space: nowrap;
 	}
 
-	tbody {
-
+	tbody { 
 
 		tr:last-child td {
 			border-bottom: 0;

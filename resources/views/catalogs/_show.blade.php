@@ -6,22 +6,22 @@
 	<div class="material-show__content">
 		<div class="material-show__row">
 			<span>Наименование:</span>
-			<span>{{ $catalog->name }}</span>
+			<div class="material-show__info">{{ $catalog->name }}</div>
 		</div>
 
 		<div class="material-show__row">
 			<span>Полный путь:</span>
-			<span>{{ $path }}</span>
+			<div class="material-show__info">{{ $path }}</div>
 		</div>
 
 		<div class="material-show__row">
 			<span>Материалов:</span>
-			<span>{{ $catalog->materials()->count() }}</span>
+			<div class="material-show__info">{{ $catalog->materials()->count() }}</div>
 		</div>
 
 		<div class="material-show__row">
 			<span>Статус:</span>
-			<span>{{ $catalog->is_active ? 'Активен' : 'Неактивен' }}</span>
+			<div class="material-show__info">{{ $catalog->is_active ? 'Активен' : 'Неактивен' }}</div>
 		</div>
 	</div>
 </div>

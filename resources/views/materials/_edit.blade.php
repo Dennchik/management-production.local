@@ -48,7 +48,12 @@
 		<div class="material-show__row">
 			<span>Формат:</span>
 			<label>
-				<input type="text" name="format" id="material-format" value="{{ $material->format }}" autocomplete="off" inputmode="numeric">
+				<input type="text"
+						name="format"
+						id="material-format"
+						value="{{ $material->format }}"
+						autocomplete="off"
+						inputmode="numeric">
 			</label>
 		</div>
 
@@ -68,7 +73,8 @@
 
 					<div class="select__dropdown material-select__select-list _collapse" role="listbox">
 						<button class="material-select__select-option select__item" type="button" role="option"
-								data-value="">— Нет —</button>
+								data-value="">— Нет —
+						</button>
 
 						@foreach ($catalogOptions as $catalogId => $catalogLabel)
 							<button class="material-select__select-option select__item" type="button" role="option"
@@ -82,7 +88,7 @@
 		<div class="material-show__row">
 			<span>Назначение материала:</span>
 
-			<div class="material-show__operations">
+			<div class="material-form__operations">
 				@if ($productionLines->isEmpty())
 					<span>Нет активных технологических линий.</span>
 				@else
@@ -100,7 +106,7 @@
 		<div class="material-show__row">
 			<span>Статус:</span>
 
-			<label>
+			<label class="material-show__status">
 				<input type="checkbox" name="is_active" {{ $material->is_active ? 'checked' : '' }}>
 				Активен
 			</label>
@@ -108,6 +114,6 @@
 	</div>
 
 	<div class="material-show__actions">
-		<button class="button button--primary" type="button" data-action="update">Сохранить</button>
+		<button class="button button--primary" type="button" data-action="update"><span>Сохранить</span></button>
 	</div>
 </div>

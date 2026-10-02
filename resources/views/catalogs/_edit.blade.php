@@ -42,7 +42,7 @@
 		<div class="material-show__row">
 			<span>Статус:</span>
 
-			<label>
+			<label class="material-show__status">
 				<input type="checkbox" name="is_active" {{ $catalog->is_active ? 'checked' : '' }}>
 				Активен
 			</label>

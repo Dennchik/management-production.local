@@ -77,39 +77,43 @@
 
 				{{-- Рулоны материала --}}
 				<section class="material__section">
-					<h2 class="material__section-title">Рулоны</h2>
+					<div class="material__column">
+						<h2 class="material__section-title">Рулоны</h2>
 
-					<div class="material__column material__column--full">
-						@if ($material->rolls->isEmpty())
-							<p class="material__empty">Рулонов этого материала на складе нет.</p>
-						@else
+						<div class="material__column material__column--full">
+							@if ($material->rolls->isEmpty())
+								<p class="material__empty">Рулонов этого материала на складе нет.</p>
+							@else
 
-							<div class="material__table-wrapper">
-								<table class="material__table">
-									<thead>
-									<tr>
-										<th>Номер рулона</th>
-										<th>Остаток, кг</th>
-										<th>Дата поступления</th>
-									</tr>
-									</thead>
-
-									<tbody>
-
-									@foreach ($material->rolls as $roll)
-										<tr class="material__roll-row" data-row-link="{{ route('material-rolls.show', $roll) }}"
-												tabindex="0" role="link">
-											<td>{{ $roll->roll_number }}</td>
-											<td>{{ number_format($roll->weight, 3, '.', '') }}</td>
-											<td>{{ $roll->created_at->format('d.m.Y H:i') }}</td>
+								<div class="material__table-wrapper">
+									<table class="material__table">
+										<thead>
+										<tr>
+											<th>Номер рулона</th>
+											<th>Остаток, кг</th>
+											<th>Дата поступления</th>
 										</tr>
-									@endforeach
+										</thead>
 
-									</tbody>
-								</table>
-							</div>
+										<tbody>
 
-						@endif
+										@foreach ($material->rolls as $roll)
+											<tr class="material__roll-row"
+													data-row-link="{{ route('material-rolls.show', $roll) }}"
+													tabindex="0"
+													role="link">
+												<td>{{ $roll->roll_number }}</td>
+												<td>{{ number_format($roll->weight, 3, '.', '') }}</td>
+												<td>{{ $roll->created_at->format('d.m.Y H:i') }}</td>
+											</tr>
+										@endforeach
+
+										</tbody>
+									</table>
+								</div>
+
+							@endif
+						</div>
 					</div>
 				</section>
 			</div>

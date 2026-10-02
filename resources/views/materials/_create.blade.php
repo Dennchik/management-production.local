@@ -122,7 +122,7 @@
 		<div class="material-show__row">
 			<span>Статус:</span>
 
-			<label class="material-form__status">
+			<label class="material-show__status">
 				<input type="checkbox" name="is_active" checked>Активен
 			</label>
 		</div>

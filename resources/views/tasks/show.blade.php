@@ -343,7 +343,7 @@
 							</div>
 
 							<button class="button button--secondary" type="button" data-output-roll-add>
-								+ Ещё рулон
+								<span>+ Ещё рулон</span>
 							</button>
 
 							{{-- Общий вес сделанной продукции --}}
