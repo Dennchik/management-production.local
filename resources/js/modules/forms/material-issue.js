@@ -37,23 +37,26 @@ export function initMaterialIssueModule() {
 
    const reindexRows = () => {
       getRows().forEach((row, index) => {
-         row
-            .querySelector('[data-issue-material]')
-            ?.setAttribute('name', `rows[${index}][material_id]`);
+         row.querySelector('[data-issue-material]')?.setAttribute(
+            'name',
+            `rows[${index}][material_id]`
+         );
 
-         row
-            .querySelector('[data-issue-roll]')
-            ?.setAttribute('name', `rows[${index}][roll_id]`);
+         row.querySelector('[data-issue-roll]')?.setAttribute(
+            'name',
+            `rows[${index}][roll_id]`
+         );
 
-         row
-            .querySelector('[data-issue-input]')
-            ?.setAttribute('name', `rows[${index}][weight]`);
+         row.querySelector('[data-issue-input]')?.setAttribute(
+            'name',
+            `rows[${index}][weight]`
+         );
       });
    };
 
    // =========================================================
    // Живой экземпляр селекта: шаблонный рулон-селект помечен
-   // data-select-initialized и массово не переинициализируется
+   // data-select-initialized и массово не пере инициализируется
    // =========================================================
 
    const findSelectInstance = (container) =>
@@ -197,18 +200,22 @@ export function initMaterialIssueModule() {
       // его экземпляр создаётся при первой загрузке рулонов)
       initSelects(row);
 
-      const materialSelectEl = row.querySelector('[data-issue-material-select]');
+      const materialSelectEl = row.querySelector(
+         '[data-issue-material-select]'
+      );
 
       materialSelectEl?.addEventListener('select:change', (e) => {
          void loadRolls(row, e.detail.value);
       });
 
-      row
-         .querySelector('[data-issue-roll-select]')
-         ?.addEventListener('select:change', (e) => {
+      row.querySelector('[data-issue-roll-select]')?.addEventListener(
+         'select:change',
+         (e) => {
             const weight = e.detail.option?.dataset.weight || '';
 
-            const weightBefore = row.querySelector('[data-issue-weight-before]');
+            const weightBefore = row.querySelector(
+               '[data-issue-weight-before]'
+            );
 
             if (weightBefore) {
                weightBefore.value = weight;
@@ -219,11 +226,12 @@ export function initMaterialIssueModule() {
             if (weightInput) {
                weightInput.max = weight;
             }
-         });
+         }
+      );
 
-      row
-         .querySelector('[data-issue-row-remove]')
-         ?.addEventListener('click', () => {
+      row.querySelector('[data-issue-row-remove]')?.addEventListener(
+         'click',
+         () => {
             confirmRowRemoval({
                text: rowRemovalText(
                   row,
@@ -236,7 +244,8 @@ export function initMaterialIssueModule() {
                   reindexRows();
                },
             });
-         });
+         }
+      );
 
       return row;
    };
@@ -262,7 +271,7 @@ export function initMaterialIssueModule() {
       for (let index = 0; index < oldRows.length; index += 1) {
          const oldRow = oldRows[index] || {};
 
-         const row = index === 0 ? getRows()[0] ?? createRow() : createRow();
+         const row = index === 0 ? (getRows()[0] ?? createRow()) : createRow();
 
          if (oldRow.weight !== undefined && oldRow.weight !== null) {
             const weightInput = row.querySelector('[data-issue-input]');
@@ -282,11 +291,14 @@ export function initMaterialIssueModule() {
             row.querySelectorAll('.select__item[data-value]')
          ).find((option) => option.dataset.value === materialId);
 
-         const materialSelectEl = row.querySelector('[data-issue-material-select]');
+         const materialSelectEl = row.querySelector(
+            '[data-issue-material-select]'
+         );
 
          if (materialOption && materialSelectEl) {
-            const materialSelect = findSelectInstance(materialSelectEl)
-               ?? new CustomSelect(materialSelectEl);
+            const materialSelect =
+               findSelectInstance(materialSelectEl) ??
+               new CustomSelect(materialSelectEl);
 
             materialSelect.selectOption(materialOption, false);
          }
@@ -311,7 +323,9 @@ export function initMaterialIssueModule() {
 
                const weight = rollOption.dataset.weight || '';
 
-               const weightBefore = row.querySelector('[data-issue-weight-before]');
+               const weightBefore = row.querySelector(
+                  '[data-issue-weight-before]'
+               );
 
                if (weightBefore) {
                   weightBefore.value = weight;

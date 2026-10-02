@@ -6,6 +6,7 @@
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 
 	<title>@yield('title', 'Management Production')</title>
+	li
 
 	@vite([
 	  'resources/scss/app.scss',
