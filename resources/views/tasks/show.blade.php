@@ -236,7 +236,7 @@
 															<button class="material-select__select-button select__button select-button"
 																	type="button" aria-haspopup="listbox" aria-expanded="false">
 																<span class="material-select__select-value select__button-text">— Рулон не выбран —</span>
-																<span class="material-select__select-arrow" aria-hidden="true"></span>
+																<i class="material-select__select-arrow" aria-hidden="true"></i>
 															</button>
 
 															<div class="select__dropdown material-select__select-list _collapse"

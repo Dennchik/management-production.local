@@ -39,27 +39,30 @@
 	// .operation-modal__overlay
 	&__overlay {
 		cursor: pointer;
+
 		position: absolute;
 		inset: 0;
+
+		display: flex;
+
 		background: rgb(0 0 0 / 80%);
 	}
 
 	// .operation-modal__content
 	&__content {
+		scrollbar-width: none;
+
 		position: relative;
-      scrollbar-width: none;
-		// Анимация появления содержимого
 		z-index: 1;
 		transform: translateY(20px) scale(0);
 
-		overflow-y: auto;
-
-      max-width: 700px;
-		//max-width: 500px;
-		max-height: calc(100vh - 60px);
+		width: auto;
+		min-width: 70%;
+		height: auto;
 		margin: auto;
 		padding: 4rem;
 		border: 1px solid var(--color-border);
+		// Анимация появления содержимого
 		border-radius: var(--border-radius-8);
 
 		color: var(--color-text);
@@ -70,6 +73,37 @@
 
 		transition: transform 0.3s ease,
 		height 0.3s ease;
+
+		.data-operation-modal-content {
+			.material-show__row {
+				grid-template-columns: 0.5fr 1fr;
+				padding: 0;
+
+				&:first-child {
+					span {
+						border-top-left-radius: 8px;
+					}
+				}
+
+				&:last-child {
+					span {
+						border-bottom-left-radius: 8px;
+					}
+				}
+
+				> span {
+					padding: var(--spacing);
+					color: var(--color-white);
+					background: var(--color-black);
+				}
+
+				> label {
+					display: flex;
+					gap: 1rem;
+					padding: var(--spacing);
+				}
+			}
+		}
 
 	}
 

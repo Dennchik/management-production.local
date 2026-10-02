@@ -8,7 +8,7 @@
  * - пересчёт порядковых номеров блоков;
  * - настройку разрешённых операций шаблона по каталогам.
  */
-import { initSelects } from '../../assets/select.js';
+import { initSelects, prepareClonedSelects } from '../../assets/select.js';
 import { initIdentifierMirror } from './materials.js';
 
 // Подтверждаемое изменение статуса каталога.
@@ -695,6 +695,8 @@ function addMaterialRow(list) {
 	}
 
 	const newRow = template.cloneNode(true);
+
+	prepareClonedSelects(newRow);
 
 	resetRow(newRow);
 

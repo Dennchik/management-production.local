@@ -7,7 +7,6 @@
 		display: grid;
 		grid-template-columns:  1.5fr repeat(2, 0.5fr);
 		gap: 2rem;
-		align-items: center;
 		align-items: end
 	}
 
@@ -92,17 +91,8 @@
 	 */
 	&__rolls-table {
 		table-layout: fixed;
-		border: 1px solid var(--border-color);
 		background: var(--color-white);
 		box-shadow: none;
-
-		thead {
-			background: var(--background-gray);
-
-			th {
-				color: var(--color-text);
-			}
-		}
 
 		th,
 		td {
@@ -119,9 +109,6 @@
 		.receipt-order__input {
 			min-height: 4.6rem;
 			padding: 0 1.6rem;
-			border: 0;
-			border-radius: 0;
-
 			background: transparent;
 
 			&:read-only {
@@ -133,7 +120,7 @@
 			}
 		}
 
-		// Колонка «Удалить»: без паддингов ячейки, кнопка по центру
+		// Колонка «Удалить»: без padding ячейки, кнопка по центру
 		// и на всю ширину — не вылезает за рамку при fixed-раскладке
 		th:last-child,
 		td:last-child {
@@ -144,7 +131,6 @@
 
 		.receipt-order__roll-remove {
 			width: 100%;
-			padding: 0.6rem 0.4rem;
 			font-size: 1.3rem;
 		}
 
@@ -180,6 +166,7 @@
 		display: flex;
 		gap: var(--gap);
 		align-items: center;
+		margin-bottom: 1.6rem;
 	}
 
 	// .receipt-order__line
@@ -234,12 +221,24 @@
 		width: 100%;
 	}
 
+	// .production-task__table
+	&__table {
+		.table__row-line {
+			grid-template-columns: 40px minmax(0, 2fr) minmax(0, 1fr) 7rem;
+		}
+
+		.table__cell-wrapper  {
+			width: 100%;
+		}
+
+	}
+
 	// .receipt-order__label
 	&__label {
 		padding-right: 1.6rem;
 		padding-left: 1.6rem;
 
-		font-size: 1.4rem;
+		font-size: 1.6rem;
 		color: var(--color-text);
 		white-space: nowrap;
 

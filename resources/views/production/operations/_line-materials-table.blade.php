@@ -18,19 +18,19 @@
 		@if (($allowAdd ?? true))
 			<button class="button button--secondary" type="button" data-production-line-add-material
 					@if (($buttonsHidden ?? false)) hidden @endif>
-				Добавить материал
+				<span>Добавить материал</span>
 			</button>
 		@endif
 
 		@if (($allowAddFormat ?? false))
 			<button class="button button--secondary" type="button" data-production-line-add-format
 					@if (($buttonsHidden ?? false)) hidden @endif>
-				Добавить формат
+				<span>Добавить формат</span>
 			</button>
 		@endif
 	</div>
 
-	<div class="table">
+	<div class="production-task__table table">
 		<div class="table__row-line table__row--header">
 			<div class="table__cell">№</div>
 			<div class="table__cell">Материал</div>
@@ -45,14 +45,14 @@
 				<div class="table__row-line" data-production-line-material>
 					<div class="table__cell" data-line-index>{{ $loop->iteration }}</div>
 					<div class="table__cell">
-						<div data-select>
+						<div class="table__cell-wrapper" data-select>
 							<div class="select material-select operation-form">
 								<input class="select__value" type="hidden" name="{{ $inputName }}[]" value="{{ $row->id ?? '' }}">
 
 								<button class="material-select__select-button select__button select-button"
 										type="button" aria-haspopup="listbox" aria-expanded="false">
 									<span class="material-select__select-value select__button-text">{{ $row->name ?? 'Выберите материал' }}</span>
-									<span class="material-select__select-arrow" aria-hidden="true"></span>
+									<i class="material-select__select-arrow" aria-hidden="true"></i>
 								</button>
 
 								<div class="select__dropdown material-select__select-list _collapse" role="listbox">

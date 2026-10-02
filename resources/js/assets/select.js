@@ -267,6 +267,38 @@ export class CustomSelect {
    }
 }
 
+/**
+ * Готовит селекты клонированной строки к инициализации.
+ *
+ * cloneNode копирует отметку data-select-initialized, но не копирует
+ * обработчики — без сброса отметки initSelects пропустит такой селект
+ * и выпадающий список не откроется.
+ *
+ * @param {HTMLElement} scope Клонированный узел.
+ */
+export function prepareClonedSelects(scope) {
+   const selects = [
+      ...(scope.matches?.('.select, .material-select') ? [scope] : []),
+      ...scope.querySelectorAll('.select, .material-select'),
+   ];
+
+   selects.forEach((element) => {
+      delete element.dataset.selectInitialized;
+
+      // Клон мог быть снят с открытого селекта.
+      const dropdown = element.querySelector('._collapse');
+
+      if (dropdown) {
+         dropdown.classList.remove('_show', 'collapsing');
+         dropdown.style.height = '';
+      }
+
+      element
+         .querySelector('.select-button, .select__button')
+         ?.setAttribute('aria-expanded', 'false');
+   });
+}
+
 export function initSelects(container = document) {
    const selects = container.querySelectorAll('.select, .material-select');
 

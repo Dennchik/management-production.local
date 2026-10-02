@@ -1,3 +1,6 @@
+//! ✅ vite.config.js
+// noinspection JSValidateTypes
+
 import autoprefixer from 'autoprefixer';
 import laravel from 'laravel-vite-plugin';
 import { dirname, resolve } from 'node:path';
@@ -80,8 +83,8 @@ export default defineConfig(({ command }) => {
 
          rollupOptions: {
             output: {
-               assetFileNames: 'assets/[name]-[hash].[ext]',
-               chunkFileNames: 'assets/vendors/[name]-[hash].js',
+               assetFileNames: 'assets/[name].[ext]',
+               chunkFileNames: 'assets/vendors/[name].js',
 
                manualChunks(id) {
                   if (id.includes('node_modules')) {

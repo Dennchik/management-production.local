@@ -28,18 +28,24 @@ export function initMaterialReceiptModule() {
 
       // Колонка номера скрывается динамически: строки
       // могут быть добавлены уже после переключения режима
-      form.querySelectorAll('[data-receipt-roll-number-field]').forEach((field) => {
-         field.hidden = isTotal;
-      });
+      form
+         .querySelectorAll('[data-receipt-roll-number-field]')
+         .forEach((field) => {
+            field.hidden = isTotal;
+         });
 
-      const numberColumn = form.querySelector('[data-receipt-roll-number-column]');
+      const numberColumn = form.querySelector(
+         '[data-receipt-roll-number-column]'
+      );
 
       if (numberColumn) {
          numberColumn.hidden = isTotal;
       }
 
       if (addButtonText) {
-         addButtonText.textContent = isTotal ? 'Добавить материал' : 'Добавить рулон';
+         addButtonText.textContent = isTotal
+            ? 'Добавить материал'
+            : 'Добавить рулон';
       }
 
       if (totalHint) {
@@ -67,9 +73,8 @@ export function initMaterialReceiptModule() {
     */
    modeButtons.forEach((button) => {
       button.addEventListener('click', () => {
-         const mode = button.dataset.mode === 'total_weight'
-            ? 'total_weight'
-            : 'rolls';
+         const mode =
+            button.dataset.mode === 'total_weight' ? 'total_weight' : 'rolls';
 
          setMode(mode);
          storeMode(mode);
@@ -89,7 +94,6 @@ export function initMaterialReceiptModule() {
 
    resetButton?.addEventListener('click', () => {
       form.reset();
-
       setMode('rolls');
    });
 }

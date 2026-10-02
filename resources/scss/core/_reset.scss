@@ -94,11 +94,14 @@ input[type='submit'] {
 
 input,
 textarea,
-button,
 select {
+	width: 100%;
+
 	font-family: inherit;
 	font-size: inherit;
 	color: inherit;
+
+	accent-color: var(--color-button);
 	background-color: transparent;
 }
 
@@ -110,7 +113,7 @@ button:focus,
 button:active,
 textarea:focus,
 textarea:active {
-	 outline: none;
+	outline: none;
 }
 
 button::-moz-focus-inner {

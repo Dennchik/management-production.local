@@ -7,7 +7,7 @@
 		<div class="material-show__row">
 			<span>Шаблон названия:</span>
 			<label>
-				<input type="text" name="name-template" id="name-template" autocomplete="off"
+				<input type="text" name="name-template" id="name-template" autocomplete="off" disabled
 						value="{{ $nameTemplate }}">
 			</label>
 		</div>
@@ -15,7 +15,12 @@
 		<div class="material-show__row">
 			<span>Название:</span>
 			<label>
-				<input type="text" name="material-name" id="material-name" autocomplete="off" list="names-list" value="{{ $prefill->name ?? '' }}">
+				<input type="text"
+						name="material-name"
+						id="material-name"
+						autocomplete="off"
+						list="names-list"
+						value="{{ $prefill->name ?? '' }}">
 				<datalist id="names-list">
 					{{-- Список наименований будет заполнен позже по справочнику пользователя --}}
 				</datalist>
@@ -34,13 +39,20 @@
 
 		<div class="material-show__row">
 			<span>Идентификатор:</span>
-			<input type="text" name="identifier" id="identifier" readonly>
+			<label>
+				<input type="text" name="identifier" id="identifier" readonly>
+			</label>
 		</div>
 
 		<div class="material-show__row">
 			<span>Грамматура:</span>
 			<label>
-				<input type="number" name="grammage" min="0" step="0.01" list="grammages-list" value="{{ $prefill->grammage ?? '' }}">
+				<input type="number"
+						name="grammage"
+						min="0"
+						step="0.01"
+						list="grammages-list"
+						value="{{ $prefill->grammage ?? '' }}">
 				<datalist id="grammages-list">
 					{{-- Список грамматур будет заполнен позже по справочнику пользователя --}}
 				</datalist>
@@ -72,12 +84,13 @@
 						<span class="material-select__select-value select__button-text">
 							{{ $catalogOptions[$selectedCatalogId ?? ''] ?? '— Нет —' }}
 						</span>
-						<span class="material-select__select-arrow" aria-hidden="true"></span>
+						<i class="material-select__select-arrow" aria-hidden="true"></i>
 					</button>
 
 					<div class="select__dropdown material-select__select-list _collapse" role="listbox">
 						<button class="material-select__select-option select__item" type="button" role="option"
-								data-value="">— Нет —</button>
+								data-value="">— Нет —
+						</button>
 
 						@foreach ($catalogOptions as $catalogId => $catalogLabel)
 							<button class="material-select__select-option select__item" type="button" role="option"
@@ -109,16 +122,15 @@
 		<div class="material-show__row">
 			<span>Статус:</span>
 
-			<label>
-				<input type="checkbox" name="is_active" checked>
-				Активен
+			<label class="material-form__status">
+				<input type="checkbox" name="is_active" checked>Активен
 			</label>
 		</div>
 	</div>
 
 	<div class="material-show__actions">
 		<button class="button button--primary" type="button" data-action="save">
-			Сохранить
+			<span>Сохранить</span>
 		</button>
 	</div>
 </div>

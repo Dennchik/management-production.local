@@ -65,7 +65,7 @@
 								<span class="material-select__select-value select__button-text">
 									{{ $roles->firstWhere('id', (int) old('role_id', $user->role_id))?->name ?? '— Нет роли —' }}
 								</span>
-								<span class="material-select__select-arrow" aria-hidden="true"></span>
+								<i class="material-select__select-arrow" aria-hidden="true"></i>
 							</button>
 
 							<div class="select__dropdown material-select__select-list _collapse" role="listbox">

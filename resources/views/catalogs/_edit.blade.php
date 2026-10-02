@@ -22,7 +22,7 @@
 						<span class="material-select__select-value select__button-text">
 							{{ $parents->firstWhere('id', $catalog->parent_id)?->name ?? '— Нет —' }}
 						</span>
-						<span class="material-select__select-arrow" aria-hidden="true"></span>
+						<i class="material-select__select-arrow" aria-hidden="true"></i>
 					</button>
 
 					<div class="select__dropdown material-select__select-list _collapse" role="listbox">
@@ -50,6 +50,8 @@
 	</div>
 
 	<div class="material-show__actions">
-		<button class="button button--primary" type="button" data-action="update">Сохранить</button>
+		<button class="button button--primary" type="button" data-action="update">
+			<span>Сохранить</span>
+		</button>
 	</div>
 </div>

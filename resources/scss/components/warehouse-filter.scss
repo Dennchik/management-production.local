@@ -65,7 +65,7 @@
 		height: 4.2rem;
 		padding: 0 12px;
 		border: 1px solid var(--border-color);
-		border-radius: var(--border-radius);
+		border-radius: var(--border-radius-8);
 
 		font: inherit;
 
@@ -85,7 +85,6 @@
 	&__actions {
 		display: flex;
 		gap: var(--gap);
-		align-items: center;
 		justify-content: end;
 	}
 
@@ -101,24 +100,20 @@
 
 	// .filters-actions__filter-reset
 	&__filter-reset {
-		display: inline-flex;
-		justify-content: center;
-
 		border: 1px solid var(--border-color);
-
-		color: var(--color-text);
 		text-decoration: none;
-
 		background: var(--background-gray);
 		background-color: var(--background);
-	}
-
-	// .filters-actions__filter-button, .filters-actions__filter-reset
-	&__filter-button, &__filter-reset {
-		white-space: nowrap;
 
 		span {
-			font-weight: 600;
+			color: var(--color-text);
+			transition: color 0.3s ease-in-out;
+		}
+
+		&:hover {
+			span {
+				color: var(--color-white);
+			}
 		}
 	}
 }

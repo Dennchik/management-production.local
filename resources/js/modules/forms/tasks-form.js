@@ -11,7 +11,7 @@
  * Добавление/удаление строк и сабмит пустых селектов обрабатывает
  * модуль production-lines.js — форма подключается его атрибутами.
  */
-import { initSelects } from '../../assets/select.js';
+import { initSelects, prepareClonedSelects } from '../../assets/select.js';
 import { applyCuttingOutputFilter, setCuttingActive } from '../pages/production-lines.js';
 
 /**
@@ -296,6 +296,7 @@ export function initTasksFormModule() {
       items.forEach((material) => {
          const row = template.cloneNode(true);
 
+         prepareClonedSelects(row);
          clearOptionStates(row);
          applyRow(row, null);
 

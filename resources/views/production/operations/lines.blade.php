@@ -9,12 +9,12 @@
 
 			<div class="catalogs__header-actions">
 				<a class="button button--primary" href="{{ route('production.lines.create', $operation) }}">
-					Добавить
+					<span>Добавить</span>
 				</a>
 
 				<a class="button button--secondary"
 						href="{{ route('production.operations.allowed-catalogs', $operation) }}">
-					Назначенные материалы
+					<span>Назначенные материалы</span>
 				</a>
 			</div>
 		</div>

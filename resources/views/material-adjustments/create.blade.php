@@ -32,7 +32,7 @@
 							<th>Учётный остаток, кг</th>
 							<th>Отклонение, кг</th>
 							<th>Новый остаток, кг</th>
-							<th></th>
+							<th><i class="icon-settings-cogs icon"></i></th>
 						</tr>
 					</thead>
 
@@ -78,7 +78,7 @@
 						<button class="material-select__select-button select__button select-button"
 								type="button" aria-haspopup="listbox" aria-expanded="false">
 							<span class="material-select__select-value select__button-text">Выберите материал</span>
-							<span class="material-select__select-arrow" aria-hidden="true"></span>
+							<i class="material-select__select-arrow" aria-hidden="true"></i>
 						</button>
 
 						<div class="select__dropdown material-select__select-list _collapse" role="listbox">
@@ -119,7 +119,7 @@
 						<button class="material-select__select-button select__button select-button"
 								type="button" aria-haspopup="listbox" aria-expanded="false">
 							<span class="material-select__select-value select__button-text">Сначала выберите материал</span>
-							<span class="material-select__select-arrow" aria-hidden="true"></span>
+							<i class="material-select__select-arrow" aria-hidden="true"></i>
 						</button>
 
 						<div class="select__dropdown material-select__select-list _collapse" role="listbox">

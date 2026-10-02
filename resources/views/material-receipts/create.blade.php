@@ -56,7 +56,9 @@
 								<th>Материал</th>
 								<th data-receipt-roll-number-column>Номер рулона</th>
 								<th>Вес, кг</th>
-								<th></th>
+								<th class="materials__table-edit">
+									<i class="icon-settings-cogs icon"></i>
+								</th>
 							</tr>
 						</thead>
 						<tbody data-receipt-rolls>
@@ -86,7 +88,7 @@
 														type="button" aria-haspopup="listbox" aria-expanded="false">
 													<span class="material-select__select-value select__button-text">Выберите материал</span>
 
-													<span class="material-select__select-arrow" aria-hidden="true"></span>
+													<i class="material-select__select-arrow" aria-hidden="true"></i>
 												</button>
 
 												<div class="select__dropdown material-select__select-list _collapse" role="listbox">
@@ -185,7 +187,7 @@
 								type="button" aria-haspopup="listbox" aria-expanded="false">
 							<span class="material-select__select-value select__button-text">Выберите материал</span>
 
-							<span class="material-select__select-arrow" aria-hidden="true"></span>
+							<i class="material-select__select-arrow" aria-hidden="true"></i>
 						</button>
 
 						<div class="select__dropdown material-select__select-list _collapse" role="listbox">

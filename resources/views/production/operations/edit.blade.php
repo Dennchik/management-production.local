@@ -93,11 +93,11 @@
 
 			<div class="operation-form__actions">
 				<a class="button button--secondary" href="{{ route('production.operations.index') }}">
-					Отмена
+					<span>Отмена</span>
 				</a>
 
 				<button class="button" type="submit">
-					Сохранить изменения
+					<span>Сохранить изменения</span>
 				</button>
 			</div>
 		</form>

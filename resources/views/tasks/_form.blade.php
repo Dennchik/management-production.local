@@ -89,16 +89,20 @@
 						<span class="material-select__select-value select__button-text">
 							{{ $operations->firstWhere('id', (int) $selectedOperationId)?->name ?? '— Не выбрана —' }}
 						</span>
-						<span class="material-select__select-arrow" aria-hidden="true"></span>
+						<i class="material-select__select-arrow" aria-hidden="true"></i>
 					</button>
 
 					<div class="select__dropdown material-select__select-list _collapse" role="listbox">
 						<button class="material-select__select-option select__item" type="button" role="option"
-								data-value="">— Не выбрана —</button>
+								data-value="">— Не выбрана —
+						</button>
 
 						@foreach ($operations as $operation)
-							<button class="material-select__select-option select__item" type="button" role="option"
-									data-value="{{ $operation->id }}" @if ($operation->is_cutting) data-is-cutting="1" @endif>{{ $operation->name }}</button>
+							<button class="material-select__select-option select__item"
+									type="button"
+									role="option"
+									data-value="{{ $operation->id }}"
+									@if ($operation->is_cutting) data-is-cutting="1" @endif>{{ $operation->name }}</button>
 						@endforeach
 					</div>
 				</div>
@@ -116,12 +120,13 @@
 						<span class="material-select__select-value select__button-text">
 							{{ $selectedTemplateName ?? '— Не выбран —' }}
 						</span>
-						<span class="material-select__select-arrow" aria-hidden="true"></span>
+						<i class="material-select__select-arrow" aria-hidden="true"></i>
 					</button>
 
 					<div class="select__dropdown material-select__select-list _collapse" role="listbox">
 						<button class="material-select__select-option select__item" type="button" role="option"
-								data-value="">— Не выбран —</button>
+								data-value="">— Не выбран —
+						</button>
 
 						@foreach ($operations as $operation)
 							@foreach ($operation->productionLines as $line)
@@ -148,12 +153,13 @@
 						<span class="material-select__select-value select__button-text">
 							{{ $operators->firstWhere('id', (int) $selectedOperatorId)?->name ?? '— Не назначен —' }}
 						</span>
-						<span class="material-select__select-arrow" aria-hidden="true"></span>
+						<i class="material-select__select-arrow" aria-hidden="true"></i>
 					</button>
 
 					<div class="select__dropdown material-select__select-list _collapse" role="listbox">
 						<button class="material-select__select-option select__item" type="button" role="option"
-								data-value="">— Не назначен —</button>
+								data-value="">— Не назначен —
+						</button>
 
 						@foreach ($operators as $operator)
 							<button class="material-select__select-option select__item" type="button" role="option"
@@ -166,9 +172,14 @@
 			<fieldset class="production-task__field">
 				<label class="production-task__label" for="quantity"><span data-task-quantity-label>Кол-во вых. материала, кг</span></label>
 
-				<input class="production-task__input" id="quantity" name="quantity" type="number"
-						step="0.001" min="0.001"
-						value="{{ old('quantity', $task ? rtrim(rtrim((string) $task->quantity, '0'), '.') : null) }}" required>
+				<input class="production-task__input"
+						id="quantity"
+						name="quantity"
+						type="number"
+						step="0.001"
+						min="0.001"
+						value="{{ old('quantity', $task ? rtrim(rtrim((string) $task->quantity, '0'), '.') : null) }}"
+						required>
 			</fieldset>
 		</div>
 	@else
@@ -191,12 +202,13 @@
 						<span class="material-select__select-value select__button-text">
 							{{ $operators->firstWhere('id', (int) $selectedOperatorId)?->name ?? '— Не назначен —' }}
 						</span>
-						<span class="material-select__select-arrow" aria-hidden="true"></span>
+						<i class="material-select__select-arrow" aria-hidden="true"></i>
 					</button>
 
 					<div class="select__dropdown material-select__select-list _collapse" role="listbox">
 						<button class="material-select__select-option select__item" type="button" role="option"
-								data-value="">— Не назначен —</button>
+								data-value="">— Не назначен —
+						</button>
 
 						@foreach ($operators as $operator)
 							<button class="material-select__select-option select__item" type="button" role="option"
@@ -207,7 +219,8 @@
 			</fieldset>
 
 			<fieldset class="production-task__field">
-				<label class="production-task__label" for="quantity">{{ $task->isCutting() ? 'Резать, кг (вход)' : 'Количество, кг' }}</label>
+				<label class="production-task__label"
+						for="quantity">{{ $task->isCutting() ? 'Резать, кг (вход)' : 'Количество, кг' }}</label>
 
 				<input class="production-task__input" id="quantity" name="quantity" type="number"
 						step="0.001" min="0.001"
@@ -261,7 +274,8 @@
 			</div>
 		</div>
 
-		<script type="application/json" data-task-form-data>@json(['templates' => $templates, 'allowed' => $allowedMaterials])</script>
+		<script type="application/json"
+				data-task-form-data>@json(['templates' => $templates, 'allowed' => $allowedMaterials])</script>
 	@endif
 
 	{{-- Действия --}}

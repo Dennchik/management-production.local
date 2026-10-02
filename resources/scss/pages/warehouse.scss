@@ -11,6 +11,7 @@
 
 	// .materials__table-edit
 	&__table-edit {
+		justify-self: center;
 		text-align: center;
 	}
 
@@ -53,6 +54,7 @@
 .icon {
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	font-size: var(--materials-icon-size);
 }
 
@@ -123,7 +125,6 @@
 
 		.material__section-title {
 			flex: 0 0 100%;
-
 			margin-bottom: 0;
 		}
 	}
@@ -226,7 +227,6 @@
 			.material__value {
 				overflow: hidden;
 				min-width: 0;
-
 				text-overflow: ellipsis;
 				white-space: nowrap;
 			}
@@ -432,19 +432,19 @@
 
 // Шеврон ветки каталога склада
 .material__catalog-arrow {
+	transform: rotate(45deg); // ветка раскрыта — шеврон «вниз»
+
 	display: inline-block;
 
 	width: 0.7rem;
 	height: 0.7rem;
 	margin-right: 0.8rem;
-
 	border-right: 2px solid var(--color-text);
 	border-bottom: 2px solid var(--color-text);
 
 	opacity: 0.6;
 
-	transform: rotate(45deg); // ветка раскрыта — шеврон «вниз»
-	transition: transform 0.15s ease;
+	transition: transform 0.1s ease;
 
 	[aria-expanded='false'] & {
 		transform: rotate(-45deg); // свёрнута — «вправо»
