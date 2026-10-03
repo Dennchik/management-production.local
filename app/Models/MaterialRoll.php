@@ -6,6 +6,7 @@
 	use Illuminate\Database\Eloquent\Model;
 	use Illuminate\Database\Eloquent\Relations\BelongsTo;
 	use Illuminate\Database\Eloquent\Relations\HasMany;
+	use Illuminate\Database\Eloquent\SoftDeletes;
 
 	#[Fillable([
 		'material_id',
@@ -14,12 +15,14 @@
 	])]
 	class MaterialRoll extends Model
 	{
+		use SoftDeletes;
+
 		/**
-		 * Тип материала, к которому относится физический рулон.
+		 * Материал, к которому относится физический рулон.
 		 */
 		public function material(): BelongsTo
 		{
-			return $this->belongsTo(Material::class);
+			return $this->belongsTo(Material::class)->withTrashed();
 		}
 
 		/**

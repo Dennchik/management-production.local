@@ -1,3 +1,6 @@
+import { initSelects } from '../../assets/select.js';
+import { confirmRowRemoval, rowRemovalText } from './row-remove-confirm.js';
+
 export function initReceiptRolls() {
    const form = document.querySelector('.receipt-order');
 
@@ -9,12 +12,14 @@ export function initReceiptRolls() {
 
    const addButton = form.querySelector('[data-receipt-roll-add]');
 
-   if (!rollsList || !addButton) {
+   const rowTemplate = document.querySelector('[data-receipt-roll-template]');
+
+   if (!rollsList || !addButton || !rowTemplate) {
       return;
    }
 
    // =========================================================
-   // Получить все рулоны
+   // Получить все строки рулонов
    // =========================================================
 
    const getRolls = () => {
@@ -22,68 +27,52 @@ export function initReceiptRolls() {
    };
 
    // =========================================================
-   // Создать новый рулон
+   //* Переиндексация
    // =========================================================
 
-   const createRoll = (index) => {
-      const roll = document.createElement('div');
+   const reindexRolls = () => {
+      getRolls().forEach((roll, index) => {
+         const materialInput = roll.querySelector('[data-receipt-roll-material]');
 
-      roll.className = 'receipt-order__roll';
-      roll.dataset.receiptRoll = '';
+         const numberInput = roll.querySelector('[data-receipt-roll-number]');
 
-      roll.innerHTML = `
-         <fieldset class="receipt-order__field">
-            <label class="receipt-order__label" for="roll_number_${index}" data-receipt-roll-number-label>
-               Номер рулона
-            </label>
+         const weightInput = roll.querySelector('[data-receipt-roll-weight]');
 
-            <input
-               class="receipt-order__input"
-               id="roll_number_${index}"
-               name="rolls[${index}][roll_number]"
-               data-receipt-roll-number
-               type="text" 
-               value="">
+         if (materialInput) {
+            materialInput.name = `rolls[${index}][material_id]`;
+         }
 
-         </fieldset>
+         if (numberInput) {
+            numberInput.id = `roll_number_${index}`;
 
+            numberInput.name = `rolls[${index}][roll_number]`;
+         }
 
-         <fieldset class="receipt-order__field">
+         if (weightInput) {
+            weightInput.id = `weight_${index}`;
 
-            <label
-               class="receipt-order__label"
-               for="weight_${index}"
-               data-receipt-roll-weight-label>
+            weightInput.name = `rolls[${index}][weight]`;
+         }
+      });
+   };
 
-               Вес, кг
+   // =========================================================
+   // Создать новую строку рулона из шаблона
+   // =========================================================
 
-            </label>
+   const createRoll = () => {
+      const roll = rowTemplate.content.cloneNode(true).querySelector('tr');
 
-            <input
-               class="receipt-order__input"
-               id="weight_${index}"
-               name="rolls[${index}][weight]"
-               data-receipt-roll-weight
-               type="number"
-               step="0.001"
-               min="0"
-               value="">
+      rollsList.appendChild(roll);
 
-         </fieldset>
+      // Кастомные селекты клона инициализируются после вставки
+      initSelects(roll);
 
-
-         <button
-            class="receipt-order__roll-remove button"
-            type="button"
-            data-receipt-roll-remove
-            aria-label="Удалить рулон">
-
-            <span>
-               Удалить рулон
-            </span>
-
-         </button>
-      `;
+      // Строка, добавленная после переключения режима учёта,
+      // наследует текущее скрытие колонки номера
+      if (form.querySelector('[data-receipt-mode-input]')?.value === 'total_weight') {
+         roll.querySelector('[data-receipt-roll-number-field]')?.setAttribute('hidden', '');
+      }
 
       return roll;
    };
@@ -93,16 +82,11 @@ export function initReceiptRolls() {
    // =========================================================
 
    const addRoll = () => {
-      const rolls = getRolls();
-      const index = rolls.length;
+      const roll = createRoll();
 
-      const roll = createRoll(index);
+      reindexRolls();
 
-      rollsList.appendChild(roll);
-
-      const numberInput = roll.querySelector('[data-receipt-roll-number]');
-
-      numberInput?.focus();
+      roll.querySelector('.select__button')?.focus();
    };
 
    // =========================================================
@@ -114,73 +98,18 @@ export function initReceiptRolls() {
          return;
       }
 
-      const rolls = getRolls();
-
-      /*
-       * Первый рулон удалить нельзя.
-       */
-      if (rolls.indexOf(roll) === 0) {
-         return;
-      }
-
       roll.remove();
 
       reindexRolls();
    };
 
    // =========================================================
-   //* Переиндексация
-   // =========================================================
-
-   const reindexRolls = () => {
-      const rolls = getRolls();
-
-      rolls.forEach((roll, index) => {
-         const numberInput = roll.querySelector('[data-receipt-roll-number]');
-
-         const numberLabel = roll.querySelector(
-            '[data-receipt-roll-number-label]'
-         );
-
-         const weightInput = roll.querySelector('[data-receipt-roll-weight]');
-
-         const weightLabel = roll.querySelector(
-            '[data-receipt-roll-weight-label]'
-         );
-
-         if (numberInput) {
-            numberInput.id = `roll_number_${index}`;
-
-            numberInput.name = `rolls[${index}][roll_number]`;
-         }
-
-         if (numberLabel) {
-            numberLabel.htmlFor = `roll_number_${index}`;
-         }
-
-         if (weightInput) {
-            weightInput.id = `weight_${index}`;
-
-            weightInput.name = `rolls[${index}][weight]`;
-         }
-
-         if (weightLabel) {
-            weightLabel.htmlFor = `weight_${index}`;
-         }
-      });
-   };
-
-   // =========================================================
-   // Добавление
+   // Добавление и удаление
    // =========================================================
 
    addButton.addEventListener('click', () => {
       addRoll();
    });
-
-   // =========================================================
-   // Удаление
-   // =========================================================
 
    rollsList.addEventListener('click', (event) => {
       const removeButton = event.target.closest('[data-receipt-roll-remove]');
@@ -191,8 +120,38 @@ export function initReceiptRolls() {
 
       const roll = removeButton.closest('[data-receipt-roll]');
 
-      removeRoll(roll);
+      if (!roll) {
+         return;
+      }
+
+      confirmRowRemoval({
+         text: rowRemovalText(
+            roll,
+            '[data-receipt-roll-material]',
+            '.select__button-text'
+         ),
+         onConfirm: () => removeRoll(roll),
+      });
    });
+
+   // =========================================================
+   // Очистка формы: строки пересоздаются из шаблона
+   // =========================================================
+
+   form.querySelector('[data-receipt-form-reset]')?.addEventListener('click', () => {
+      rollsList.innerHTML = '';
+
+      createRoll();
+
+      reindexRolls();
+   });
+
+   // =========================================================
+   // Сервер отрендерил old-строки после ошибки валидации —
+   // их селекты нужно инициализировать
+   // =========================================================
+
+   initSelects(rollsList);
 
    // =========================================================
    // Начальная индексация

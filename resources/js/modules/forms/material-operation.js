@@ -5,6 +5,18 @@ export function initProductionOperationModule() {
 
    if (!form) return;
 
+   initProductionOperationForm(form);
+}
+
+/**
+ * Инициализирует форму производственной операции (создание или редактирование).
+ * Используется как на отдельной странице, так и в модальном окне.
+ */
+export function initProductionOperationForm(form) {
+   if (!form || form.dataset.operationFormInitialized) return;
+
+   form.dataset.operationFormInitialized = 'true';
+
    /**
     * Инициализирует CustomSelect на всех элементах внутри указанного контейнера.
     */
@@ -38,6 +50,12 @@ export function initProductionOperationModule() {
       const newIndex = items.length;
 
       newRow.setAttribute('data-component-index', newIndex);
+
+      // Новая строка не связана с существующим компонентом.
+      newRow.removeAttribute('data-component-id');
+      newRow
+         .querySelectorAll(`input[name^="${type}["][name$="[id]"]`)
+         .forEach((input) => input.remove());
 
       newRow.querySelectorAll('input, select, textarea').forEach((input) => {
          if (input.type === 'checkbox') {
@@ -194,8 +212,9 @@ export function initProductionOperationModule() {
       }
 
       try {
+         // PUT передаётся через скрытое поле _method, поэтому метод запроса — POST.
          const response = await fetch(operationForm.action, {
-            method: operationForm.method || 'POST',
+            method: 'POST',
             headers: {
                'X-Requested-With': 'XMLHttpRequest',
                Accept: 'application/json',
@@ -206,6 +225,11 @@ export function initProductionOperationModule() {
          const result = await response.json();
 
          if (!response.ok || !result.success) {
+            showOperationFormError(
+               operationForm,
+               result.message || firstValidationError(result.errors)
+            );
+
             if (submitButton) {
                submitButton.disabled = false;
             }
@@ -291,11 +315,59 @@ export function initProductionOperationModule() {
    /**
     * Перехватываем стандартную отправку формы.
     */
-   const operationForm = form.querySelector(
-      '[data-production-operation-create-form]'
-   );
+   const formSelector =
+      '[data-production-operation-create-form], [data-production-operation-update-form]';
+
+   // Корнем модуля может быть сам элемент формы (форма редактирования).
+   const operationForm = form.matches(formSelector)
+      ? form
+      : form.querySelector(formSelector);
 
    if (operationForm) {
       operationForm.addEventListener('submit', submitOperation);
    }
+}
+
+/**
+ * Первая ошибка валидации из ответа Laravel.
+ *
+ * @param {Object|null} errors Ошибки валидации {field: [messages]}.
+ * @returns {string} Текст ошибки.
+ */
+function firstValidationError(errors) {
+   if (!errors) {
+      return '';
+   }
+
+   const first = Object.values(errors)[0];
+
+   return Array.isArray(first) ? first[0] : String(first ?? '');
+}
+
+/**
+ * Показывает ошибку сохранения внутри формы операции —
+ * вверху формы, чтобы была видна в модалке без прокрутки.
+ *
+ * @param {HTMLElement} form Форма операции.
+ * @param {string} message Текст ошибки.
+ */
+function showOperationFormError(form, message) {
+   if (!form || !message) {
+      return;
+   }
+
+   let error = form.querySelector('[data-operation-form-error]');
+
+   if (!error) {
+      error = document.createElement('div');
+      error.setAttribute('data-operation-form-error', '');
+      error.style.cssText =
+         'color: #c0392b; padding: 10px 14px; margin-bottom: 12px;' +
+         'border: 1px solid #c0392b; border-radius: 8px;';
+
+      form.prepend(error);
+   }
+
+   error.textContent = message;
+   error.scrollIntoView({ block: 'nearest' });
 }

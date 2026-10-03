@@ -2,10 +2,10 @@
 	<td>{{ $number }}</td>
 	<td>{{ $material->name }}</td>
 	<td>{{ $material->code }}</td>
-	<td>{{ $material->identifier }}</td>
+	<td>{{ $material->identifier ?? '—' }}</td>
 	<td>{{ $material->grammage }}</td>
 	<td>{{ $material->thickness }}</td>
-	<td>{{ $material->format }}</td>
+	<td>{{ $material->format ?? '—' }}</td>
 	<td>{{ $material->is_active ? 'Активен' : 'Неактивен' }}</td>
 	<td class="materials__actions-icons">
 		<button type="button" data-action="view" aria-label="Просмотр" title="Просмотр">

@@ -138,7 +138,7 @@ export class CustomSelect {
 
       const label = option
          ? option.textContent.trim()
-         : this.options.placeholder || 'Выберите значение';
+         : this.options.placeholder || 'Выберите материал';
 
       if (this.hiddenInput) {
          this.hiddenInput.value = value;
@@ -267,8 +267,58 @@ export class CustomSelect {
    }
 }
 
+/**
+ * Готовит селекты клонированной строки к инициализации.
+ *
+ * cloneNode копирует отметку data-select-initialized, но не копирует
+ * обработчики — без сброса отметки initSelects пропустит такой селект
+ * и выпадающий список не откроется.
+ *
+ * @param {HTMLElement} scope Клонированный узел.
+ */
+export function prepareClonedSelects(scope) {
+   const selects = [
+      ...(scope.matches?.('.select, .material-select') ? [scope] : []),
+      ...scope.querySelectorAll('.select, .material-select'),
+   ];
+
+   selects.forEach((element) => {
+      delete element.dataset.selectInitialized;
+
+      // Клон мог быть снят с открытого селекта.
+      const dropdown = element.querySelector('._collapse');
+
+      if (dropdown) {
+         dropdown.classList.remove('_show', 'collapsing');
+         dropdown.style.height = '';
+      }
+
+      element
+         .querySelector('.select-button, .select__button')
+         ?.setAttribute('aria-expanded', 'false');
+   });
+}
+
 export function initSelects(container = document) {
    const selects = container.querySelectorAll('.select, .material-select');
 
-   return Array.from(selects).map((element) => new CustomSelect(element));
+   // Мёртвые экземпляры (модалка закрыта, контент заменён) держат
+   // document-слушатели и мешают closeAllExcept — вычищаем их.
+   if (window._activeSelects) {
+      window._activeSelects = window._activeSelects.filter(
+         (select) => document.contains(select.container)
+      );
+   }
+
+   return Array.from(selects).map((element) => {
+      // Повторная инициализация даёт двойной toggle (селект «сразу
+      // закрывается») — пропускаем уже инициализированные.
+      if (element.dataset.selectInitialized) {
+         return null;
+      }
+
+      element.dataset.selectInitialized = 'true';
+
+      return new CustomSelect(element);
+   });
 }

@@ -27,7 +27,7 @@
 		 */
 		public function material(): BelongsTo
 		{
-			return $this->belongsTo(Material::class);
+			return $this->belongsTo(Material::class)->withTrashed();
 		}
 
 		/**
@@ -35,6 +35,6 @@
 		 */
 		public function roll(): BelongsTo
 		{
-			return $this->belongsTo(MaterialRoll::class, 'roll_id');
+			return $this->belongsTo(MaterialRoll::class, 'roll_id')->withTrashed();
 		}
 	}

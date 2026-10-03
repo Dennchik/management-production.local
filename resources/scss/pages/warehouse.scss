@@ -11,6 +11,7 @@
 
 	// .materials__table-edit
 	&__table-edit {
+		justify-self: center;
 		text-align: center;
 	}
 
@@ -50,7 +51,35 @@
 		}
 	}
 }
+.icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: var(--materials-icon-size);
+}
 
+.icon-eye {
+	color: var(--color-orange);
+}
+
+.icon-edit {
+	color: var(--color-blue);
+}
+
+.icon-trash {
+	font-size: var(--materials-icon-size-middle);
+	color: var(--alarm);
+}
+
+.icon-close {
+	font-size: var(--materials-icon-size-middle);
+	color: var(--alarm);
+}
+
+.icon-check {
+	font-size: 2.4rem;
+	color: var(---color-green);
+}
 .material {
 	width: 100%;
 	font-size: 1.4rem;
@@ -81,6 +110,22 @@
 		
 		@include min-690 {
 			flex-direction: row;
+		}
+	}
+
+	/*
+	 * Блок формата: заголовок формата и таблица рулонов
+	 * на всю ширину, колонки идентификатора и остатка — рядом.
+	 */
+	// .material__section--format
+	&__section--format {
+		@include min-690 {
+			flex-wrap: wrap;
+		}
+
+		.material__section-title {
+			flex: 0 0 100%;
+			margin-bottom: 0;
 		}
 	}
 
@@ -136,6 +181,13 @@
 		}
 	}
 
+	// .material__column--full
+	&__column--full {
+		@include min-690 {
+			flex: 0 0 100%;
+		}
+	}
+
 	// .material__rows
 	&__rows {
 		overflow: hidden;
@@ -152,6 +204,31 @@
 			.material__row {
 				display: grid;
 				grid-template-columns: minmax(140px, 1fr) 2.3fr;
+			}
+		}
+
+		/*
+		 * Список рулонов: заголовок и строки — единая сетка,
+		 * чтобы колонки не разъезжались из-за длинных значений.
+		 */
+		&--rolls {
+			.material__head,
+			.material__row {
+				display: grid;
+				// Три колонки: № рулона, материал, остаток
+				// (идентификатор и формат вернулись на материал).
+				grid-template-columns:
+					minmax(70px, 0.6fr)
+					minmax(0, 2.4fr)
+					minmax(100px, 1fr);
+			}
+
+			.material__label,
+			.material__value {
+				overflow: hidden;
+				min-width: 0;
+				text-overflow: ellipsis;
+				white-space: nowrap;
 			}
 		}
 	}
@@ -193,7 +270,6 @@
 		transition: background 0.2s ease-in-out;
 
 		&:hover {
-			color: var(--color-blue);
 			background: var(--color-beige);
 		}
 
@@ -308,5 +384,68 @@
 		&__filter-reset {
 			flex: 1;
 		}
+	}
+}
+
+
+
+// Таблица склада на компоненте .table: 6 колонок, строки-каталоги
+// раскрывают вложенные ветки .table__branch.
+.table--warehouse {
+
+	.table__row-line {
+		grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, 0.6fr) minmax(0, 0.6fr) minmax(0, 1fr) 90px;
+	}
+
+	// Строка-заголовок каталога
+	.table__row-line--catalog {
+		font-weight: 600;
+	}
+
+	/*
+	 * Разделители строк: правило компонента .table__row-line:last-child
+	 * снимает бордер у последней строки КАЖДОЙ ветки склада, из-за чего
+	 * строки раскрытых каталогов посреди списка оставались без линии.
+	 * Возвращаем бордер всем строкам (специфичность выше компонента),
+	 * а снимает его только класс _last у реально последней видимой
+	 * строки, помечаемой JS.
+	 */
+	&.table .table__row-line {
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	&.table .table__row-line._last {
+		border-bottom: none;
+	}
+
+	// Отступ вложенности у каталогов и материалов
+	.table__row-line[style*='--tree-depth'] .table__cell:first-child {
+		padding-left: calc(var(--gap) / 2 + var(--tree-depth, 0) * 2rem);
+	}
+
+	// Ветка каталога: прячется целиком вместе с потомками
+	.table__branch[hidden] {
+		display: none;
+	}
+}
+
+// Шеврон ветки каталога склада
+.material__catalog-arrow {
+	transform: rotate(45deg); // ветка раскрыта — шеврон «вниз»
+
+	display: inline-block;
+
+	width: 0.7rem;
+	height: 0.7rem;
+	margin-right: 0.8rem;
+	border-right: 2px solid var(--color-text);
+	border-bottom: 2px solid var(--color-text);
+
+	opacity: 0.6;
+
+	transition: transform 0.1s ease;
+
+	[aria-expanded='false'] & {
+		transform: rotate(-45deg); // свёрнута — «вправо»
 	}
 }

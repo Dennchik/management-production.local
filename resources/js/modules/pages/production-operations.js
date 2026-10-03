@@ -3,19 +3,6 @@ export function initProductionOperations() {
 
    if (!page) return;
 
-   const createButton = page.querySelector(
-      '[data-production-operation-create]'
-   );
-
-   if (createButton) {
-      createButton.addEventListener('click', () => {
-         window.operationModal?.load(
-            '/production/operations/create',
-            'Не удалось загрузить форму создания производственной операции.'
-         );
-      });
-   }
-
    document.addEventListener('click', (event) => {
       const deleteButton = event.target.closest(
          '[data-production-operation-delete]'
@@ -32,7 +19,7 @@ export function initProductionOperations() {
 
          window.operationModal?.load(
             `/production/operations/${operationId}/delete`,
-            'Не удалось загрузить окно удаления производственной операции.'
+            'Не удалось загрузить окно удаления технологической линии.'
          );
 
          return;

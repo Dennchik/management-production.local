@@ -20,99 +20,33 @@
 		</div>
 	@endif
 
-	<div class="operation-view__section">
-		<div class="operation-view__label">Входные компоненты</div>
-
-		@php
-			$inputs = $operation->components->where('direction', 'input');
-		@endphp
-
-		@if ($inputs->isEmpty())
-			<div class="operation-view__empty">
-				Входные компоненты не заданы.
+	@if ($operation->is_cutting)
+		<div class="operation-view__section">
+			<div class="operation-view__label">Режим резки</div>
+			<div class="operation-view__description">
+				На входе один материал, на выходе — тот же материал другого формата.
 			</div>
-		@else
-			<div class="operation-view__components">
-				@foreach ($inputs as $component)
-					<div class="operation-view__component">
-						<div class="operation-view__component-main">
-                     <span class="operation-view__component-name">
-                        {{ $component->material->name }}
-                     </span>
-
-							@if ($component->quantity !== null)
-								<span class="operation-view__component-quantity">
-                           {{ rtrim(rtrim(number_format($component->quantity, 3, '.', ''), '0'), '.') }}
-									{{ $component->unit }}
-                        </span>
-							@endif
-						</div>
-
-						<div class="operation-view__component-meta">
-							{{ $component->is_required ? 'Обязательный' : 'Необязательный' }}
-						</div>
-
-						@if ($component->comment)
-							<div class="operation-view__component-comment">
-								{{ $component->comment }}
-							</div>
-						@endif
-					</div>
-				@endforeach
-			</div>
-		@endif
-	</div>
+		</div>
+	@endif
 
 	<div class="operation-view__section">
-		<div class="operation-view__label">Выходные компоненты</div>
-
-		@php
-			$outputs = $operation->components->where('direction', 'output');
-		@endphp
-
-		@if ($outputs->isEmpty())
-			<div class="operation-view__empty">
-				Выходные компоненты не заданы.
-			</div>
-		@else
-			<div class="operation-view__components">
-				@foreach ($outputs as $component)
-					<div class="operation-view__component">
-						<div class="operation-view__component-main">
-                     <span class="operation-view__component-name">
-                        {{ $component->material->name }}
-                     </span>
-
-							@if ($component->quantity !== null)
-								<span class="operation-view__component-quantity">
-                           {{ rtrim(rtrim(number_format($component->quantity, 3, '.', ''), '0'), '.') }}
-									{{ $component->unit }}
-                        </span>
-							@endif
-						</div>
-
-						<div class="operation-view__component-meta">
-							{{ $component->is_required ? 'Обязательный' : 'Необязательный' }}
-						</div>
-
-						@if ($component->comment)
-							<div class="operation-view__component-comment">
-								{{ $component->comment }}
-							</div>
-						@endif
-					</div>
-				@endforeach
-			</div>
-		@endif
+		<div class="operation-view__label">Выходные товары</div>
+		<div class="operation-view__description">
+			@if ($operation->outputOperations->isEmpty())
+				—
+			@else
+				{{ $operation->outputOperations->pluck('name')->implode(', ') }}
+			@endif
+		</div>
 	</div>
 
 	<div class="operation-view__actions">
-		<button class="button" type="button" data-production-operation-edit="{{ $operation->id }}">
-			Редактировать
-		</button>
+		<a class="button" href="{{ route('production.operations.edit', $operation) }}">
+			<span>Редактировать</span>
+		</a>
 
 		<button class="button" type="button" data-production-operation-delete="{{ $operation->id }}">
-			Удалить
+			<span>Удалить</span>
 		</button>
 	</div>
 </div>

@@ -6,6 +6,7 @@
 
 	@include('material-issues._content', [
 		'issue' => $issue,
+		'rows' => $rows,
 	])
 
 @endsection

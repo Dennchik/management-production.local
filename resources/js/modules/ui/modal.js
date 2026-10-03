@@ -1,3 +1,5 @@
+import { initProductionOperationForm } from '../forms/material-operation.js';
+
 document.addEventListener('DOMContentLoaded', () => {
    const modal = document.querySelector('[data-operation-modal]');
 
@@ -49,6 +51,16 @@ document.addEventListener('DOMContentLoaded', () => {
          })
          .then((html) => {
             content.innerHTML = html;
+
+            // Формы в загруженном контенте (создание/редактирование
+            // линии) требуют инициализации обработчиков.
+            const form = content.querySelector(
+               '[data-production-operation-create-form], [data-production-operation-update-form], [data-production-operation-form]'
+            );
+
+            if (form) {
+               initProductionOperationForm(form);
+            }
          })
          .catch(() => {
             close();
@@ -83,25 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
          return;
       }
 
-      const receipt = event.target.closest('[data-receipt-modal-open]');
-
-      if (receipt) {
-         event.preventDefault();
-
-         load(`/receipts/${receipt.dataset.receiptId}`);
-
-         return;
-      }
-
-      const issue = event.target.closest('[data-issue-modal-open]');
-
-      if (issue) {
-         event.preventDefault();
-
-         load(`/issues/${issue.dataset.issueId}`);
-
-         return;
-      }
+      // Ордера (приход, расход, корректировка) открываются
+      // на отдельных страницах — через data-row-link в списках.
 
       const closeButton = event.target.closest('[data-operation-modal-close]');
 

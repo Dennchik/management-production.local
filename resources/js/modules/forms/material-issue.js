@@ -1,193 +1,125 @@
-import { CustomSelect } from '../../assets/select.js';
+import { CustomSelect, initSelects } from '../../assets/select.js';
 import { RollsApiService } from '../../services/rollsApi.js';
+import { confirmRowRemoval, rowRemovalText } from '../ui/row-remove-confirm.js';
 
 export function initMaterialIssueModule() {
-   const form = document.querySelector('.issue-order');
+   const form = document.querySelector('[data-issue-order]');
 
    if (!form) return;
 
-   const selects = form.querySelectorAll('.material-select');
+   const rowsList = form.querySelector('[data-issue-rows]');
+   const addButton = form.querySelector('[data-issue-row-add]');
+   const rowTemplate = document.querySelector('[data-issue-row-template]');
 
-   const materialSelectEl = selects[0];
-   const rollSelectEl = selects[1];
+   if (!rowsList || !addButton || !rowTemplate) return;
 
-   if (!materialSelectEl || !rollSelectEl) {
-      return;
-   }
-
-   const materialSelect = new CustomSelect(materialSelectEl);
-
-   const rollSelect = new CustomSelect(rollSelectEl, {
-      placeholder: 'Сначала выберите материал',
-   });
-
-   const materialNameInput = form.querySelector('#material_name');
-   const materialIdentifierInput = form.querySelector('#material_identifier');
-
-   const remainingWeightInput = form.querySelector('#remaining_weight');
-
-   const weightInput = form.querySelector('#weight');
-
-   const rollList = rollSelectEl.querySelector('#rolls-list');
-
-   const rollEmptyMsg = rollSelectEl.querySelector('.select__empty');
+   const commentInput = form.querySelector('#comment');
 
    /*
-    * Материал -> загрузка доступных рулонов.
+    * Строки одного ордера: материал -> рулон -> остаток -> вес расхода.
+    * Шаблон строки рендерит сервер, JS клонирует, переиндексирует
+    * и вешает логику.
     */
-   materialSelectEl.addEventListener('select:change', async (e) => {
-      const option = e.detail.option;
-      const materialId = e.detail.value;
+   const getRows = () =>
+      Array.from(rowsList.querySelectorAll('[data-issue-row]'));
 
-      fillMaterialInfo(option);
+   const escapeHtml = (value) =>
+      String(value)
+         .replace(/&/g, '&amp;')
+         .replace(/</g, '&lt;')
+         .replace(/>/g, '&gt;')
+         .replace(/"/g, '&quot;')
+         .replace(/'/g, '&#039;');
 
-      resetRollState();
+   // =========================================================
+   // Переиндексация имён rows[i][...] после добавления/удаления
+   // =========================================================
 
-      if (!materialId) {
-         return;
-      }
+   const reindexRows = () => {
+      getRows().forEach((row, index) => {
+         row.querySelector('[data-issue-material]')?.setAttribute(
+            'name',
+            `rows[${index}][material_id]`
+         );
 
-      if (rollSelect.valueSpan) {
-         rollSelect.valueSpan.textContent = 'Загрузка рулонов...';
-      }
+         row.querySelector('[data-issue-roll]')?.setAttribute(
+            'name',
+            `rows[${index}][roll_id]`
+         );
 
-      try {
-         const rolls = await RollsApiService.fetchByMaterial(materialId);
+         row.querySelector('[data-issue-input]')?.setAttribute(
+            'name',
+            `rows[${index}][weight]`
+         );
+      });
+   };
 
-         renderRolls(rolls);
-      } catch (error) {
-         console.error('Ошибка загрузки рулонов:', error);
+   // =========================================================
+   // Живой экземпляр селекта: шаблонный рулон-селект помечен
+   // data-select-initialized и массово не пере инициализируется
+   // =========================================================
 
-         renderRollsError();
-      }
-   });
+   const findSelectInstance = (container) =>
+      (window._activeSelects || []).find(
+         (select) => select.container === container
+      ) ?? null;
 
-   /*
-    * Выбор рулона -> отображение текущего остатка
-    * и установка максимального веса расхода.
-    */
-   rollSelectEl.addEventListener('select:change', (e) => {
-      const option = e.detail.option;
+   // =========================================================
+   // Загрузка рулонов материала строки
+   // =========================================================
 
-      setRollWeight(option);
-   });
+   const resetRollCell = (row) => {
+      const rollList = row.querySelector('[data-issue-rolls-list]');
+      const rollSelectEl = row.querySelector('[data-issue-roll-select]');
+      const emptyMsg = rollSelectEl?.querySelector('.select__empty');
 
-   /*
-    * Сброс формы.
-    */
-   const resetButton = form.querySelector('.issue-order__button--reset');
-
-   resetButton?.addEventListener('click', () => {
-      form.reset();
-
-      materialSelect.selectOption(null);
-
-      resetRollState();
-
-      if (materialNameInput) {
-         materialNameInput.value = '';
-      }
-
-      if (materialIdentifierInput) {
-         materialIdentifierInput.value = '';
-      }
-
-      if (weightInput) {
-         weightInput.removeAttribute('max');
-      }
-   });
-
-   /*
-    * Восстановление формы после неудачной отправки.
-    *
-    * Laravel возвращает старые значения через withInput().
-    * Hidden input material_id уже содержит old('material_id'),
-    * а roll_id содержит old('roll_id').
-    *
-    * CustomSelect восстанавливает визуальный выбор материала, но намеренно
-    * не вызывает select:change.
-    * Поэтому здесь вручную запускаем необходимую логику.
-    */
-   void restoreFormState();
-
-   /*
-    * Заполняет информацию о выбранном материале.
-    */
-   function fillMaterialInfo(option) {
-      if (!option) {
-         if (materialNameInput) {
-            materialNameInput.value = '';
-         }
-
-         if (materialIdentifierInput) {
-            materialIdentifierInput.value = '';
-         }
-
-         return;
-      }
-
-      if (materialNameInput) {
-         materialNameInput.value = option.dataset.name || '';
-      }
-
-      if (materialIdentifierInput) {
-         materialIdentifierInput.value = option.dataset.identifier || '';
-      }
-   }
-
-   /*
-    * Сбрасывает состояние рулона.
-    */
-   function resetRollState() {
       if (rollList) {
          rollList.innerHTML = '';
       }
 
-      rollSelect.selectOption(null);
+      const rollHidden = row.querySelector('[data-issue-roll]');
 
-      if (remainingWeightInput) {
-         remainingWeightInput.value = '';
+      if (rollHidden) {
+         rollHidden.value = '';
       }
 
-      if (weightInput) {
-         weightInput.removeAttribute('max');
+      if (emptyMsg) {
+         emptyMsg.hidden = true;
       }
 
-      if (rollEmptyMsg) {
-         rollEmptyMsg.hidden = true;
-         rollEmptyMsg.textContent = 'Нет доступных рулонов';
+      const valueSpan = rollSelectEl?.querySelector('.select__button-text');
+
+      if (valueSpan) {
+         valueSpan.textContent = 'Сначала выберите материал';
       }
 
-      if (rollSelect.valueSpan) {
-         rollSelect.valueSpan.textContent = 'Сначала выберите материал';
-      }
-   }
+      const weightBefore = row.querySelector('[data-issue-weight-before]');
 
-   /*
-    * Отображает загруженные рулоны.
-    */
-   function renderRolls(rolls) {
-      if (!rollList) {
-         return;
+      if (weightBefore) {
+         weightBefore.value = '';
       }
+   };
+
+   const renderRolls = (row, rolls) => {
+      const rollList = row.querySelector('[data-issue-rolls-list]');
+      const rollSelectEl = row.querySelector('[data-issue-roll-select]');
+      const emptyMsg = rollSelectEl?.querySelector('.select__empty');
+
+      if (!rollList) return;
 
       if (!Array.isArray(rolls) || rolls.length === 0) {
          rollList.innerHTML = '';
 
-         if (rollEmptyMsg) {
-            rollEmptyMsg.textContent = 'Нет доступных рулонов';
-            rollEmptyMsg.hidden = false;
-         }
-
-         if (rollSelect.valueSpan) {
-            rollSelect.valueSpan.textContent = 'Нет доступных рулонов';
+         if (emptyMsg) {
+            emptyMsg.textContent = 'Нет доступных рулонов';
+            emptyMsg.hidden = false;
          }
 
          return;
       }
 
-      if (rollEmptyMsg) {
-         rollEmptyMsg.hidden = true;
+      if (emptyMsg) {
+         emptyMsg.hidden = true;
       }
 
       rollList.innerHTML = rolls
@@ -198,155 +130,273 @@ export function initMaterialIssueModule() {
                   type="button"
                   role="option"
                   data-value="${escapeHtml(roll.id ?? '')}"
-                  data-roll="${escapeHtml(roll.roll_number ?? '')}"
                   data-weight="${escapeHtml(roll.weight ?? '')}"
                   aria-selected="false">
-                  
+
                      <span>
                      ${escapeHtml(roll.roll_number ?? '')}
                   |
-                  ${escapeHtml(roll.weight ?? '')}
+                     ${escapeHtml(roll.weight ?? '')}
                   кг
-                  </span>
-                  
+                     </span>
+
                   </button>
                   `
          )
          .join('');
 
-      /*
-       * Обновляем DOM-список внутри CustomSelect.
-       */
-      rollSelect.refresh();
+      // Селект рулона создаётся один раз на строку: при повторных
+      // загрузках обновляем список опций у живого экземпляра
+      const select = findSelectInstance(rollSelectEl);
 
-      if (rollSelect.valueSpan) {
-         rollSelect.valueSpan.textContent = 'Выберите рулон';
+      if (select) {
+         select.optionsList = Array.from(
+            rollSelectEl.querySelectorAll('.select__item')
+         );
+
+         select.bindOptionsEvents();
+      } else {
+         new CustomSelect(rollSelectEl, {
+            placeholder: 'Выберите рулон',
+         });
       }
-   }
+   };
 
-   /*
-    * Состояние ошибки загрузки рулонов.
-    */
-   function renderRollsError() {
-      if (rollList) {
-         rollList.innerHTML = '';
-      }
-
-      if (rollEmptyMsg) {
-         rollEmptyMsg.textContent = 'Не удалось загрузить рулоны';
-
-         rollEmptyMsg.hidden = false;
-      }
-
-      if (rollSelect.valueSpan) {
-         rollSelect.valueSpan.textContent = 'Не удалось загрузить рулоны';
-      }
-   }
-
-   /*
-    * Отображает остаток выбранного рулона
-    * и ограничивает поле веса расхода.
-    */
-   function setRollWeight(option) {
-      const weight = option?.dataset.weight || '';
-
-      if (remainingWeightInput) {
-         remainingWeightInput.value = weight;
-      }
-
-      if (weightInput) {
-         if (weight) {
-            weightInput.max = weight;
-         } else {
-            weightInput.removeAttribute('max');
-         }
-      }
-   }
-
-   /*
-    * Восстанавливает состояние формы после
-    * возврата Laravel с withInput().
-    */
-   async function restoreFormState() {
-      const materialId = materialSelect.hiddenInput?.value || '';
-      const rollId = rollSelect.hiddenInput?.value || '';
+   const loadRolls = async (row, materialId) => {
+      resetRollCell(row);
 
       if (!materialId) {
          return;
       }
 
-      /*
-       * Находим материал, который был выбран до отправки.
-       */
-      const materialOption = materialSelect.optionsList.find(
-         (option) => option.dataset.value === materialId
-      );
-
-      if (!materialOption) {
-         return;
-      }
-
-      /*
-       * Восстанавливаем визуальный выбор материала.
-       * triggerEvent=false, чтобы не создавать лишние события.
-       */
-      materialSelect.selectOption(materialOption, false);
-
-      /*
-       * Заполняем readonly-поля материала.
-       */
-      fillMaterialInfo(materialOption);
-
-      /*
-       * Показываем состояние загрузки рулонов.
-       */
-      if (rollSelect.valueSpan) {
-         rollSelect.valueSpan.textContent = 'Загрузка рулонов...';
-      }
-
       try {
          const rolls = await RollsApiService.fetchByMaterial(materialId);
 
-         renderRolls(rolls);
+         renderRolls(row, rolls);
+      } catch (error) {
+         console.error('Ошибка загрузки рулонов:', error);
 
-         /*
-          * После загрузки рулонов восстанавливаем
-          * ранее выбранный рулон.
-          */
-         if (!rollId) {
-            return;
+         const emptyMsg = row.querySelector('.select__empty');
+
+         if (emptyMsg) {
+            emptyMsg.textContent = 'Не удалось загрузить рулоны';
+            emptyMsg.hidden = false;
+         }
+      }
+   };
+
+   // =========================================================
+   // Создание строки из шаблона
+   // =========================================================
+
+   const createRow = () => {
+      const templateContent = rowTemplate.content.cloneNode(true);
+      const row = templateContent.querySelector('tr');
+
+      rowsList.appendChild(row);
+
+      // Кастомные селекты клона инициализируются после вставки
+      // (рулон-селект помечен в шаблоне как уже инициализированный —
+      // его экземпляр создаётся при первой загрузке рулонов)
+      initSelects(row);
+
+      const materialSelectEl = row.querySelector(
+         '[data-issue-material-select]'
+      );
+
+      materialSelectEl?.addEventListener('select:change', (e) => {
+         void loadRolls(row, e.detail.value);
+      });
+
+      row.querySelector('[data-issue-roll-select]')?.addEventListener(
+         'select:change',
+         (e) => {
+            const weight = e.detail.option?.dataset.weight || '';
+
+            const weightBefore = row.querySelector(
+               '[data-issue-weight-before]'
+            );
+
+            if (weightBefore) {
+               weightBefore.value = weight;
+            }
+
+            const weightInput = row.querySelector('[data-issue-input]');
+
+            if (weightInput) {
+               weightInput.max = weight;
+            }
+         }
+      );
+
+      row.querySelector('[data-issue-row-remove]')?.addEventListener(
+         'click',
+         () => {
+            confirmRowRemoval({
+               text: rowRemovalText(
+                  row,
+                  '[data-issue-material]',
+                  '[data-issue-material-select] .select__button-text'
+               ),
+               onConfirm: () => {
+                  row.remove();
+
+                  reindexRows();
+               },
+            });
+         }
+      );
+
+      return row;
+   };
+
+   // =========================================================
+   // Восстановление после возврата с ошибкой валидации:
+   // строки из old('rows'), рулоны подгружаются заново
+   // =========================================================
+
+   const restoreRows = async () => {
+      let oldRows = [];
+
+      try {
+         oldRows = JSON.parse(rowsList.dataset.oldRows || '[]') || [];
+      } catch {
+         oldRows = [];
+      }
+
+      if (!Array.isArray(oldRows) || oldRows.length === 0) {
+         return;
+      }
+
+      for (let index = 0; index < oldRows.length; index += 1) {
+         const oldRow = oldRows[index] || {};
+
+         const row = index === 0 ? (getRows()[0] ?? createRow()) : createRow();
+
+         if (oldRow.weight !== undefined && oldRow.weight !== null) {
+            const weightInput = row.querySelector('[data-issue-input]');
+
+            if (weightInput) {
+               weightInput.value = oldRow.weight;
+            }
          }
 
-         const rollOption = rollSelect.optionsList.find(
-            (option) => option.dataset.value === rollId
+         const materialId = String(oldRow.material_id ?? '');
+
+         if (!materialId) {
+            continue;
+         }
+
+         const materialOption = Array.from(
+            row.querySelectorAll('.select__item[data-value]')
+         ).find((option) => option.dataset.value === materialId);
+
+         const materialSelectEl = row.querySelector(
+            '[data-issue-material-select]'
          );
 
-         if (!rollOption) {
-            return;
+         if (materialOption && materialSelectEl) {
+            const materialSelect =
+               findSelectInstance(materialSelectEl) ??
+               new CustomSelect(materialSelectEl);
+
+            materialSelect.selectOption(materialOption, false);
          }
 
-         rollSelect.selectOption(rollOption, false);
+         const rollId = String(oldRow.roll_id ?? '');
 
-         /*
-          * Восстанавливаем остаток и ограничение веса.
-          */
-         setRollWeight(rollOption);
-      } catch (error) {
-         console.error('Ошибка восстановления рулонов:', error);
+         if (!rollId) {
+            continue;
+         }
 
-         renderRollsError();
+         try {
+            const rolls = await RollsApiService.fetchByMaterial(materialId);
+
+            renderRolls(row, rolls);
+
+            const rollOption = Array.from(
+               row.querySelectorAll('.select__item[data-value]')
+            ).find((option) => option.dataset.value === rollId);
+
+            if (rollOption) {
+               row.querySelector('[data-issue-roll]').value = rollId;
+
+               const weight = rollOption.dataset.weight || '';
+
+               const weightBefore = row.querySelector(
+                  '[data-issue-weight-before]'
+               );
+
+               if (weightBefore) {
+                  weightBefore.value = weight;
+               }
+
+               const weightInput = row.querySelector('[data-issue-input]');
+
+               if (weightInput) {
+                  weightInput.max = weight;
+               }
+            }
+         } catch (error) {
+            console.error('Ошибка восстановления рулонов:', error);
+         }
       }
-   }
+   };
 
-   /*
-    * Безопасная вставка значений API в HTML.
-    */
-   function escapeHtml(value) {
-      return String(value)
-         .replace(/&/g, '&amp;')
-         .replace(/</g, '&lt;')
-         .replace(/>/g, '&gt;')
-         .replace(/"/g, '&quot;')
-         .replace(/'/g, '&#039;');
-   }
+   // =========================================================
+   // Добавление строки, сабмит, сброс
+   // =========================================================
+
+   addButton.addEventListener('click', () => {
+      const row = createRow();
+
+      reindexRows();
+
+      row.querySelector('.select__button')?.focus();
+   });
+
+   form.addEventListener('submit', () => {
+      // Незаполненные строки не отправляются: материал и рулон
+      // без значения отключаются вместе с весом.
+      getRows().forEach((row) => {
+         const material = row.querySelector('[data-issue-material]');
+         const roll = row.querySelector('[data-issue-roll]');
+         const weight = row.querySelector('[data-issue-input]');
+
+         const filled =
+            (material?.value || '') !== '' &&
+            (roll?.value || '') !== '' &&
+            (weight?.value || '') !== '';
+
+         if (!filled) {
+            [material, roll, weight].forEach((input) => {
+               if (input) {
+                  input.disabled = true;
+               }
+            });
+         }
+      });
+   });
+
+   const resetButton = form.querySelector('.issue-order__button--reset');
+
+   resetButton?.addEventListener('click', () => {
+      form.reset();
+
+      rowsList.innerHTML = '';
+
+      createRow();
+
+      reindexRows();
+
+      if (commentInput) {
+         commentInput.value = '';
+      }
+   });
+
+   // Начальная строка + восстановление после ошибки
+   createRow();
+   reindexRows();
+
+   void restoreRows();
 }

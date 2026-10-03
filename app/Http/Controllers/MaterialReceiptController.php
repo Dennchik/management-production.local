@@ -9,11 +9,17 @@
 	use Illuminate\Database\UniqueConstraintViolationException;
 	use Illuminate\Http\RedirectResponse;
 	use Illuminate\Http\Request;
+	use Illuminate\Support\Collection;
 	use Illuminate\Support\Facades\DB;
 	use Illuminate\View\View;
 
 	class MaterialReceiptController extends Controller
 	{
+		/**
+		 * Номер рулона, накапливающего приход без учёта рулонами.
+		 */
+		public const TOTAL_WEIGHT_ROLL_NUMBER = 'Общий вес';
+
 		/**
 		 * Список приходных ордеров.
 		 */
@@ -65,40 +71,87 @@
 			]);
 		}
 
-		/**
-		 * Отображает форму нового оприходования сырья.
-		 */
-		public function create(): View
-		{
-			$materials = Material::orderBy('name')->get();
+	/**
+	 * Отображает форму нового оприходования сырья.
+	 */
+	public function create(): View
+	{
+		$materials = Material::query()
+			->orderBy('name')
+			->get();
 
-			return view('material-receipts.create', compact('materials'));
-		}
+		return view('material-receipts.create', compact('materials'));
+	}
 
 		/**
-		 * Сохраняет приходный ордер с одним или несколькими рулонами.
+		 * Сохраняет приходный ордер с одним или несколькими рулонами
+		 * одного или разных материалов: материал выбирается в каждой
+		 * строке.
 		 */
 		public function store(Request $request): RedirectResponse
 		{
+			$mode = $request->input('mode') === 'total_weight'
+					? 'total_weight'
+					: 'rolls';
+
 			$validated = $request->validate(
 					[
-							'material_id' => [
-									'required',
-									'integer',
-									'exists:materials,id',
-							],
-
 							'rolls' => [
 									'required',
 									'array',
 									'min:1',
 							],
 
-							'rolls.*.roll_number' => [
-									'required',
-									'string',
-									'max:50',
-							],
+						'rolls.*.material_id' => [
+								'required',
+								'integer',
+								'exists:materials,id',
+						],
+
+						'rolls.*.roll_number' => [
+								// В режиме общего веса номер не вводится —
+								// приход уходит в рулон «Общий вес»
+								$mode === 'total_weight' ? 'nullable' : 'required',
+								'string',
+								'max:50',
+								// В режиме общего веса номер фиксированный, повтор разрешён.
+								// Для обычных номеров уникальность проверяется здесь:
+								// в рамках материала строки и внутри одной заявки.
+								static function ($attribute, $value, $fail) use ($request, $mode) {
+										if ($mode === 'total_weight') {
+												return;
+										}
+
+										$value = trim((string) $value);
+
+										$index = (int) substr($attribute, strlen('rolls.'));
+
+										$materialId = (int) ($request->input("rolls.{$index}.material_id") ?? 0);
+
+										// Дубль номера в другой строке этого же материала
+										foreach ((array) $request->input('rolls', []) as $otherIndex => $otherRoll) {
+												if ((int) $otherIndex >= $index) {
+														continue;
+												}
+
+												if ((int) ($otherRoll['material_id'] ?? 0) === $materialId
+														&& trim((string) ($otherRoll['roll_number'] ?? '')) === $value) {
+														$fail("В ордере два рулона с номером «{$value}» для одного материала.");
+
+														return;
+												}
+										}
+
+										$exists = MaterialRoll::query()
+												->where('material_id', $materialId)
+												->where('roll_number', $value)
+												->exists();
+
+										if ($exists) {
+												$fail("Рулон с номером «{$value}» для этого материала уже существует.");
+										}
+								},
+						],
 
 							'rolls.*.weight' => [
 									'required',
@@ -111,14 +164,14 @@
 									'string',
 							],
 					],
-					[
-							'material_id.required' => 'Укажите материал.',
-							'material_id.integer' => 'Некорректный материал.',
-							'material_id.exists' => 'Выбранный материал не существует.',
-
+						[
 							'rolls.required' => 'Добавьте хотя бы один рулон.',
 							'rolls.array' => 'Некорректный список рулонов.',
 							'rolls.min' => 'Добавьте хотя бы один рулон.',
+
+							'rolls.*.material_id.required' => 'Укажите материал в каждой строке.',
+							'rolls.*.material_id.integer' => 'Некорректный материал.',
+							'rolls.*.material_id.exists' => 'Выбранный материал не существует.',
 
 							'rolls.*.roll_number.required' => 'Укажите номер рулона.',
 							'rolls.*.roll_number.string' => 'Номер рулона должен быть строкой.',
@@ -133,22 +186,62 @@
 			);
 
 			try {
-				DB::transaction(function () use ($validated) {
+				DB::transaction(function () use ($validated, $mode) {
 					$receipt = MaterialReceipt::create([
 							'comment' => $validated['comment'] ?? null,
-							'user_id' => 1, // Временно, пока нет авторизации
+							'user_id' => auth()->id(), // Временно, пока нет авторизации
 					]);
+
+					// Режим общего веса: вес каждой строки уходит в рулон
+					// «Общий вес» её материала, вес по материалу суммируется.
+					if ($mode === 'total_weight') {
+							collect($validated['rolls'])
+									->groupBy(static fn (array $roll) => (int) $roll['material_id'])
+									->each(static function (Collection $rows, int $materialId) use ($receipt) {
+											$totalWeight = round(
+													$rows->sum(static fn (array $roll) => (float) $roll['weight']),
+													3
+											);
+
+											$roll = MaterialRoll::query()
+												->where('material_id', $materialId)
+												->where('roll_number', self::TOTAL_WEIGHT_ROLL_NUMBER)
+												->lockForUpdate()
+												->first();
+
+											if ($roll === null) {
+													$roll = MaterialRoll::create([
+															'material_id' => $materialId,
+															'roll_number' => self::TOTAL_WEIGHT_ROLL_NUMBER,
+															'weight' => $totalWeight,
+													]);
+											} else {
+													$roll->update([
+															'weight' => round((float) $roll->weight + $totalWeight, 3),
+													]);
+											}
+
+											MaterialReceiptItem::create([
+													'material_receipt_id' => $receipt->id,
+													'material_id' => $materialId,
+													'roll_id' => $roll->id,
+													'weight' => $totalWeight,
+											]);
+									});
+
+							return;
+					}
 
 					foreach ($validated['rolls'] as $rollData) {
 						$roll = MaterialRoll::create([
-								'material_id' => $validated['material_id'],
+								'material_id' => $rollData['material_id'],
 								'roll_number' => $rollData['roll_number'],
 								'weight' => $rollData['weight'],
 						]);
 
 						MaterialReceiptItem::create([
 								'material_receipt_id' => $receipt->id,
-								'material_id' => $validated['material_id'],
+								'material_id' => $rollData['material_id'],
 								'roll_id' => $roll->id,
 								'weight' => $rollData['weight'],
 						]);

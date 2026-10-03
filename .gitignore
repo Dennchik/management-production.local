@@ -11,6 +11,7 @@
 /.nova
 /.phpunit.cache
 /.vscode
+/.zcode
 /.zed
 /auth.json
 /node_modules
@@ -25,3 +26,8 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+vite.config.js
+<<<<<<< Updated upstream
+=======
+hot
+>>>>>>> Stashed changes

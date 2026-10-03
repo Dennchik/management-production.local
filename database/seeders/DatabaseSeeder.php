@@ -14,9 +14,14 @@
 		 */
 		public function run(): void
 		{
-			// Справочник типов материалов.
+			// Пользователи, роли и станки + справочники материалов
+			// и технологических линий.
+			//
 			$this->call([
+					UserSeeder::class,
 					MaterialSeeder::class,
+					ProductionOperationSeeder::class,
+					ProductionDemoSeeder::class,
 			]);
 		}
 	}
