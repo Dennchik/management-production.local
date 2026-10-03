@@ -223,9 +223,9 @@
 				->middleware('can.do:warehouse')
 				->name('warehouse.index');
 
-		Route::get('/warehouse/materials/{material}', [WarehouseController::class, 'material'])
-				->middleware('can.do:warehouse')
-				->name('warehouse.material');
+	Route::get('/warehouse/materials/{material}', [WarehouseController::class, 'material'])
+			->middleware('can.do:warehouse')
+			->name('warehouse.material');
 
 		/*
 		|--------------------------------------------------------------------------

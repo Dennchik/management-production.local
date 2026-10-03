@@ -1,11 +1,13 @@
 @php
 	/*
 	 * Ветка каталога в таблице склада: строка-заголовок раскрывает
-	 * вложенный блок с материалами и подкаталогами.
+	 * вложенный блок с материалами и подкаталогами. Сервер раскрывает
+	 * только ветку из адреса страницы; раскрытые вручную ветви
+	 * восстанавливает JS из хранилища браузера.
 	 *
 	 * Переменные: $node (id, name, materials, children), $depth,
-	 * $ancestors, $activePath, $canMaterials, $canMaterialsEdit,
-	 * $canMaterialsDelete.
+	 * $ancestors, $activePath, $canMaterials, $canMaterialsCreate,
+	 * $canMaterialsEdit, $canMaterialsDelete.
 	 */
 	$inActivePath = $activePath->contains($node['id'])
 			|| $node['children']->contains(static fn ($child) => $activePath->contains($child['id']));
@@ -39,6 +41,14 @@
 						aria-label="Редактировать каталог" title="Редактировать каталог"
 						data-catalog-row-button>
 					<i class="icon icon-edit" aria-hidden="true"></i>
+				</button>
+			@endif
+
+			@if ($canMaterialsCreate)
+				<button type="button" data-action="catalog-copy" data-catalog-id="{{ $node['id'] }}"
+						aria-label="Копировать каталог" title="Копировать каталог"
+						data-catalog-row-button>
+					<i class="icon icon-copy-files" aria-hidden="true"></i>
 				</button>
 			@endif
 

@@ -38,9 +38,21 @@
 		{
 			$selectedParentId = request('parent');
 
+			// Копирование: форма создания, заполненная данными источника.
+			$copyFrom = request('copy_from');
+			$copy = $copyFrom !== null && $copyFrom !== ''
+					? Catalog::query()->findOrFail((int) $copyFrom)
+					: null;
+
+			if ($copy !== null) {
+					$selectedParentId = $copy->parent_id;
+			}
+
 			return view('catalogs._create', [
 					'parents' => Catalog::selectableParents(),
 					'selectedParentId' => $selectedParentId !== null ? (int) $selectedParentId : null,
+					'copy' => $copy,
+					'copyName' => $copy !== null ? $copy->name . ' (копия)' : null,
 			]);
 		}
 

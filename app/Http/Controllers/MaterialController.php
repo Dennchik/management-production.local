@@ -27,9 +27,18 @@
 			// Предзаполнение данными существующего материала —
 			// так из линии резки создаётся новый формат того же материала.
 			$prefillFrom = request('prefill_from');
-			$prefill = $prefillFrom !== null && $prefillFrom !== ''
-				? Material::query()->findOrFail((int) $prefillFrom)
-				: null;
+
+			// Копирование: форма создания, заполненная данными источника
+			// целиком, включая формат и статус.
+			$copyFrom = request('copy_from');
+
+			$sourceId = $copyFrom !== null && $copyFrom !== ''
+					? $copyFrom
+					: $prefillFrom;
+
+			$prefill = $sourceId !== null && $sourceId !== ''
+					? Material::query()->findOrFail((int) $sourceId)
+					: null;
 
 			return view('materials._create', [
 					'number' => $number,
@@ -38,6 +47,7 @@
 					'selectedCatalogId' => $prefill?->catalog_id ?? request('catalog'),
 					'productionLines' => $this->productionLines(),
 					'prefill' => $prefill,
+					'isCopy' => $copyFrom !== null && $copyFrom !== '',
 					'selectedOperationIds' => $prefill?->allowedOperations()
 						->pluck('production_operations.id')
 						->all() ?? [],

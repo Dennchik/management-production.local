@@ -3,15 +3,20 @@
  *
  * Отвечает за:
  * - открытие формы создания материала;
+ * - копирование материала и каталога;
  * - просмотр материала;
  * - открытие формы редактирования;
  * - удаление материала;
  * - сохранение нового материала;
  * - обновление существующего материала;
  * - просмотр, редактирование и удаление каталога;
+ * - запоминание раскрытых ветвей каталогов в хранилище браузера;
  * - обновление таблицы без перезагрузки страницы.
  */
 import { initSelects } from '../../assets/select.js';
+
+/** Ключ sessionStorage с раскрытыми ветвями каталогов. */
+const EXPANDED_CATALOGS_KEY = 'warehouse-expanded-catalogs';
 
 export function initMaterialsModule() {
    // Сохранение и подтверждение удаления материала работают из модалки
@@ -84,6 +89,7 @@ export function initMaterialsModule() {
             });
 
          markLastWarehouseRow(materialsPage);
+         persistExpandedCatalogs();
          return;
       }
 
@@ -121,15 +127,19 @@ export function initMaterialsModule() {
          return;
       }
 
+      if (action === 'copy') {
+         void copyMaterial(actionButton);
+         return;
+      }
+
       if (action === 'delete') {
          deleteMaterial(actionButton);
       }
    });
 
-   // Начальная видимость вложенных веток проставлена сервером
-   // через hidden на .table__branch — JS-пересчёт не нужен.
-   // Последняя видимая строка помечается для снятия бордера.
-   markLastWarehouseRow(materialsPage);
+   // Ветка из адреса раскрыта сервером через hidden/aria-expanded,
+   // вручную раскрытые ветви восстанавливаются из хранилища браузера.
+   restoreExpandedCatalogs();
 }
 
 /**
@@ -172,6 +182,11 @@ function handleCatalogRowAction(event, button) {
 
    if (action === 'catalog-edit') {
       void editCatalogRow(catalogId);
+      return;
+   }
+
+   if (action === 'catalog-copy') {
+      void copyCatalog(catalogId);
       return;
    }
 
@@ -235,6 +250,83 @@ function toggleCatalogBranch(row) {
    branch.hidden = expanded;
 
    markLastWarehouseRow();
+   persistExpandedCatalogs();
+}
+
+/**
+ * Сохраняет раскрытые ветви каталогов в хранилище браузера:
+ * позиция дерева переживает обновления таблицы, перезагрузки
+ * и возврат с карточки материала — без обращений к серверу.
+ */
+function persistExpandedCatalogs() {
+   const expandedIds = Array.from(
+      document.querySelectorAll(
+         '[data-materials-page] [data-catalog-toggle][aria-expanded="true"]'
+      )
+   )
+      .map((row) => row.dataset.catalogId)
+      .filter(Boolean);
+
+   try {
+      sessionStorage.setItem(
+         EXPANDED_CATALOGS_KEY,
+         JSON.stringify(expandedIds)
+      );
+   } catch {
+      // Хранилище недоступно — позиция дерева просто не запомнится.
+   }
+}
+
+/**
+ * Раскрывает ветви, запомненные в хранилище браузера: сервер
+ * отдаёт дерево свёрнутым, кроме ветки из адреса страницы.
+ * Несуществующие каталоги (удалённые) пропускаются.
+ */
+function restoreExpandedCatalogs() {
+   const materialsPage = document.querySelector('[data-materials-page]');
+
+   if (!materialsPage) {
+      return;
+   }
+
+   const wantedIds = new Set(readExpandedCatalogs());
+
+   materialsPage
+      .querySelectorAll('[data-catalog-toggle]')
+      .forEach((row) => {
+         if (!wantedIds.has(row.dataset.catalogId)) {
+            return;
+         }
+
+         const branch = row.parentElement.querySelector(
+            `[data-catalog-branch="${row.dataset.catalogId}"]`
+         );
+
+         if (!branch) {
+            return;
+         }
+
+         row.setAttribute('aria-expanded', 'true');
+         branch.hidden = false;
+      });
+
+   markLastWarehouseRow(materialsPage);
+}
+
+/**
+ * Читает раскрытые ветви каталогов из хранилища браузера.
+ *
+ * @returns {string[]} Идентификаторы каталогов.
+ */
+function readExpandedCatalogs() {
+   try {
+      const raw = sessionStorage.getItem(EXPANDED_CATALOGS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+   } catch {
+      return [];
+   }
 }
 
 /**
@@ -381,13 +473,21 @@ async function createCatalog() {
 
 /**
  * Открывает форму создания материала.
+ *
+ * @param {Object} [extraParams] Дополнительные параметры запроса
+ *     (например, {copy_from: id} для копирования материала).
  */
-async function createMaterial() {
+async function createMaterial(extraParams = {}) {
    try {
       const catalogId = getCurrentCatalogId();
-      const url = catalogId
-         ? `/materials/create?catalog=${encodeURIComponent(catalogId)}`
-         : '/materials/create';
+      const params = new URLSearchParams(extraParams);
+
+      if (catalogId) {
+         params.set('catalog', catalogId);
+      }
+
+      const query = params.toString();
+      const url = query ? `/materials/create?${query}` : '/materials/create';
 
       const response = await fetch(url, {
          headers: {
@@ -412,6 +512,68 @@ async function createMaterial() {
       initNameMirror(form);
 
       form?.querySelector('input[name="material-name"]')?.focus();
+   } catch (error) {
+      return;
+   }
+}
+
+/**
+ * Открывает форму создания материала, заполненную данными
+ * копируемого материала.
+ *
+ * @param {HTMLElement} button Кнопка копирования.
+ */
+async function copyMaterial(button) {
+   const row = button.closest('[data-material-id]');
+
+   if (!row) {
+      return;
+   }
+
+   const materialId = row.dataset.materialId;
+
+   if (!materialId) {
+      return;
+   }
+
+   await createMaterial({copy_from: materialId});
+}
+
+/**
+ * Открывает форму создания каталога, заполненную данными
+ * копируемого каталога (имя с суффиксом «(копия)», родитель, статус).
+ *
+ * @param {string} catalogId Идентификатор каталога-источника.
+ */
+async function copyCatalog(catalogId) {
+   try {
+      const response = await fetch(
+         `/catalogs/create?copy_from=${encodeURIComponent(catalogId)}`,
+         {
+            headers: {
+               'X-Requested-With': 'XMLHttpRequest',
+               Accept: 'text/html',
+            },
+         }
+      );
+
+      if (!response.ok) {
+         return;
+      }
+
+      window.operationModal.open(await response.text());
+
+      const form = document.querySelector('[data-catalog-form]');
+
+      // Кастомные селекты внутри модалки инициализируются после вставки.
+      initSelects(form);
+
+      const nameInput = form?.querySelector('input[name="catalog-name"]');
+
+      if (nameInput) {
+         nameInput.focus();
+         nameInput.select();
+      }
    } catch (error) {
       return;
    }
@@ -639,7 +801,9 @@ async function refreshMaterialsTable() {
 
       tableBody.replaceChildren(...Array.from(newTableBody.childNodes));
 
-      markLastWarehouseRow();
+      // Сервер отдал дерево свёрнутым — раскрытые ветви
+      // восстанавливаются из хранилища браузера.
+      restoreExpandedCatalogs();
 
       return true;
    } catch (error) {

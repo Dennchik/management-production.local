@@ -1,10 +1,11 @@
 @php
-	/*
-	 * Строка материала в таблице склада: тире вместо маркера,
-	 * отступ по глубине вложенности.
-	 *
-	 * Переменные: $material, $depth, $canMaterials.
-	 */
+/*
+ * Строка материала в таблице склада: тире вместо маркера,
+ * отступ по глубине вложенности.
+ *
+ * Переменные: $material, $depth, $canMaterials, $canMaterialsCreate,
+ * $canMaterialsEdit, $canMaterialsDelete.
+ */
 @endphp
 
 <div class="table__row-line" style="--tree-depth: {{ $depth }}"
@@ -29,6 +30,12 @@
 			@if ($canMaterialsEdit)
 				<button type="button" data-action="edit" aria-label="Редактировать" title="Редактировать">
 					<i class="icon icon-edit" aria-hidden="true"></i>
+				</button>
+			@endif
+
+			@if ($canMaterialsCreate)
+				<button type="button" data-action="copy" aria-label="Копировать" title="Копировать">
+					<i class="icon icon-copy-files" aria-hidden="true"></i>
 				</button>
 			@endif
 

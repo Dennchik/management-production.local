@@ -47,6 +47,10 @@
 					? collect()
 					: $this->catalogAncestors($currentCatalog)->pluck('id');
 
+			// Адрес списка запоминается для кнопки «Назад» карточки
+			// материала; раскрытые ветви дерева хранит браузер.
+			session()->put('warehouse.index_url', $request->fullUrl());
+
 			$materialsQuery = Material::query()
 					->with([
 							'rolls' => function ($query) {

@@ -8,7 +8,8 @@
 		<div class="main-content__header">
 			<h1 class="main-content__title">{{ $material->name }}</h1>
 
-			<a class="material__back button" href="{{ route('warehouse.index') }}">
+			{{-- Возврат на адрес списка из сессии: дерево каталогов остаётся в той же позиции --}}
+			<a class="material__back button" href="{{ session('warehouse.index_url', route('warehouse.index')) }}">
 				<span>Назад на склад</span>
 			</a>
 

@@ -7,7 +7,8 @@
 		<div class="material-show__row">
 			<span>Наименование:</span>
 			<label>
-				<input type="text" name="catalog-name" autocomplete="off" required>
+				<input type="text" name="catalog-name" autocomplete="off" required
+						value="{{ $copyName ?? '' }}">
 			</label>
 		</div>
 
@@ -43,7 +44,9 @@
 			<span>Статус:</span>
 
 			<label class="material-show__status">
-				<input type="checkbox" name="is_active" checked>
+				{{-- При копировании берётся статус каталога-источника --}}
+				<input type="checkbox" name="is_active"
+						@checked(($copy ?? null) !== null ? (bool) $copy->is_active : true)>
 				Активен
 			</label>
 		</div>

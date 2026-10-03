@@ -1,6 +1,6 @@
 <div class="material-show material-form" data-material-form>
 	<div class="material-show__header">
-		<h2 class="material-show__title">{{ isset($prefill) ? 'Новый формат материала' : 'Создание материала' }}</h2>
+		<h2 class="material-show__title">{{ ($isCopy ?? false) ? 'Копирование материала' : (isset($prefill) ? 'Новый формат материала' : 'Создание материала') }}</h2>
 	</div>
 
 	<div class="material-show__content">
@@ -69,7 +69,10 @@
 		<div class="material-show__row">
 			<span>Формат:</span>
 			<label>
-				<input type="text" name="format" id="material-format" autocomplete="off" inputmode="numeric">
+				{{-- При копировании формат источника подставляется,
+						при «новом формате» поле остаётся пустым --}}
+				<input type="text" name="format" id="material-format" autocomplete="off" inputmode="numeric"
+						value="{{ ($isCopy ?? false) ? $prefill?->format : '' }}">
 			</label>
 		</div>
 
@@ -123,7 +126,9 @@
 			<span>Статус:</span>
 
 			<label class="material-show__status">
-				<input type="checkbox" name="is_active" checked>Активен
+				{{-- При копировании берётся статус материала-источника --}}
+				<input type="checkbox" name="is_active"
+						@checked(($isCopy ?? false) ? (bool) $prefill?->is_active : true)>Активен
 			</label>
 		</div>
 	</div>
