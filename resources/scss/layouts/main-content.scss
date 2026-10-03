@@ -32,7 +32,6 @@
 	// .main-content__column
 	&__column {
 		min-width: 0;
-		padding-block: var(--padding);
 
 		&:first-child {
 			flex: 0 0 320px;
@@ -195,7 +194,7 @@
 	&__operation-info {
 		overflow-x: auto;
 		display: grid;
-		grid-template-columns: minmax(200px, 1.5fr) repeat(2, minmax(110px, 1fr)) minmax(120px, 1.1fr);
+		grid-template-columns: minmax(200px, 2.5fr) repeat(3, minmax(110px, 0.7fr));
 		gap: var(--gap);
 		align-items: center;
 

@@ -22,6 +22,8 @@
 
 	// .sidebar__nav
 	&__nav {
+		scrollbar-width: none;
+
 		overflow-y: auto;
 		display: flex;
 		flex-direction: column;
@@ -30,10 +32,10 @@
 		width: fit-content;
 		height: 100%;
 		padding: var(--space-yxs);
+		border: 2px solid var(--border-color);
 		border-radius: var(--border-radius-8);
 
 		background-color: var(--color-white);
-		box-shadow: var(--box-shadow);
 
 		.icon {
 			margin-right: var(--padding);
@@ -78,7 +80,9 @@
 	&__section-title {
 		display: flex;
 		align-items: center;
+
 		padding: 1rem;
+
 		font-weight: var(--font-weight-bold);
 		color: inherit;
 		text-decoration: none;

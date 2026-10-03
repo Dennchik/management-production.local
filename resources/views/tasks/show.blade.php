@@ -48,7 +48,8 @@
 							@if ($task->isCutting())
 								{{-- План — вход: сколько резать; прогресс по списанному входу --}}
 								<span data-task-consumed>{{ $reservedMade }}</span> из {{ $plan }}
-								<span style="color: var(--text-muted);" data-task-reserved-left>осталось резать {{ $reservedLeft }}</span>
+								<span style="color: var(--text-muted);"
+										data-task-reserved-left>осталось резать {{ $reservedLeft }}</span>
 							@else
 								<span data-task-progress-made>{{ $made }}</span> из {{ $plan }}
 								<span class="{{ $task->isShort() ? 'text-red-soft' : '' }}"
@@ -64,7 +65,9 @@
 					<tr>
 						<th style="text-align: left;">Статус</th>
 						<td>
-							<span class="status-chip status-chip--{{ $task->statusClass() }}">{{ $task->statusLabel() }}</span>
+							<span class="status-chip status-chip--auto status-chip--{{ $task->statusClass() }}">{{
+							$task->statusLabel()
+							}}</span>
 						</td>
 					</tr>
 					@if ($task->started_at)
@@ -89,57 +92,64 @@
 				</table>
 			</div>
 			<div class="materials-action">
-				@if ($task->status === 'pending' && auth()->user()?->may('tasks', 'execute'))
-					<form method="POST" action="{{ route('tasks.start', $task) }}" style="display: inline;">
-						@csrf
-						<button class="button button--primary" type="submit">
-							<span>Начать задачу</span>
-						</button>
-					</form>
+				<div class="materials-action__body">
+					<div class="materials-action__line">
+						<p style="margin: 0.5rem 0 0; color: var(--text-muted);">
+							Рулоны берутся прямо на странице задачи после старта.
+						</p>
+					</div>
+					<div class="materials-action__line">
+						@if ($task->status === 'pending' && auth()->user()?->may('tasks', 'execute'))
+							<form method="POST" action="{{ route('tasks.start', $task) }}" style="display: inline;">
+								@csrf
+								<button class="button button--primary" type="submit">
+									<span>Начать задачу</span>
+								</button>
+							</form>
+						@endif
 
-					<p style="margin: 0.5rem 0 0; color: var(--text-muted);">
-						Рулоны берутся прямо на странице задачи после старта.
-					</p>
-				@endif
+						@if ($task->status === 'done' && $task->isShort() && !auth()->user()?->may('tasks', 'status') && auth()->user()?->may('tasks', 'execute'))
+							{{-- Оператор: продолжить завершённую с недобором задачу, чтобы доделать вес --}}
+							<form method="POST" action="{{ route('tasks.status', $task) }}" style="display: inline;"
+									onsubmit="return confirm('Продолжить задачу №{{ $task->number }}? Она вернётся в работу для доделки.');">
+								@csrf
+								<input type="hidden" name="status" value="in_progress">
+								<button class="button button--primary" type="submit">
+									<span>Продолжить задачу</span>
+								</button>
+							</form>
+						@endif
 
-				@if ($task->status === 'done' && $task->isShort() && !auth()->user()?->may('tasks', 'status') && auth()->user()?->may('tasks', 'execute'))
-					{{-- Оператор: продолжить завершённую с недобором задачу, чтобы доделать вес --}}
-					<form method="POST" action="{{ route('tasks.status', $task) }}" style="display: inline;"
-							onsubmit="return confirm('Продолжить задачу №{{ $task->number }}? Она вернётся в работу для доделки.');">
-						@csrf
-						<input type="hidden" name="status" value="in_progress">
-						<button class="button button--primary" type="submit">
-							<span>Продолжить задачу</span>
-						</button>
-					</form>
-				@endif
+						@if (auth()->user()?->may('tasks', 'status'))
+							{{-- Право смены статуса: одна кнопка, выбор в модалке --}}
+							<button class="button button--primary" type="button"
+									data-task-status-open
+									data-task-id="{{ $task->id }}"
+									data-current="{{ $task->status }}"
+									data-statuses="{{ json_encode($statuses, JSON_UNESCAPED_UNICODE) }}">
+								<span>Изменить статус</span>
+							</button>
+						@endif
 
-				@if (auth()->user()?->may('tasks', 'status'))
-					{{-- Право смены статуса: одна кнопка, выбор в модалке --}}
-					<button class="button button--primary" type="button"
-							data-task-status-open
-							data-task-id="{{ $task->id }}"
-							data-current="{{ $task->status }}"
-							data-statuses="{{ json_encode($statuses, JSON_UNESCAPED_UNICODE) }}">
-						<span>Изменить статус</span>
-					</button>
-				@endif
+						@if ($task->status !== 'cancelled' && auth()->user()?->may('tasks', 'edit'))
+							<a class="button button--primary" href="{{ route('tasks.edit', $task) }}">
+								<span>Редактировать</span>
+							</a>
+						@endif
 
-				@if ($task->status !== 'cancelled' && auth()->user()?->may('tasks', 'edit'))
-					<a class="button button--primary" href="{{ route('tasks.edit', $task) }}">
-						<span>Редактировать</span>
-					</a>
-				@endif
+						@if ($task->status === 'pending' && auth()->user()?->may('tasks', 'cancel'))
+							<form method="POST" action="{{ route('tasks.cancel', $task) }}" style="display: inline;"
+									onsubmit="return confirm('Отменить задачу №{{ $task->number }}?');">
+								@csrf
+								<button class="button button--secondary" type="submit">
+									<span>Отменить задачу</span>
+								</button>
+							</form>
+						@endif
+					</div>
+				</div>
 
-				@if ($task->status === 'pending' && auth()->user()?->may('tasks', 'cancel'))
-					<form method="POST" action="{{ route('tasks.cancel', $task) }}" style="display: inline;"
-							onsubmit="return confirm('Отменить задачу №{{ $task->number }}?');">
-						@csrf
-						<button class="button button--secondary" type="submit">
-							<span>Отменить задачу</span>
-						</button>
-					</form>
-				@endif
+
 			</div>
 		</div>
 
@@ -242,33 +252,33 @@
 															<div class="select__dropdown material-select__select-list _collapse"
 																	role="listbox">
 																@foreach ($materialRolls as $roll)
-																@php
-																	$takenBy = $roll->taken_by ?? null;
-																	$available = (float) ($roll->available ?? $roll->weight);
-																	$isExhausted = $available <= 0.0005;
-																@endphp
-																<button class="material-select__select-option select__item"
-																		type="button"
-																		role="option"
-																		data-value="{{ $isExhausted ? '' : $roll->id }}"
-																		data-search="{{ strtolower($roll->roll_number) }}"
-																		data-available="{{ $available }}"
-																		data-shared="{{ $roll->is_shared ? '1' : '' }}"
-																		@if ($isExhausted) disabled @endif>
+																	@php
+																		$takenBy = $roll->taken_by ?? null;
+																		$available = (float) ($roll->available ?? $roll->weight);
+																		$isExhausted = $available <= 0.0005;
+																	@endphp
+																	<button class="material-select__select-option select__item"
+																			type="button"
+																			role="option"
+																			data-value="{{ $isExhausted ? '' : $roll->id }}"
+																			data-search="{{ strtolower($roll->roll_number) }}"
+																			data-available="{{ $available }}"
+																			data-shared="{{ $roll->is_shared ? '1' : '' }}"
+																			@if ($isExhausted) disabled @endif>
 																	<span>{{ $roll->roll_number }} (доступно
 																		{{ rtrim(rtrim(number_format($available, 3, '.', ''), '0'), '.') }}
 																		из {{ rtrim(rtrim($roll->weight, '0'), '.') }} кг)</span>
-																	@if ($takenBy)
-																		<small style="display: block; font-size: 1.1rem; color: var(--text-muted);">
-																			@if ($isExhausted)
-																				взята в задачу №{{ $takenBy }}
-																			@else
-																				частично в задаче №{{ $takenBy }}
-																			@endif
-																		</small>
-																	@endif
-																</button>
-															@endforeach
+																		@if ($takenBy)
+																			<small style="display: block; font-size: 1.1rem; color: var(--text-muted);">
+																				@if ($isExhausted)
+																					взята в задачу №{{ $takenBy }}
+																				@else
+																					частично в задаче №{{ $takenBy }}
+																				@endif
+																			</small>
+																		@endif
+																	</button>
+																@endforeach
 																<div class="material-select__select-empty select__empty" hidden>Ничего
 																	не найдено
 																</div>
@@ -348,7 +358,9 @@
 
 							{{-- Общий вес сделанной продукции --}}
 							<p style="margin: 0.8rem 0 0; font-weight: 600;">
-								Общий вес сделанного: <span data-outputs-total>{{ rtrim(rtrim(number_format((float) $task->outputs->sum('actual_weight'), 3, '.', ''), '0'), '.') }}</span> кг
+								Общий вес сделанного:
+								<span data-outputs-total>{{ rtrim(rtrim(number_format((float) $task->outputs->sum('actual_weight'), 3, '.', ''), '0'), '.') }}</span>
+								кг
 							</p>
 						</div>
 					</div>
@@ -393,12 +405,12 @@
 							</tr>
 							</thead>
 							<tbody>
-								@foreach ($task->inputMaterials as $material)
-									<tr>
-										<th colspan="3" style="text-align: left;">
-											{{ $material->name }}
-										</th>
-									</tr>
+							@foreach ($task->inputMaterials as $material)
+								<tr>
+									<th colspan="3" style="text-align: left;">
+										{{ $material->name }}
+									</th>
+								</tr>
 
 								@foreach ($task->inputs->where('material_id', $material->id) as $input)
 									<tr>

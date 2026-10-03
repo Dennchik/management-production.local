@@ -4,6 +4,20 @@
 	display: flex;
 	justify-content: space-between;
 	margin: 2rem 0;
+
+	// .materials-action__body
+	&__body{
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
+
+	// .materials-action__line
+	&__line {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 2rem;
+	}
 }
 
 textarea {
@@ -67,7 +81,6 @@ table {
 	font-size: var(--font-size-middle);
 
 	background: var(--background);
-	box-shadow: var(--box-shadow);
 
 	thead {
 		height: 5.5rem;

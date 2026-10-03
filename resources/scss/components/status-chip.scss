@@ -20,6 +20,11 @@
 
 	box-shadow: var(--shadow);
 
+	// .status-chip--auto
+	&--auto {
+		width: auto;
+	}
+
 	// Ожидает
 	&--gray {
 		border-color: rgb(148 163 184 / 60%);
