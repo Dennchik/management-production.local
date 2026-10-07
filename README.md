@@ -155,3 +155,38 @@ Blade-шаблон
 ---
 
 *Актуально для Laravel 10+ / 11+ с Vite*
+
+---
+### Шпаргалка для сервера
+---
+```
+# 1. Режим обслуживания
+php8.4 artisan down
+
+# 2. Забрать код
+git fetch origin
+git checkout beta
+git pull origin beta
+
+# 3. Зависимости PHP
+php8.4 /usr/local/bin/composer install --no-dev --optimize-autoloader
+# путь к composer может отличаться — проверить: which composer
+
+# 4. Миграции
+php8.4 artisan migrate --force
+
+# 5. Пересобрать фронт (изменились materials.js и catalogs.js)
+npm ci && npm run build
+
+# 6. Сбросить кеши
+php8.4 artisan config:cache
+php8.4 artisan route:cache
+php8.4 artisan view:cache
+php8.4 artisan cache:clear
+
+# 7. Если крутятся воркеры очередей — перезапустить
+php8.4 artisan queue:restart
+
+# 8. Открыть сайт
+php8.4 artisan up
+```
