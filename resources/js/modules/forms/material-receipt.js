@@ -1,68 +1,91 @@
-import { CustomSelect } from '../../assets/select.js';
+const MODE_STORAGE_KEY = 'receipt-mode';
 
 export function initMaterialReceiptModule() {
    const form = document.querySelector('.receipt-order');
    if (!form) return;
 
-   const materialSelectEl = form.querySelector('.material-select');
-   if (!materialSelectEl) return;
-
-   const materialSelect = new CustomSelect(materialSelectEl);
-
-   const inputs = {
-      grammage: form.querySelector('#grammage'),
-      thickness: form.querySelector('#thickness'),
-      format: form.querySelector('#format'),
-      identifier: form.querySelector('#identifier'),
-   };
+   const modeInput = form.querySelector('[data-receipt-mode-input]');
+   const modeButtons = form.querySelectorAll('[data-receipt-mode-button]');
+   const rollAddButton = form.querySelector('[data-receipt-roll-add]');
+   const addButtonText = form.querySelector('[data-receipt-roll-add-text]');
+   const totalHint = form.querySelector('[data-receipt-total-hint]');
+   const rollsTitle = form.querySelector('[data-receipt-rolls-title]');
 
    /**
-    * Заполняет характеристики выбранного материала.
+    * Режим учёта: rolls — обычный ввод номеров,
+    * total_weight — вес каждого материала в его рулон «Общий вес».
     */
-   function fillMaterialData(option) {
-      if (inputs.grammage) {
-         inputs.grammage.value = option?.dataset.grammage || '';
+   function setMode(mode) {
+      if (modeInput) {
+         modeInput.value = mode;
       }
 
-      if (inputs.thickness) {
-         inputs.thickness.value = option?.dataset.thickness || '';
+      modeButtons.forEach((button) => {
+         button.classList.toggle('_active', button.dataset.mode === mode);
+      });
+
+      const isTotal = mode === 'total_weight';
+
+      // Колонка номера скрывается динамически: строки
+      // могут быть добавлены уже после переключения режима
+      form
+         .querySelectorAll('[data-receipt-roll-number-field]')
+         .forEach((field) => {
+            field.hidden = isTotal;
+         });
+
+      const numberColumn = form.querySelector(
+         '[data-receipt-roll-number-column]'
+      );
+
+      if (numberColumn) {
+         numberColumn.hidden = isTotal;
       }
 
-      if (inputs.format) {
-         inputs.format.value = option?.dataset.format || '';
+      if (addButtonText) {
+         addButtonText.textContent = isTotal
+            ? 'Добавить материал'
+            : 'Добавить рулон';
       }
 
-      if (inputs.identifier) {
-         inputs.identifier.value = option?.dataset.identifier || '';
+      if (totalHint) {
+         totalHint.hidden = !isTotal;
+      }
+
+      if (rollsTitle) {
+         rollsTitle.textContent = isTotal ? 'Общий вес' : 'Рулоны';
       }
    }
 
    /**
-    * Выбор материала пользователем.
+    * Последний выбранный режим запоминается в localStorage.
     */
-   materialSelectEl.addEventListener('select:change', (e) => {
-      const { option } = e.detail;
+   function storeMode(mode) {
+      try {
+         localStorage.setItem(MODE_STORAGE_KEY, mode);
+      } catch {
+         // localStorage недоступен — режим просто не запоминается
+      }
+   }
 
-      fillMaterialData(option);
+   /**
+    * Переключение режима учёта.
+    */
+   modeButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+         const mode =
+            button.dataset.mode === 'total_weight' ? 'total_weight' : 'rolls';
+
+         setMode(mode);
+         storeMode(mode);
+      });
    });
 
-   /**
-    * Восстановление состояния формы после
-    * возврата Laravel с ошибкой валидации.
-    *
-    * CustomSelect уже восстановил selected option,
-    * но событие select:change при этом не вызывается.
-    */
-   const selectedMaterial = materialSelectEl.querySelector(
-      '.select__item._selected'
-   );
-
-   if (selectedMaterial) {
-      fillMaterialData(selectedMaterial);
-   }
+   setMode(modeInput?.value === 'total_weight' ? 'total_weight' : 'rolls');
 
    /**
-    * Очистка формы.
+    * Очистка формы. Строки позиций пересоздает
+    * модуль receipt-rolls, это его зона ответственности.
     *
     * Это единственное место, где форма должна
     * очищаться программно.
@@ -71,41 +94,6 @@ export function initMaterialReceiptModule() {
 
    resetButton?.addEventListener('click', () => {
       form.reset();
-
-      materialSelect.selectOption(null);
-
-      Object.values(inputs).forEach((input) => {
-         if (input) {
-            input.value = '';
-         }
-      });
-
-      const rollsList = form.querySelector('[data-receipt-rolls]');
-
-      if (rollsList) {
-         const firstRoll = rollsList.querySelector('[data-receipt-roll]');
-
-         rollsList.innerHTML = '';
-
-         if (firstRoll) {
-            rollsList.appendChild(firstRoll);
-
-            const rollNumberInput = firstRoll.querySelector(
-               '[data-receipt-roll-number]'
-            );
-
-            const weightInput = firstRoll.querySelector(
-               '[data-receipt-roll-weight]'
-            );
-
-            if (rollNumberInput) {
-               rollNumberInput.value = '';
-            }
-
-            if (weightInput) {
-               weightInput.value = '';
-            }
-         }
-      }
+      setMode('rolls');
    });
 }

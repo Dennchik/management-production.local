@@ -43,14 +43,15 @@
 					$query->where('material_id', $materialId);
 				})
 				->when($search, function ($query) use ($search) {
-					$query->whereHas('material', function ($query) use ($search) {
+					$query->where(function ($query) use ($search) {
 						$query
-							->where('name', 'ilike', '%' . $search . '%')
-							->orWhere(
-								'identifier',
-								'ilike',
-								'%' . $search . '%'
-							);
+							->whereHas('material', function ($query) use ($search) {
+								$query->whereIlike('name', '%' . $search . '%');
+							})
+							// Идентификатор — атрибут материала
+							->orWhereHas('material', function ($query) use ($search) {
+								$query->whereIlike('identifier', '%' . $search . '%');
+							});
 					});
 				})
 				->get()
@@ -85,14 +86,15 @@
 					$query->where('material_id', $materialId);
 				})
 				->when($search, function ($query) use ($search) {
-					$query->whereHas('material', function ($query) use ($search) {
+					$query->where(function ($query) use ($search) {
 						$query
-							->where('name', 'ilike', '%' . $search . '%')
-							->orWhere(
-								'identifier',
-								'ilike',
-								'%' . $search . '%'
-							);
+							->whereHas('material', function ($query) use ($search) {
+								$query->whereIlike('name', '%' . $search . '%');
+							})
+							// Идентификатор — атрибут материала
+							->orWhereHas('material', function ($query) use ($search) {
+								$query->whereIlike('identifier', '%' . $search . '%');
+							});
 					});
 				})
 				->get()

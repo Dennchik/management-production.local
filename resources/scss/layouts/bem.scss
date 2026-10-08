@@ -1,5 +1,25 @@
 @use '../core/variables';
 
+.materials-action {
+	display: flex;
+	justify-content: space-between;
+	margin: 2rem 0;
+
+	// .materials-action__body
+	&__body{
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
+
+	// .materials-action__line
+	&__line {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 2rem;
+	}
+}
+
 textarea {
 	cursor: pointer;
 	resize: vertical;
@@ -25,20 +45,26 @@ textarea {
 	align-items: center;
 	justify-content: center;
 
-	height: 36px;
-	padding: var(--spacing);
+	padding: 0 1.6rem;
 	border-radius: var(--border-radius);
-
-	font-weight: 500;
-	color: var(--color-button-text);
 
 	background-color: var(--color-button);
 
-	transition: all 0.3s ease-in-out;
+	transition: background-color 0.3s ease-in-out;
+
+	.icon {
+		color: var(--color-white);
+	}
 
 	span {
+		padding: 1rem 0;
 		font-weight: var(--font-weight-bold);
+		color: var(--color-button-text);
 		white-space: nowrap;
+	}
+
+	&.button--danger {
+		align-self: flex-end;
 	}
 
 	&:hover {
@@ -47,25 +73,35 @@ textarea {
 }
 
 table {
-	overflow: hidden;
-	//	table-layout: fixed;
+	table-layout: auto;
 	border-collapse: collapse;
 
 	width: 100%;
-	border-radius: var(--border-radius-8);
 
 	font-size: var(--font-size-middle);
 
 	background: var(--background);
-	box-shadow: var(--box-shadow);
 
 	thead {
+		height: 5.5rem;
 		border-radius: var(--border-radius);
 		background: var(--color-black);
 
 		th {
 			color: var(--color-white);
+
+			&:first-child {
+				border-top-left-radius: 8px;
+			}
+
+			&:last-child {
+				border-top-right-radius: 8px;
+			}
 		}
+	}
+
+	tbody {
+		border: 1px solid var(--border-color);
 	}
 
 	td {
@@ -75,15 +111,14 @@ table {
 			width: 100%; /* Занимает ровно 100% ширины td */
 			min-width: 0; /* Сбрасывает дефолтную минимальную ширину браузера */
 			max-width: 100%; /* Не дает выходить за границы */
+			border: 1px solid var(--border-color);
 		}
 	}
 
 	th,
 	td {
-		height: 5.5rem;
-		padding: 0 1.6rem;
+		padding: 1rem 1.6rem;
 		border-bottom: 1px solid var(--border-color);
-
 		text-align: left;
 		vertical-align: middle;
 
@@ -93,7 +128,6 @@ table {
 			align-items: center;
 		}
 
-		&:not(:last-child),
 		&:not(:last-child) {
 			border-right: 1px solid rgb(220 226 232);
 		}
@@ -104,10 +138,7 @@ table {
 		white-space: nowrap;
 	}
 
-	tbody {
-		tr:nth-child(even) {
-			background: var(--color-gray);
-		}
+	tbody { 
 
 		tr:last-child td {
 			border-bottom: 0;

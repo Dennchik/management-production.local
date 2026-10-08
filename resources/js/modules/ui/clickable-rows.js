@@ -3,6 +3,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const row = e.target.closest('[data-row-link]');
       if (!row) return;
 
+      // Клик по кнопке действия или ссылке внутри строки
+      // не должен открывать карточку строки.
+      if (e.target.closest('a, button, [data-action]')) return;
+
       const url = row.dataset.rowLink;
       if (!url) return;
 

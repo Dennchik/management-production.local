@@ -22,6 +22,8 @@
 @use 'pages/material-modal';
 @use 'pages/warehouse';
 @use 'pages/operations';
+@use 'pages/catalogs';
+@use 'pages/material-orders';
 
 //todo  -------------------------- Partials ------------------------------------
 
@@ -36,7 +38,7 @@
 @use 'components/lamination-form';
 @use 'components/operation-form';
 @use 'components/operation-view';
-@use 'components/s';
+@use 'components/status-chip';
 
 //todo  -------------------------- Modules -------------------------------------
 

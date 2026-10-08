@@ -16,19 +16,13 @@
 		{
 			$search = trim($request->input('search', ''));
 			$materialId = $request->input('material_id', '');
-			$identifier = $request->input('identifier', '');
 
 			$rolls = MaterialRoll::with('material')
 					->when($search, function ($query) use ($search) {
-						$query->where('roll_number', 'ilike', "%{$search}%");
+						$query->whereIlike('roll_number', "%{$search}%");
 					})
 					->when($materialId, function ($query) use ($materialId) {
 						$query->where('material_id', $materialId);
-					})
-					->when($identifier, function ($query) use ($identifier) {
-						$query->whereHas('material', function ($query) use ($identifier) {
-							$query->where('identifier', $identifier);
-						});
 					})
 					->where('weight', '>', 0)
 					->orderBy('roll_number')
@@ -41,24 +35,11 @@
 					->orderBy('name')
 					->get();
 
-			$identifiers = Material::query()
-					->whereHas('rolls', function ($query) {
-						$query->where('weight', '>', 0);
-					})
-					->whereNotNull('identifier')
-					->where('identifier', '!=', '')
-					->orderBy('identifier')
-					->pluck('identifier')
-					->unique()
-					->values();
-
 			return view('material-rolls.index', compact(
 					'rolls',
 					'search',
 					'materialId',
-					'identifier',
 					'materials',
-					'identifiers',
 			));
 		}
 
@@ -146,14 +127,14 @@
 				return response()->json([]);
 			}
 
-			$rolls = MaterialRoll::where('material_id', $materialId)
-					->where('weight', '>', 0)
-					->orderBy('roll_number')
-					->get([
-							'id',
-							'roll_number',
-							'weight',
-					]);
+		$rolls = MaterialRoll::where('material_id', $materialId)
+				->where('weight', '>', 0)
+				->orderBy('roll_number')
+				->get([
+						'id',
+						'roll_number',
+						'weight',
+				]);
 
 			return response()->json($rolls);
 		}

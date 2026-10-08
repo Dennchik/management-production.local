@@ -127,8 +127,7 @@
 		.button {
 			cursor: pointer;
 
-			padding: var(--spacing);
-			border: 1px solid transparent; 
+			border: 1px solid transparent;
 
 			font-size: var(--font-size-normal);
 			font-weight: var(--font-weight-bold);
@@ -151,12 +150,20 @@
 
 			&[data-production-operation-delete] {
 				border-color: var(--alarm);
-				color: var(--alarm);
 				background-color: transparent;
+				transition: background-color 0.4s ease-in-out;
+
+				span {
+					color: var(--color-black);
+					transition: color 0.4s ease-in-out;
+				}
 
 				&:hover {
-					color: var(--color-white);
 					background-color: var(--alarm);
+
+					span {
+						color: var(--color-white);
+					}
 				}
 			}
 		}

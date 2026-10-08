@@ -1,6 +1,6 @@
 //* -------------------------------- Container --------------------------------
 
-$maxWidthContainer: 1440px;
+$maxWidthContainer: 1920px;
 
 //* -------------------------------- Fonts -------------------------------------
 
@@ -21,7 +21,7 @@ $font-color: var(--color-text);
 	--font-size-middle: 1.4rem;
 	--font-size-small: 1.2rem;
 	--font-weight-bold: 600;
-	--shadow: 0 1px 12px rgb(0 0 0 / 15%);
+	--shadow: 0 1px 7px -2px rgb(0 0 0 / 15%);
 	--box-shadow: 0 0 1px rgb(0 0 0 / 15%), 0 0 15px rgb(0 0 0 / 20%);
 	--focus-shadow: 0 0 0 3px rgb(150 190 220 / 15%);
 	--focus-color: rgb(150 190 220 / 35%);

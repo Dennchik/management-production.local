@@ -8,7 +8,8 @@
 		<div class="main-content__header">
 			<h1 class="main-content__title">{{ $material->name }}</h1>
 
-			<a class="material__back button" href="{{ route('warehouse.index') }}">
+			{{-- Возврат на адрес списка из сессии: дерево каталогов остаётся в той же позиции --}}
+			<a class="material__back button" href="{{ session('warehouse.index_url', route('warehouse.index')) }}">
 				<span>Назад на склад</span>
 			</a>
 
@@ -17,7 +18,7 @@
 			<div class="material__content">
 
 				<section class="material__section">
-					{{-- Основная информация --}}
+					{{-- Формат и идентификатор — атрибуты материала --}}
 					<div class="material__column">
 
 						<h2 class="material__section-title">Информация о материале</h2>
@@ -26,11 +27,6 @@
 							<div class="material__row">
 								<div class="material__label">Наименование</div>
 								<div class="material__value">{{ $material->name }}</div>
-							</div>
-
-							<div class="material__row">
-								<div class="material__label">Идентификатор</div>
-								<div class="material__value">{{ $material->identifier }}</div>
 							</div>
 
 							<div class="material__row">
@@ -55,10 +51,15 @@
 								<div class="material__label">Формат</div>
 								<div class="material__value">{{ $material->format ?? '—' }}</div>
 							</div>
+
+							<div class="material__row">
+								<div class="material__label">Идентификатор</div>
+								<div class="material__value">{{ $material->identifier ?? '—' }}</div>
+							</div>
 						</div>
 					</div>
 
-					{{-- Остаток --}}
+					{{-- Остаток материала --}}
 					<div class="material__column">
 						<h2 class="material__section-title">Остаток на складе</h2>
 						<div class="material__stats">
@@ -74,41 +75,46 @@
 						</div>
 					</div>
 				</section>
-				{{-- Физические рулоны --}}
+
+				{{-- Рулоны материала --}}
 				<section class="material__section">
 					<div class="material__column">
-						<h2 class="material__section-title">Физические рулоны</h2>
+						<h2 class="material__section-title">Рулоны</h2>
 
-						@if ($rolls->isEmpty())
-							<p class="material__empty">Рулонов этого материала на складе нет.</p>
-						@else
+						<div class="material__column material__column--full">
+							@if ($material->rolls->isEmpty())
+								<p class="material__empty">Рулонов этого материала на складе нет.</p>
+							@else
 
-							<div class="material__table-wrapper">
-								<table class="material__table">
-									<thead>
-									<tr>
-										<th>Номер рулона</th>
-										<th>Остаток, кг</th>
-										<th>Дата поступления</th>
-									</tr>
-									</thead>
-
-									<tbody>
-
-									@foreach ($rolls as $roll)
-										<tr class="material__roll-row" data-row-link="{{ route('material-rolls.show', $roll) }}"
-												tabindex="0" role="link">
-											<td>{{ $roll->roll_number }}</td>
-											<td>{{ number_format($roll->weight, 3, '.', '') }}</td>
-											<td>{{ $roll->created_at->format('d.m.Y H:i') }}</td>
+								<div class="material__table-wrapper">
+									<table class="material__table">
+										<thead>
+										<tr>
+											<th>Номер рулона</th>
+											<th>Остаток, кг</th>
+											<th>Дата поступления</th>
 										</tr>
-									@endforeach
+										</thead>
 
-									</tbody>
-								</table>
-							</div>
+										<tbody>
 
-						@endif
+										@foreach ($material->rolls as $roll)
+											<tr class="material__roll-row"
+													data-row-link="{{ route('material-rolls.show', $roll) }}"
+													tabindex="0"
+													role="link">
+												<td>{{ $roll->roll_number }}</td>
+												<td>{{ number_format($roll->weight, 3, '.', '') }}</td>
+												<td>{{ $roll->created_at->format('d.m.Y H:i') }}</td>
+											</tr>
+										@endforeach
+
+										</tbody>
+									</table>
+								</div>
+
+							@endif
+						</div>
 					</div>
 				</section>
 			</div>

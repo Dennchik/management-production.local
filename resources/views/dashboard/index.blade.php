@@ -12,63 +12,23 @@
 
 		<div class="main-content__stats main-content__stats--grid">
 
-			{{-- 1. Сырье на складе --}}
-			<a href="{{ route('warehouse.index') }}"
-					class="main-content__stat main-content__stat--link">
-				<span class="main-content__stat-label">Сырье на складе</span>
-				<strong class="main-content__stat-value">{{ number_format($rawMaterialsWeight, 0, '.', ' ') }}
-					кг</strong>
-				<span class="main-content__stat-sub">{{ $rawMaterialsRolls }} рулонов</span>
-			</a>
+			@foreach ($productionStats as $stat)
+				@php
+					$statUrl = $stat['codes']->isNotEmpty()
+							? route('warehouse.index', ['codes' => $stat['codes']->all()])
+							: route('warehouse.index');
+				@endphp
 
-			{{-- 2. ПФ не праймированный --}}
-			<a href="{{ route('warehouse.index', ['codes' => ['30', '40']]) }}"
-					class="main-content__stat main-content__stat--link">
-				<span class="main-content__stat-label">ПФ не праймированный</span>
-				<strong class="main-content__stat-value">
-					{{ number_format($unprimedPfWeight, 0, '.', ' ') }} кг
-				</strong>
-				<span class="main-content__stat-sub">
-				  {{ $unprimedPfRolls }} рулонов
-				</span>
-			</a>
+				<a href="{{ $statUrl }}" class="main-content__stat main-content__stat--link">
+					<span class="main-content__stat-label">{{ $stat['label'] }}</span>
+					<strong class="main-content__stat-value">
+						{{ number_format($stat['weight'], 0, '.', ' ') }} кг
+					</strong>
+					<span class="main-content__stat-sub">{{ $stat['rolls'] }} рулонов</span>
+				</a>
+			@endforeach
 
-			{{-- 3. ПФ праймированный --}}
-			<a href="{{ route('warehouse.index', ['codes' => ['31', '41']]) }}"
-					class="main-content__stat main-content__stat--link">
-				<span class="main-content__stat-label">ПФ праймированный</span>
-				<strong class="main-content__stat-value">
-					{{ number_format($primedPfWeight, 0, '.', ' ') }} кг
-				</strong>
-				<span class="main-content__stat-sub">
-				  {{ $primedPfRolls }} рулонов
-				</span>
-			</a>
-
-			{{-- 4. ПФ на резку --}}
-			<a href="{{ route('warehouse.index', ['codes' => ['30', '31', '40', '41']]) }}"
-					class="main-content__stat main-content__stat--link">
-				<span class="main-content__stat-label">ПФ на резку</span>
-				<strong class="main-content__stat-value">
-					{{ number_format($cuttingPfWeight, 0, '.', ' ') }} кг
-				</strong>
-				<span class="main-content__stat-sub">{{ $cuttingPfRolls }} рулонов </span>
-			</a>
-
-			{{-- 5. ПФ на печать --}}
-			<a
-					href="{{ route('warehouse.index', ['codes' => ['30', '31', '40', '41']]) }}"
-					class="main-content__stat main-content__stat--link">
-				<span class="main-content__stat-label">ПФ на печать</span>
-				<strong class="main-content__stat-value">
-					{{ number_format($printingPfWeight, 0, '.', ' ') }} кг
-				</strong>
-				<span class="main-content__stat-sub">
-				  {{ $printingPfRolls }} рулонов
-				</span>
-			</a>
-
-			{{-- 6. Материалы с низким остатком --}}
+			{{-- Материалы с низким остатком --}}
 			<a href="{{ route('warehouse.index', ['stock' => 'low']) }}"
 					class="main-content__stat main-content__stat--link">
 				<span class="main-content__stat-label">Низкий остаток</span>

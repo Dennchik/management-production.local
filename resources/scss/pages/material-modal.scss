@@ -1,8 +1,30 @@
 @use '../core/variables' as *;
 @use '../core/mixins' as *;
 
+.material-form {
+	// .material-form__operations
+	&__operations {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		padding: 1.6rem;
+
+		input {
+			cursor: pointer;
+		}
+
+		label {
+			display: flex;
+			gap: 1rem;
+
+			input {
+				width: auto;}
+		}
+	}
+}
+
 .material-show {
-		// .material-show__title
+	// .material-show__title
 	&__title {
 		font-family: $font-family-secondary;
 		font-size: var(--clamp-32);
@@ -16,93 +38,27 @@
 	}
 
 	// .material-show__row
-	&__row {padding: var(--spacing);
+	&__row {
+		padding: var(--spacing);
 	}
 
 	// .material-show__actions
-	&__actions{
+	&__actions {
 		margin-top: var(--padding);
 	}
-}
 
-.material-receipt, .material-issue, .operation-confirm, .material-show {
-	width: 100%;
-
-	// .material-receipt__header
-	&__header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: var(--padding);
-	}
-
-	// .material-receipt__content
-	&__content {
-		overflow: hidden;
-		border-radius: var(--border-radius-8);
-		background: var(--color-gray);
-		box-shadow: var(--box-shadow);
-	}
-
-	// .operation-confirm__text
-	&__text {
-		margin-bottom: var(--padding);
-		color: var(--alarm);
-	}
-
-	// .material-receipt__row
-	&__row {
-		display: grid;
-		grid-template-columns: 200px 1fr;
-		border-bottom: 1px solid var(--border-color);
-
-		&:last-child {
-			border-bottom: 0;
-		}
-
-		@include screen-425 {
-			grid-template-columns:   1fr;
-		}
-	}
-
-	// .material-receipt__label
-	&__label {
-		padding: var(--spacing);
-		font-weight: 600;
-		color: var(--color-white);
-		background: var(--color-black);
-	}
-
-	// .material-receipt__value
-	&__value {
+	// .material-show__operations
+	&__operations {
 		display: flex;
 		flex-direction: column;
-		gap: var(--gap-2);
-		padding: var(--spacing);
-	}
-
-	// .material-receipt__roll
-	&__roll {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	// .material-receipt__actions
-	&__actions {
-		display: flex;
 		gap: var(--gap);
-		align-items: center;
 	}
 
-	// .material-receipt__back
-	&__back {
-		border: 1px solid var(--border-color);
-		transition: background-color 0.2s ease,
-		color 0.2s ease;
-
-		&:hover {
-			background: var(--color-gray);
+	// material-show__status
+	&__status {
+		input {
+			width: auto;
 		}
 	}
 }
+

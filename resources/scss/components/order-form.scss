@@ -7,15 +7,145 @@
 		display: grid;
 		grid-template-columns:  1.5fr repeat(2, 0.5fr);
 		gap: 2rem;
+		align-items: end
+	}
+
+	// .issue-order__line--material — строка характеристик материала:
+	// селект + имя + идентификатор + формат
+	&__line--material {
+		grid-template-columns: 1.5fr repeat(3, 0.5fr);
+	}
+}
+
+.production-task {
+	// .production-task__line
+	&__line {
+		&:nth-child(1) {
+			display: grid;
+			grid-template-columns:  80px repeat(3, 0.5fr);
+			gap: 2rem;
+			align-items: center;
+		}
+	}
+
+	// .production-task__field
+	&__field {
+		&:nth-child(5) {
+			//			grid-column: span 2;
+		}
+	}
+
+	&--edit {
+		.production-task__line {
+			grid-template-columns:  1fr repeat(2, 0.5fr);
+		}
 	}
 }
 
 .receipt-order {
+	// .receipt-order__modes
+	&__modes {
+		display: flex;
+		gap: var(--gap);
+	}
+
+	// .receipt-order__mode-button
+	&__mode-button:not(._active) {
+		color: var(--color-text);
+		background: var(--background-gray);
+	}
+
+	/*
+	 * Скрытие через [hidden]: у .button и .receipt-order__field
+	 * свои display, которые перебивают атрибут.
+	 */
+	.button[hidden],
+	&__field[hidden] {
+		display: none;
+	}
+
+	// .receipt-order__rolls-hint
+	&__rolls-hint {
+		margin: 0;
+		font-size: 1.4rem;
+		color: var(--text-muted);
+	}
+
 	// receipt-order__rolls
 	&__rolls {
 		display: flex;
+
+		// Строка рулонов — flex-элемент: растягиваем на всю ширину формы
+		flex: 1 1 auto;
 		flex-direction: column;
 		gap: var(--gap);
+
+		width: 100%;
+	}
+
+	/*
+	 * Таблица рулонов внутри белой карточки формы: лёгкая шапка
+	 * вместо общей чёрной, без зебры и внутренних границ — только
+	 * внешняя рамка. Раскладка фиксированная: длинное название
+	 * материала не растягивает таблицу за экран, а обрезается.
+	 */
+	&__rolls-table {
+		table-layout: fixed;
+		background: var(--color-white);
+		box-shadow: none;
+
+		th,
+		td {
+			border: 0;
+		}
+
+		tbody {
+			tr {
+				background: transparent;
+			}
+		}
+
+		// Инпуты внутри ячеек — без собственных рамок
+		.receipt-order__input {
+			min-height: 4.6rem;
+			padding: 0 1.6rem;
+			background: transparent;
+
+			&:read-only {
+				background: transparent;
+			}
+
+			&:focus {
+				background: var(--background-gray);
+			}
+		}
+
+		// Колонка «Удалить»: без padding ячейки, кнопка по центру
+		// и на всю ширину — не вылезает за рамку при fixed-раскладке
+		th:last-child,
+		td:last-child {
+			width: 10rem;
+			padding: 0 0.6rem;
+			text-align: center;
+		}
+
+		.receipt-order__roll-remove {
+			width: 100%;
+			font-size: 1.3rem;
+		}
+
+		// Длинное название материала в строке обрезается многоточием
+		.select__button-text {
+			overflow: hidden;
+			min-width: 0;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		// Колонка номера прячется целиком в режиме «Общий вес»
+		[hidden] {
+			display: none !important;
+		}
 	}
 
 	// .receipt-order__roll
@@ -36,6 +166,7 @@
 		display: flex;
 		gap: var(--gap);
 		align-items: center;
+		margin-bottom: 1.6rem;
 	}
 
 	// .receipt-order__line
@@ -63,7 +194,7 @@
 	}
 }
 
-.receipt-order, .issue-order {
+.receipt-order, .issue-order, .production-task {
 	// receipt-order__body
 	&__body {
 		display: flex;
@@ -90,11 +221,27 @@
 		width: 100%;
 	}
 
+	// .production-task__table
+	&__table {
+		.table__row-line {
+			grid-template-columns: 40px minmax(0, 2fr) minmax(0, 1fr) 7rem;
+		}
+
+		.table__cell-wrapper  {
+			width: 100%;
+		}
+
+	}
+
 	// .receipt-order__label
 	&__label {
+		padding-right: 1.6rem;
 		padding-left: 1.6rem;
-		font-size: 1.4rem;
+
+		font-size: 1.6rem;
 		color: var(--color-text);
+		white-space: nowrap;
+
 		opacity: 0.7;
 	}
 
@@ -104,7 +251,7 @@
 		min-height: 44px;
 		padding: 0 14px;
 		border: 1px solid var(--border-color);
-		border-radius: var(--border-radius-32);
+		border-radius: var(--border-radius-8);
 
 		color: var(--color-text);
 
@@ -145,6 +292,38 @@
 		&:hover {
 			opacity: 0.8;
 		}
+	}
+}
+
+/*
+ * Ширины колонок таблицы позиций при фиксированной раскладке:
+ * колонка материала/позиции занимает всё оставшееся место.
+ */
+
+// Приходный ордер: Материал | Номер рулона | Вес | Удалить
+.receipt-order .receipt-order__rolls-table {
+	th:nth-child(2),
+	td:nth-child(2) {
+		width: 26%;
+	}
+
+	th:nth-child(3),
+	td:nth-child(3) {
+		width: 20%;
+	}
+}
+
+// Расходный ордер и ордер корректировки:
+// Материал | Рулон | числовые колонки | Удалить
+.issue-order .receipt-order__rolls-table {
+	th:nth-child(2),
+	td:nth-child(2) {
+		width: 20%;
+	}
+
+	th:nth-child(n + 3):not(:last-child),
+	td:nth-child(n + 3):not(:last-child) {
+		width: 13%;
 	}
 }
 

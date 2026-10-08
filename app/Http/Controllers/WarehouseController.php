@@ -2,8 +2,10 @@
 
 	namespace App\Http\Controllers;
 
+	use App\Models\Catalog;
 	use App\Models\Material;
 	use Illuminate\Http\Request;
+	use Illuminate\Support\Collection;
 	use Illuminate\View\View;
 
 	class WarehouseController extends Controller
@@ -24,19 +26,45 @@
 			}
 			$codes = array_values(array_filter($codes));
 
+			/*
+			 * Складские фильтры (поиск, формат, статус остатка, коды)
+			 * пробивают иерархию: материалы всех каталогов показываются
+			 * плоским списком. Без фильтров — раскрывающееся дерево
+			 * каталогов, в котором перечислены все каталоги и материалы.
+			 */
+			$hasStockFilters = $search !== null
+					|| $format !== null
+					|| $stock !== null
+					|| $code !== null
+					|| $codes !== [];
+
+			$flatList = $hasStockFilters;
+
+			$currentCatalog = Catalog::query()->find($request->input('catalog'));
+
+			// Ветка до каталога из адреса раскрывается в дереве.
+			$activePath = $currentCatalog === null
+					? collect()
+					: $this->catalogAncestors($currentCatalog)->pluck('id');
+
+			// Адрес списка запоминается для кнопки «Назад» карточки
+			// материала; раскрытые ветви дерева хранит браузер.
+			session()->put('warehouse.index_url', $request->fullUrl());
+
 			$materialsQuery = Material::query()
-					->withCount([
-							'rolls as rolls_count' => function ($query) {
-								$query->where('weight', '>', 0);
+					->with([
+							'rolls' => function ($query) {
+								$query
+									->select('id', 'material_id', 'weight')
+									->where('weight', '>', 0);
 							},
-					])
-					->withSum('rolls as total_weight', 'weight');
+					]);
 
 			if ($search) {
 				$materialsQuery->where(function ($query) use ($search) {
 					$query
-							->where('name', 'ilike', "%{$search}%")
-							->orWhere('identifier', 'ilike', "%{$search}%");
+						->whereIlike('name', "%{$search}%")
+						->orWhereIlike('identifier', "%{$search}%");
 				});
 			}
 
@@ -48,7 +76,6 @@
 				$materialsQuery->where('code', $code);
 			}
 
-			// ДОБАВЛЕНО:
 			if ($codes) {
 				$materialsQuery->whereIn('code', $codes);
 			}
@@ -80,33 +107,82 @@
 					->orderBy('name')
 					->get();
 
-			$formats = Material::query()
-					->select('format')
-					->distinct()
-					->orderBy('format')
-					->pluck('format');
+			// Материалы раскладываются по своим каталогам для дерева.
+			$materialsByCatalog = $materials->groupBy(
+					static fn (Material $material) => $material->catalog_id ?? 0
+			);
 
-			$materialTypes = Material::query()
-					->select('code')
-					->distinct()
-					->orderBy('code')
-					->pluck('code');
+			$rootMaterials = $materialsByCatalog->get(0, collect())->values();
+
+			$catalogTree = $flatList
+					? collect()
+					: $this->catalogTree(
+							Catalog::query()
+									->orderBy('sort_order')
+									->orderBy('name')
+									->get(),
+							$materialsByCatalog
+					);
+
+			// Формат — атрибут материала: список для фильтра строится из материалов.
+			$formats = Material::query()
+				->select('format')
+				->distinct()
+				->whereNotNull('format')
+				->orderBy('format')
+				->pluck('format');
 
 			return view('warehouse.index', compact(
 					'materials',
+					'rootMaterials',
+					'catalogTree',
+					'activePath',
+					'flatList',
 					'formats',
-					'materialTypes',
 					'search',
 					'format',
 					'stock',
 					'code',
-					'codes'
+					'codes',
+					'currentCatalog'
 			));
 		}
 
 		/**
-		 * Отображает карточку материала
-		 * и физические рулоны этого материала.
+		 * Рекурсивное дерево каталогов с материалами каждого каталога:
+		 * узел — id, имя, материалы и потомки.
+		 */
+		private function catalogTree(Collection $catalogs, Collection $materialsByCatalog, ?int $parentId = null): Collection
+		{
+			return $catalogs
+					->where('parent_id', '=', $parentId)
+					->values()
+					->map(fn (Catalog $catalog) => [
+							'id' => $catalog->id,
+							'name' => $catalog->name,
+							'materials' => $materialsByCatalog->get($catalog->id, collect())->values(),
+							'children' => $this->catalogTree($catalogs, $materialsByCatalog, $catalog->id),
+					]);
+		}
+
+		/**
+		 * Цепочка предков каталога от корня к текущему каталогу.
+		 */
+		private function catalogAncestors(Catalog $catalog): Collection
+		{
+			$chain = collect([$catalog]);
+			$parent = $catalog->parent;
+
+			while ($parent !== null) {
+				$chain->prepend($parent);
+				$parent = $parent->parent;
+			}
+
+			return $chain;
+		}
+
+		/**
+		 * Отображает карточку материала.
 		 */
 		public function material(Material $material): View
 		{
@@ -120,20 +196,17 @@
 
 			/*
 			 * Количество физических рулонов
-			 * с положительным остатком.
+			 * с положительным остатком и общий
+			 * остаток материала.
 			 */
 			$rollsCount = $material->rolls->count();
 
-			/*
-			 * Общий текущий остаток материала.
-			 */
 			$totalWeight = $material->rolls->sum(
 					fn($roll) => (float)$roll->weight
 			);
 
 			return view('warehouse.material', [
 					'material' => $material,
-					'rolls' => $material->rolls,
 					'rollsCount' => $rollsCount,
 					'totalWeight' => $totalWeight,
 			]);
